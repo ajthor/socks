@@ -1,8 +1,9 @@
-
-from gym_basic.envs.dynamical_system_env import DynamicalSystemEnv
+from gym_basic.envs.dynamical_system import DynamicalSystemEnv
+from gym_basic.envs.dynamical_system import StochasticDynamicalSystemEnv
 
 import numpy as np
 from scipy.integrate import solve_ivp
+
 
 class NDIntegratorEnv(DynamicalSystemEnv):
     """
@@ -11,38 +12,20 @@ class NDIntegratorEnv(DynamicalSystemEnv):
 
     metadata = {"render.modes": ["human"]}
 
-    def __init__(self, dim):
+    def __init__(self, state_dim):
         """Initialize the system."""
-        super().__init__(state_dim=dim, action_dim=1)
+        super().__init__(state_dim=state_dim, action_dim=1)
 
-
-
-    def step(self, action):
-        err_msg = "%r (%s) invalid" % (action, type(action))
-        assert self.action_space.contains(action), err_msg
-
-        def dynamics(t, y):
-            """Dynamics for the system."""
-            _, *x = y
-            return (*x, action)
-
-        # solve the initial value problem
-        sol = solve_ivp(dynamics, [0, self.sampling_time], self.state)
-        *y, self.state = sol.y.T
-
-        reward = self.cost(action)
-
-        done = False
-        info = {}
-
-        return np.array(self.state), reward, done, info
-
-
+    def dynamics(self, t, x, u):
+        """Dynamics for the system."""
+        _, *x = x
+        return [*x, u]
 
     def reset(self):
-        self.state = self.np_random.uniform(low=-1, high=1, size=self.observation_space.shape)
+        self.state = self.np_random.uniform(
+            low=-1, high=1, size=self.observation_space.shape
+        )
         return np.array(self.state)
-
 
 
 class DoubleIntegratorEnv(NDIntegratorEnv):
@@ -52,10 +35,33 @@ class DoubleIntegratorEnv(NDIntegratorEnv):
 
     def __init__(self):
         """Initialize the system."""
-        super().__init__(dim=2)
-
-
+        super().__init__(state_dim=2)
 
     def reset(self):
-        self.state = self.np_random.uniform(low=-1, high=1, size=(2,))
+        self.state = self.np_random.uniform(
+            low=-1, high=1, size=self.observation_space.shape
+        )
+        return np.array(self.state)
+
+
+class StochasticNDIntegratorEnv(StochasticDynamicalSystemEnv):
+    """
+    Stochastic ND integrator system.
+    """
+
+    metadata = {"render.modes": ["human"]}
+
+    def __init__(self, state_dim):
+        """Initialize the system."""
+        super().__init__(state_dim=state_dim, action_dim=1, disturbance_dim=state_dim)
+
+    def dynamics(self, t, x, u, w):
+        """Dynamics for the system."""
+        _, *x = x
+        return np.array([*x, u], dtype=np.float32) + w
+
+    def reset(self):
+        self.state = self.np_random.uniform(
+            low=-1, high=1, size=self.observation_space.shape
+        )
         return np.array(self.state)
