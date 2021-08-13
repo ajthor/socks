@@ -37,13 +37,11 @@ def generate_sample(
     x = generate_initial_conditions(sample_space, system, n)
 
     def generate_next_state(x0):
-        sol = solve_ivp(
-            system.dynamics,
-            [0, system.sampling_time],
-            x0,
-            args=(system.action_space.sample(),),
-        )
-        *_, next_state = sol.y.T
+        system.state = x0
+
+        action = system.action_space.sample()
+        next_state, reward, done, _ = system.step(action)
+
         return next_state
 
     S = np.array([(x0, generate_next_state(x0)) for x0 in x])
@@ -80,41 +78,15 @@ def generate_sample_trajectories(
     N = system.time_horizon
     Ts = system.sampling_time
 
-    # create list of time indices to integrate to
-    def t_range(start, stop, step):
-        h = 1 / step
-        i = 0
-        r = start
-        while r < stop:
-            i += 1
-            r = start + i / h
-            yield r
-
-    times = list(t_range(0, N, Ts))
-
-    # NOTE: Python has problems with floating-point precision with simple
-    # caluclations such as 3 * 0.1 = 0.30000000000000004, which is harder to
-    # integrate to and may cause issues with the number of elements in the time
-    # vector we want to integrate over. Dividing by the reciprocal seems to
-    # solve this, but is simply rounding again.
-    #
-    # Some other possible methods to obtain time steps:
-
-    # times = np.linspace(0, N, int(np.floor(N/Ts)), endpoint=False)
-
-    # Hz = 1/Ts
-    # num = int(np.floor(N/Ts))
-    # times = [i/Hz for i in range(num)]
-
     def generate_state_trajectory(x0):
-        sol = solve_ivp(
-            system.dynamics,
-            [0, N],
-            x0,
-            args=(system.action_space.sample(),),
-            t_eval=times,
-        )
-        return sol.y.T
+        system.state = x0
+
+        def generate_next_state():
+            action = system.action_space.sample()
+            next_state, reward, done, _ = system.step(action)
+            return next_state
+
+        return np.array([generate_next_state() for i in range(int(np.floor(N / Ts)))])
 
     S = [(x0, *generate_state_trajectory(x0)) for x0 in x]
 

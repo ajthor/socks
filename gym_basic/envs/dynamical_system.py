@@ -271,13 +271,6 @@ class StochasticDynamicalSystemEnv(DynamicalSystemEnv):
         # generate a disturbance
         disturbance = self.sample_disturbance()
 
-        # print("state")
-        # print(type(self.state))
-        # print("action")
-        # print(type(action))
-        # print("disturbance")
-        # print(type(disturbance))
-
         # solve the initial value problem
         sol = solve_ivp(
             self.dynamics,
@@ -317,5 +310,5 @@ class StochasticDynamicalSystemEnv(DynamicalSystemEnv):
 
         By default, returns a Gaussian sample from the disturbance space.
         """
-        w = 0*self.np_random.standard_normal(size=self.disturbance_space.shape)
+        w = self.np_random.standard_normal(size=self.disturbance_space.shape)
         return np.array(w)

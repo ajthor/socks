@@ -19,7 +19,7 @@ class NDIntegratorEnv(DynamicalSystemEnv):
     def dynamics(self, t, x, u):
         """Dynamics for the system."""
         _, *x = x
-        return [*x, u]
+        return np.array([*x, *u], dtype=np.float32)
 
     def reset(self):
         self.state = self.np_random.uniform(
@@ -58,7 +58,7 @@ class StochasticNDIntegratorEnv(StochasticDynamicalSystemEnv):
     def dynamics(self, t, x, u, w):
         """Dynamics for the system."""
         _, *x = x
-        return np.array([*x, u], dtype=np.float32) + w
+        return np.array([*x, *u], dtype=np.float32) + w
 
     def reset(self):
         self.state = self.np_random.uniform(

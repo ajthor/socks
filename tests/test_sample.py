@@ -14,12 +14,15 @@ class TestGenerateSample(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.envs = [
+            gym_basic.envs.integrator.NDIntegratorEnv(1),
             gym_basic.envs.integrator.NDIntegratorEnv(2),
             gym_basic.envs.integrator.NDIntegratorEnv(3),
             gym_basic.envs.integrator.NDIntegratorEnv(4),
+            gym_basic.envs.integrator.StochasticNDIntegratorEnv(1),
             gym_basic.envs.integrator.StochasticNDIntegratorEnv(2),
             gym_basic.envs.integrator.StochasticNDIntegratorEnv(3),
             gym_basic.envs.integrator.StochasticNDIntegratorEnv(4),
+            gym_basic.envs.point_mass.NDPointMassEnv(1),
             gym_basic.envs.point_mass.NDPointMassEnv(2),
             gym_basic.envs.point_mass.NDPointMassEnv(3),
             gym_basic.envs.point_mass.NDPointMassEnv(4),
@@ -76,9 +79,15 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.envs = [
+            gym_basic.envs.integrator.NDIntegratorEnv(1),
             gym_basic.envs.integrator.NDIntegratorEnv(2),
             gym_basic.envs.integrator.NDIntegratorEnv(3),
             gym_basic.envs.integrator.NDIntegratorEnv(4),
+            gym_basic.envs.integrator.StochasticNDIntegratorEnv(1),
+            gym_basic.envs.integrator.StochasticNDIntegratorEnv(2),
+            gym_basic.envs.integrator.StochasticNDIntegratorEnv(3),
+            gym_basic.envs.integrator.StochasticNDIntegratorEnv(4),
+            gym_basic.envs.point_mass.NDPointMassEnv(1),
             gym_basic.envs.point_mass.NDPointMassEnv(2),
             gym_basic.envs.point_mass.NDPointMassEnv(3),
             gym_basic.envs.point_mass.NDPointMassEnv(4),
