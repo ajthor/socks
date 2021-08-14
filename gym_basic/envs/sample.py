@@ -1,23 +1,22 @@
 from abc import ABC, abstractmethod
 
-import math
 import gym
 
-from gym_basic.envs.dynamical_system import DynamicalSystemEnv
+from gym_basic.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
 from scipy.integrate import solve_ivp
 
 
 def generate_initial_conditions(
-    sample_space: gym.spaces, system: DynamicalSystemEnv, n: "Number of samples." = 10
+    sample_space: gym.spaces, system: DynamicalSystem, n: "Number of samples." = 10
 ):
     """Generate a collection of initial conditions."""
     return np.array([sample_space.sample() for i in range(n)])
 
 
 def generate_sample(
-    sample_space: gym.spaces, system: DynamicalSystemEnv, n: "Number of samples." = 10
+    sample_space: gym.spaces, system: DynamicalSystem, n: "Number of samples." = 10
 ):
     """
     Generate a sample from a dynamical system.
@@ -50,7 +49,7 @@ def generate_sample(
 
 
 def generate_sample_trajectories(
-    sample_space: gym.spaces, system: DynamicalSystemEnv, n: "Number of samples." = 10
+    sample_space: gym.spaces, system: DynamicalSystem, n: "Number of samples." = 10
 ):
     """
     Generate a sample of trajectories from a dynamical system.

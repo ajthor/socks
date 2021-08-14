@@ -1,21 +1,18 @@
-import math
-
-from gym_basic.envs.dynamical_system import DynamicalSystemEnv
+from gym_basic.envs.dynamical_system import DynamicalSystem
+from gym_basic.envs.dynamical_system import StochasticMixin
 
 import numpy as np
 from scipy.integrate import solve_ivp
 
 
-class CartPoleEnv(DynamicalSystemEnv):
+class CartPoleEnv(DynamicalSystem):
     """
     Cart-pole system.
     """
 
-    metadata = {"render.modes": ["human"]}
-
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=3, action_dim=1)
+        super().__init__(state_dim=3, action_dim=1, *args, **kwargs)
 
         # system parameters
         self.damping_coefficient = 0.1

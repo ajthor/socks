@@ -26,6 +26,10 @@ class TestGenerateSample(unittest.TestCase):
             gym_basic.envs.point_mass.NDPointMassEnv(2),
             gym_basic.envs.point_mass.NDPointMassEnv(3),
             gym_basic.envs.point_mass.NDPointMassEnv(4),
+            gym_basic.envs.point_mass.StochasticNDPointMassEnv(1),
+            gym_basic.envs.point_mass.StochasticNDPointMassEnv(2),
+            gym_basic.envs.point_mass.StochasticNDPointMassEnv(3),
+            gym_basic.envs.point_mass.StochasticNDPointMassEnv(4),
             gym_basic.envs.nonholonomic.NonholonomicVehicleEnv(),
             gym_basic.envs.cwh.CWH4DEnv(),
             gym_basic.envs.cwh.CWH6DEnv(),
@@ -91,6 +95,10 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
             gym_basic.envs.point_mass.NDPointMassEnv(2),
             gym_basic.envs.point_mass.NDPointMassEnv(3),
             gym_basic.envs.point_mass.NDPointMassEnv(4),
+            gym_basic.envs.point_mass.StochasticNDPointMassEnv(1),
+            gym_basic.envs.point_mass.StochasticNDPointMassEnv(2),
+            gym_basic.envs.point_mass.StochasticNDPointMassEnv(3),
+            gym_basic.envs.point_mass.StochasticNDPointMassEnv(4),
             gym_basic.envs.nonholonomic.NonholonomicVehicleEnv(),
             gym_basic.envs.cwh.CWH4DEnv(),
             gym_basic.envs.cwh.CWH6DEnv(),
@@ -146,7 +154,7 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
         Test against specific known trajectory.
         """
 
-        env = gym_basic.envs.integrator.DoubleIntegratorEnv()
+        env = gym_basic.envs.integrator.NDIntegratorEnv(2)
         env.action_space = gym.spaces.Box(low=0, high=0, shape=(1,), dtype=np.float32)
 
         sample_space = gym.spaces.Box(low=0.1, high=0.1, shape=(2,), dtype=np.float32)

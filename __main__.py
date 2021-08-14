@@ -11,11 +11,11 @@ import numpy as np
 from gym_basic.envs.sample import generate_sample
 from gym_basic.envs.sample import generate_sample_trajectories
 
-# get environment
-# env = gym.make("doubleIntegrator-v0")
-# env.env.seed(1)
 # env = gym_basic.envs.integrator.NDIntegratorEnv(2)
 env = gym_basic.envs.integrator.StochasticNDIntegratorEnv(2)
+
+# env = gym_basic.envs.point_mass.StochasticNDPointMassEnv(2)
+
 # env = gym_basic.envs.cwh.CWH6DEnv()
 
 sample_space = gym.spaces.Box(
@@ -27,7 +27,7 @@ sample_space = gym.spaces.Box(
 
 S = generate_sample_trajectories(sample_space, env, 5)
 
-print(S)
+print(env.__class__.__mro__)
 
 
 # env.disturbance_space = gym.spaces.Box(low=0, high=0, shape=(2,), dtype=np.float32)

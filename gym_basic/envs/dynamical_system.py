@@ -7,15 +7,15 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 
-class DynamicalSystemEnv(gym.Env, ABC):
+class DynamicalSystem(gym.Env, ABC):
     """
     Base class for dynamical system models.
 
-    This class is ABSTRACT, meaning it is not meant to be instantiated directly. Instead, define a new class that inherits from DynamicalSystemEnv, and define a custom 'dynamics' function.
+    This class is ABSTRACT, meaning it is not meant to be instantiated directly. Instead, define a new class that inherits from DynamicalSystem, and define a custom 'dynamics' function.
 
     Example:
 
-    class CustomDynamicalSystemEnv(DynamicalSystemEnv):
+    class CustomDynamicalSystem(DynamicalSystem):
         def __init__(self):
             super().__init__(state_dim=2, action_dim=1)
 
@@ -44,7 +44,7 @@ class DynamicalSystemEnv(gym.Env, ABC):
     import gym
     import numpy as np
 
-    env = CustomDynamicalSystemEnv()
+    env = CustomDynamicalSystem()
     obs = env.reset()
 
     num_steps = int(np.floor(env.time_horizon/env.sampling_time))
@@ -62,7 +62,7 @@ class DynamicalSystemEnv(gym.Env, ABC):
 
     metadata = {"render.modes": ["human"]}
 
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, *args, **kwargs):
         """
         Initialize the dynamical system.
 
@@ -173,20 +173,20 @@ class DynamicalSystemEnv(gym.Env, ABC):
         return 0.0
 
 
-class StochasticDynamicalSystemEnv(DynamicalSystemEnv):
+class StochasticMixin(DynamicalSystem):
     """
     Base class for stochastic dynamical system models.
 
-    This class is ABSTRACT, meaning it is not meant to be instantiated directly. Instead, define a new class that inherits from DynamicalSystemEnv, and define a custom 'dynamics' function.
+    This class is ABSTRACT, meaning it is not meant to be instantiated directly. Instead, define a new class that inherits from DynamicalSystem, and define a custom 'dynamics' function.
 
     Example:
 
-    class CustomDynamicalSystemEnv(DynamicalSystemEnv):
+    class CustomDynamicalSystem(DynamicalSystem):
         def __init__(self):
             super().__init__(state_dim=2, action_dim=1)
 
         def dynamics(self, t, x, u, w):
-            return u
+            return u + w
 
         def reset(self):
             self.state = self.np_random.uniform(
@@ -210,7 +210,7 @@ class StochasticDynamicalSystemEnv(DynamicalSystemEnv):
     import gym
     import numpy as np
 
-    env = CustomDynamicalSystemEnv()
+    env = CustomDynamicalSystem()
     obs = env.reset()
 
     num_steps = int(np.floor(env.time_horizon/env.sampling_time))
@@ -226,7 +226,7 @@ class StochasticDynamicalSystemEnv(DynamicalSystemEnv):
     env.close()
     """
 
-    def __init__(self, state_dim, action_dim, disturbance_dim):
+    def __init__(self, disturbance_dim, *args, **kwargs):
         """
         Initialize the dynamical system.
 
@@ -236,7 +236,7 @@ class StochasticDynamicalSystemEnv(DynamicalSystemEnv):
         env.sampling_time = 0.25
         """
 
-        super().__init__(state_dim=state_dim, action_dim=action_dim)
+        super().__init__(*args, **kwargs)
 
         self.disturbance_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=(disturbance_dim,), dtype=np.float32
@@ -290,6 +290,7 @@ class StochasticDynamicalSystemEnv(DynamicalSystemEnv):
 
         return np.array(self.state), reward, done, info
 
+    @abstractmethod
     def dynamics(
         self,
         t: "Time variable.",
