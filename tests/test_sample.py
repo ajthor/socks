@@ -9,33 +9,34 @@ import numpy as np
 from gym_basic.envs.sample import generate_sample
 from gym_basic.envs.sample import generate_sample_trajectories
 
+system_list = [
+    gym_basic.envs.integrator.NDIntegratorEnv(1),
+    gym_basic.envs.integrator.NDIntegratorEnv(2),
+    gym_basic.envs.integrator.NDIntegratorEnv(3),
+    gym_basic.envs.integrator.NDIntegratorEnv(4),
+    gym_basic.envs.integrator.StochasticNDIntegratorEnv(1),
+    gym_basic.envs.integrator.StochasticNDIntegratorEnv(2),
+    gym_basic.envs.integrator.StochasticNDIntegratorEnv(3),
+    gym_basic.envs.integrator.StochasticNDIntegratorEnv(4),
+    gym_basic.envs.point_mass.NDPointMassEnv(1),
+    gym_basic.envs.point_mass.NDPointMassEnv(2),
+    gym_basic.envs.point_mass.NDPointMassEnv(3),
+    gym_basic.envs.point_mass.NDPointMassEnv(4),
+    gym_basic.envs.point_mass.StochasticNDPointMassEnv(1),
+    gym_basic.envs.point_mass.StochasticNDPointMassEnv(2),
+    gym_basic.envs.point_mass.StochasticNDPointMassEnv(3),
+    gym_basic.envs.point_mass.StochasticNDPointMassEnv(4),
+    gym_basic.envs.nonholonomic.NonholonomicVehicleEnv(),
+    gym_basic.envs.cwh.CWH4DEnv(),
+    gym_basic.envs.cwh.CWH6DEnv(),
+    gym_basic.envs.QUAD20.QuadrotorEnv(),
+    gym_basic.envs.QUAD20.StochasticQuadrotorEnv(),
+]
 
 class TestGenerateSample(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.envs = [
-            gym_basic.envs.integrator.NDIntegratorEnv(1),
-            gym_basic.envs.integrator.NDIntegratorEnv(2),
-            gym_basic.envs.integrator.NDIntegratorEnv(3),
-            gym_basic.envs.integrator.NDIntegratorEnv(4),
-            gym_basic.envs.integrator.StochasticNDIntegratorEnv(1),
-            gym_basic.envs.integrator.StochasticNDIntegratorEnv(2),
-            gym_basic.envs.integrator.StochasticNDIntegratorEnv(3),
-            gym_basic.envs.integrator.StochasticNDIntegratorEnv(4),
-            gym_basic.envs.point_mass.NDPointMassEnv(1),
-            gym_basic.envs.point_mass.NDPointMassEnv(2),
-            gym_basic.envs.point_mass.NDPointMassEnv(3),
-            gym_basic.envs.point_mass.NDPointMassEnv(4),
-            gym_basic.envs.point_mass.StochasticNDPointMassEnv(1),
-            gym_basic.envs.point_mass.StochasticNDPointMassEnv(2),
-            gym_basic.envs.point_mass.StochasticNDPointMassEnv(3),
-            gym_basic.envs.point_mass.StochasticNDPointMassEnv(4),
-            gym_basic.envs.nonholonomic.NonholonomicVehicleEnv(),
-            gym_basic.envs.cwh.CWH4DEnv(),
-            gym_basic.envs.cwh.CWH6DEnv(),
-            gym_basic.envs.QUAD20.QuadrotorEnv(),
-            gym_basic.envs.QUAD20.StochasticQuadrotorEnv(),
-        ]
+        cls.envs = system_list
 
     def test_sample_is_ndarray(cls):
         """
@@ -84,29 +85,7 @@ class TestGenerateSample(unittest.TestCase):
 class TestGenerateSampleTrajectories(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.envs = [
-            gym_basic.envs.integrator.NDIntegratorEnv(1),
-            gym_basic.envs.integrator.NDIntegratorEnv(2),
-            gym_basic.envs.integrator.NDIntegratorEnv(3),
-            gym_basic.envs.integrator.NDIntegratorEnv(4),
-            gym_basic.envs.integrator.StochasticNDIntegratorEnv(1),
-            gym_basic.envs.integrator.StochasticNDIntegratorEnv(2),
-            gym_basic.envs.integrator.StochasticNDIntegratorEnv(3),
-            gym_basic.envs.integrator.StochasticNDIntegratorEnv(4),
-            gym_basic.envs.point_mass.NDPointMassEnv(1),
-            gym_basic.envs.point_mass.NDPointMassEnv(2),
-            gym_basic.envs.point_mass.NDPointMassEnv(3),
-            gym_basic.envs.point_mass.NDPointMassEnv(4),
-            gym_basic.envs.point_mass.StochasticNDPointMassEnv(1),
-            gym_basic.envs.point_mass.StochasticNDPointMassEnv(2),
-            gym_basic.envs.point_mass.StochasticNDPointMassEnv(3),
-            gym_basic.envs.point_mass.StochasticNDPointMassEnv(4),
-            gym_basic.envs.nonholonomic.NonholonomicVehicleEnv(),
-            gym_basic.envs.cwh.CWH4DEnv(),
-            gym_basic.envs.cwh.CWH6DEnv(),
-            gym_basic.envs.QUAD20.QuadrotorEnv(),
-            gym_basic.envs.QUAD20.StochasticQuadrotorEnv(),
-        ]
+        cls.envs = system_list
 
     def test_sample_trajectories(cls):
         """

@@ -40,7 +40,7 @@ for i in range(5):
     # get action
     action = env.action_space.sample()
 
-    # print(obs)
+    print(obs)
 
     # apply action
     obs, reward, done, _ = env.step(action)

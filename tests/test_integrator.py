@@ -17,18 +17,18 @@ class TestIntegratorSystem(unittest.TestCase):
 
     def test_known_trajectory(cls):
         """
-        Test against specific known trajectory.
+        Test against specific known trajectory. Sanity check.
         """
 
         env = cls.env
 
         env.state = np.array([0.1, 0.1])
+        action = np.array([0])
 
         trajectory = []
         trajectory.append(env.state)
 
         for i in range(10):
-            action = np.array([0])
             obs, reward, done, _ = env.step(action)
             trajectory.append(obs)
 

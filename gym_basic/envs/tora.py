@@ -5,7 +5,7 @@ import numpy as np
 
 class TORAEnv(DynamicalSystem):
     """
-    TORA (translational oscillation with a rotational actuator) system.
+    TORA (translational oscillation with rotational actuation) system.
     """
 
     def __init__(self, *args, **kwargs):
@@ -35,7 +35,7 @@ class TORAEnv(DynamicalSystem):
 
 class StochasticTORAEnv(StochasticMixin, TORAEnv):
     """
-    TORA (translational oscillation with a rotational actuator) system.
+    Stochastic TORA system.
     """
 
     def __init__(self, *args, **kwargs):
