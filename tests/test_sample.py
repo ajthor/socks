@@ -33,6 +33,8 @@ class TestGenerateSample(unittest.TestCase):
             gym_basic.envs.nonholonomic.NonholonomicVehicleEnv(),
             gym_basic.envs.cwh.CWH4DEnv(),
             gym_basic.envs.cwh.CWH6DEnv(),
+            gym_basic.envs.QUAD20.QuadrotorEnv(),
+            gym_basic.envs.QUAD20.StochasticQuadrotorEnv(),
         ]
 
     def test_sample_is_ndarray(cls):
@@ -102,6 +104,8 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
             gym_basic.envs.nonholonomic.NonholonomicVehicleEnv(),
             gym_basic.envs.cwh.CWH4DEnv(),
             gym_basic.envs.cwh.CWH6DEnv(),
+            gym_basic.envs.QUAD20.QuadrotorEnv(),
+            gym_basic.envs.QUAD20.StochasticQuadrotorEnv(),
         ]
 
     def test_sample_trajectories(cls):

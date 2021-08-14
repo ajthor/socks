@@ -2,12 +2,10 @@ from gym_basic.envs.dynamical_system import DynamicalSystem
 from gym_basic.envs.dynamical_system import StochasticMixin
 
 import numpy as np
-from scipy.integrate import solve_ivp
-
 
 class NDPointMassEnv(DynamicalSystem):
     """
-    ND integrator system.
+    ND point mass system.
     """
 
     def __init__(self, dim, *args, **kwargs):
@@ -27,7 +25,7 @@ class NDPointMassEnv(DynamicalSystem):
 
 class StochasticNDPointMassEnv(StochasticMixin, NDPointMassEnv):
     """
-    ND integrator system.
+    Stochastic ND point mass system.
     """
 
     def __init__(self, dim, *args, **kwargs):
