@@ -44,7 +44,7 @@ class TestGenerateSample(unittest.TestCase):
         """
 
         for env in cls.envs:
-            with cls.subTest(f"Testing with {type(env)}."):
+            with cls.subTest(msg=f"Testing with {type(env)}."):
 
                 sample_space = gym.spaces.Box(
                     low=-0.1,
@@ -68,7 +68,7 @@ class TestGenerateSample(unittest.TestCase):
         """
 
         for env in cls.envs:
-            with cls.subTest(f"Testing with {type(env)}."):
+            with cls.subTest(msg=f"Testing with {type(env)}."):
 
                 sample_space = gym.spaces.Box(
                     low=-0.1,
@@ -93,7 +93,7 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
         """
 
         for env in cls.envs:
-            with cls.subTest(f"Testing with {type(env)}."):
+            with cls.subTest(msg=f"Testing with {type(env)}."):
 
                 sample_space = gym.spaces.Box(
                     low=-0.1,
@@ -119,7 +119,7 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
         """
 
         for env in cls.envs:
-            with cls.subTest(f"Testing with {type(env)}."):
+            with cls.subTest(msg=f"Testing with {type(env)}."):
 
                 sample_space = gym.spaces.Box(
                     low=-0.1,

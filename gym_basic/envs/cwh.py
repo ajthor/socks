@@ -23,6 +23,15 @@ class CWHBase(DynamicalSystem):
         self.compute_mu()
         self.compute_angular_velocity()
 
+    # @property
+    # def sampling_time(self):
+    #     return self._sampling_time
+    #
+    # @sampling_time.setter
+    # def sampling_time(self, value):
+    #     self._sampling_time = value
+    #     self.compute_angular_velocity()
+
     @property
     def orbital_radius(self):
         return self._orbital_radius
@@ -64,10 +73,15 @@ class CWHBase(DynamicalSystem):
 
     def compute_angular_velocity(self):
         self.angular_velocity = np.sqrt(self.mu / (self.orbital_radius ** 3))
-        self.compute_transition_matrix()
 
-    def compute_transition_matrix(self):
-        pass
+        self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
+        self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
+
+    def compute_state_matrix(self, sampling_time):
+        ...
+
+    def compute_input_matrix(self, sampling_time):
+        ...
 
 
 class CWH4DEnv(CWHBase):
@@ -83,15 +97,17 @@ class CWH4DEnv(CWHBase):
             low=-0.01, high=0.01, shape=(2,), dtype=np.float32
         )
 
-        self.compute_transition_matrix()
+        self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
 
-    def compute_transition_matrix(self):
+        self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
+
+    def compute_state_matrix(self, sampling_time):
         n = self.angular_velocity
-        nt = n * self.sampling_time
+        nt = n * sampling_time
         sin_nt = np.sin(nt)
         cos_nt = np.cos(nt)
 
-        self.transition_matrix = [
+        return [
             [4 - 3 * cos_nt, 0, (1 / n) * sin_nt, (2 / n) * (1 - cos_nt)],
             [
                 6 * (sin_nt - nt),
@@ -103,12 +119,56 @@ class CWH4DEnv(CWHBase):
             [-6 * n * (1 - cos_nt), 0, -2 * sin_nt, 4 * cos_nt - 3],
         ]
 
+    def compute_input_matrix(self, sampling_time):
+        n = self.angular_velocity
+        Ts = sampling_time
+        nt = n * Ts
+        sin_nt = np.sin(nt)
+        cos_nt = np.cos(nt)
+
+        sin_nt2 = np.sin((nt) / 2)
+
+        M = self.chief_mass
+
+        eAt = [
+            [
+                4 * Ts - (3 * sin_nt) / n,
+                0,
+                (2 * (sin_nt2 ** 2)) / (n ** 2),
+                -(2 * (sin_nt - nt)) / (n ** 2),
+            ],
+            [
+                (12 * (sin_nt2 ** 2)) / n - 3 * (Ts ** 2) * n,
+                Ts,
+                (2 * (sin_nt - nt)) / (n ** 2),
+                (8 * (sin_nt2 ** 2)) / (n ** 2) - (3 * (Ts ** 2)) / 2,
+            ],
+            [3 - 3 * cos_nt, 0, sin_nt / n, (4 * (sin_nt2 ** 2)) / n],
+            [
+                6 * sin_nt - 6 * nt,
+                0,
+                -(4 * (sin_nt2 ** 2)) / n,
+                (4 * sin_nt) / n - 3 * Ts,
+            ],
+        ]
+
+        B = [
+            [0, 0],
+            [0, 0],
+            [(1 / M), 0],
+            [0, (1 / M)],
+        ]
+
+        return np.matmul(eAt, B)
+
     def step(self, action):
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
         # use closed-form solution
-        self.state = np.matmul(self.transition_matrix, self.state.T)
+        self.state = np.matmul(self.state_matrix, self.state.T) + np.matmul(
+            self.input_matrix, action.T
+        )
 
         reward = self.cost(action)
 
@@ -118,7 +178,16 @@ class CWH4DEnv(CWHBase):
         return np.array(self.state), reward, done, info
 
     def dynamics(self, t, x, u):
-        """Dynamics for the system."""
+        """
+        Dynamics for the system.
+
+        NOTE: The CWH system has a closed-form solution for the equations of
+        motion, meaning the dynamics function presented here is primarily for
+        reference. The scipy.solve_ivp function does not return the correct
+        result for the dynamical equations, and will quickly run into numerical
+        issues where the states explode. See the 'step' function for details
+        regarding how the next state is calculated.
+        """
         x1, x2, x3, x4 = x
         u1, u2 = u
 
@@ -153,15 +222,17 @@ class CWH6DEnv(CWHBase):
             low=-0.01, high=0.01, shape=(3,), dtype=np.float32
         )
 
-        self.compute_transition_matrix()
+        self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
 
-    def compute_transition_matrix(self):
+        self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
+
+    def compute_state_matrix(self, sampling_time):
         n = self.angular_velocity
-        nt = n * self.sampling_time
+        nt = n * sampling_time
         sin_nt = np.sin(nt)
         cos_nt = np.cos(nt)
 
-        self.transition_matrix = [
+        return [
             [4 - 3 * cos_nt, 0, 0, (1 / n) * sin_nt, (2 / n) * (1 - cos_nt), 0],
             [
                 6 * (sin_nt - nt),
@@ -177,12 +248,73 @@ class CWH6DEnv(CWHBase):
             [0, 0, -n * sin_nt, 0, 0, cos_nt],
         ]
 
+    def compute_input_matrix(self, sampling_time):
+        n = self.angular_velocity
+        Ts = sampling_time
+        nt = n * Ts
+        sin_nt = np.sin(nt)
+        cos_nt = np.cos(nt)
+
+        sin_nt2 = np.sin((nt) / 2)
+
+        M = self.chief_mass
+
+        eAt = [
+            [
+                4 * Ts - (3 * sin_nt) / n,
+                0,
+                0,
+                (2 * (sin_nt2 ** 2)) / (n ** 2),
+                -(2 * (sin_nt - nt)) / (n ** 2),
+                0,
+            ],
+            [
+                (12 * (sin_nt2 ** 2)) / n - 3 * (Ts ** 2) * n,
+                Ts,
+                0,
+                (2 * (sin_nt - nt)) / (n ** 2),
+                (8 * (sin_nt2 ** 2)) / (n ** 2) - (3 * (Ts ** 2)) / 2,
+                0,
+            ],
+            [0, 0, sin_nt / n, 0, 0, (2 * (sin_nt2 ** 2)) / (n ** 2)],
+            [
+                3 - 3 * cos_nt,
+                0,
+                0,
+                sin_nt / n,
+                (4 * (sin_nt2 ** 2)) / n,
+                0,
+            ],
+            [
+                6 * sin_nt - 6 * nt,
+                0,
+                0,
+                -(4 * (sin_nt2 ** 2)) / n,
+                (4 * sin_nt) / n - 3 * Ts,
+                0,
+            ],
+            [0, 0, cos_nt - 1, 0, 0, sin_nt / n],
+        ]
+
+        B = [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0],
+            [(1 / M), 0, 0],
+            [0, (1 / M), 0],
+            [0, 0, (1 / M)],
+        ]
+
+        return np.matmul(eAt, B)
+
     def step(self, action):
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
         # use closed-form solution
-        self.state = np.matmul(self.transition_matrix, self.state.T)
+        self.state = np.matmul(self.state_matrix, self.state.T) + np.matmul(
+            self.input_matrix, action.T
+        )
 
         reward = self.cost(action)
 
@@ -192,7 +324,16 @@ class CWH6DEnv(CWHBase):
         return np.array(self.state), reward, done, info
 
     def dynamics(self, t, x, u):
-        """Dynamics for the system."""
+        """
+        Dynamics for the system.
+
+        NOTE: The CWH system has a closed-form solution for the equations of
+        motion, meaning the dynamics function presented here is primarily for
+        reference. The scipy.solve_ivp function does not return the correct
+        result for the dynamical equations, and will quickly run into numerical
+        issues where the states explode. See the 'step' function for details
+        regarding how the next state is calculated.
+        """
         x1, x2, x3, x4, x5, x6 = x
         u1, u2, u3 = u
 
@@ -225,10 +366,39 @@ class StochasticCWH4DEnv(StochasticMixin, CWH4DEnv):
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=4, action_dim=2, disturbance_dim=4, *args, **kwargs)
+        super().__init__(disturbance_dim=4, *args, **kwargs)
+
+    def step(self, action):
+        err_msg = "%r (%s) invalid" % (action, type(action))
+        assert self.action_space.contains(action), err_msg
+
+        disturbance = self.sample_disturbance()
+
+        # use closed-form solution
+        self.state = (
+            np.matmul(self.state_matrix, self.state.T)
+            + np.matmul(self.input_matrix, action.T)
+            + disturbance
+        )
+
+        reward = self.cost(action)
+
+        done = False
+        info = {}
+
+        return np.array(self.state), reward, done, info
 
     def dynamics(self, t, x, u, w):
-        """Dynamics for the system."""
+        """
+        Dynamics for the system.
+
+        NOTE: The CWH system has a closed-form solution for the equations of
+        motion, meaning the dynamics function presented here is primarily for
+        reference. The scipy.solve_ivp function does not return the correct
+        result for the dynamical equations, and will quickly run into numerical
+        issues where the states explode. See the 'step' function for details
+        regarding how the next state is calculated.
+        """
         x1, x2, x3, x4 = x
         u1, u2 = u
         w1, w2, w3, w4 = w
@@ -258,10 +428,39 @@ class StochasticCWH6DEnv(StochasticMixin, CWH6DEnv):
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=6, action_dim=3, disturbance_dim=6, *args, **kwargs)
+        super().__init__(disturbance_dim=6, *args, **kwargs)
+
+    def step(self, action):
+        err_msg = "%r (%s) invalid" % (action, type(action))
+        assert self.action_space.contains(action), err_msg
+
+        disturbance = self.sample_disturbance()
+
+        # use closed-form solution
+        self.state = (
+            np.matmul(self.state_matrix, self.state.T)
+            + np.matmul(self.input_matrix, action.T)
+            + disturbance
+        )
+
+        reward = self.cost(action)
+
+        done = False
+        info = {}
+
+        return np.array(self.state), reward, done, info
 
     def dynamics(self, t, x, u, w):
-        """Dynamics for the system."""
+        """
+        Dynamics for the system.
+
+        NOTE: The CWH system has a closed-form solution for the equations of
+        motion, meaning the dynamics function presented here is primarily for
+        reference. The scipy.solve_ivp function does not return the correct
+        result for the dynamical equations, and will quickly run into numerical
+        issues where the states explode. See the 'step' function for details
+        regarding how the next state is calculated.
+        """
         x1, x2, x3, x4, x5, x6 = x
         u1, u2, u3 = u
         w1, w2, w3, w4, w5, w6 = w
