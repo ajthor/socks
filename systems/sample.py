@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import gym
 
-from gym_basic.envs.dynamical_system import DynamicalSystem
+from systems.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
 from scipy.integrate import solve_ivp

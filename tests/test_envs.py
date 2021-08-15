@@ -2,34 +2,34 @@ import unittest
 
 import gym
 
-import gym_basic.envs
+import systems.envs
 
 import numpy as np
 
 system_list = [
-    gym_basic.envs.integrator.NDIntegratorEnv(1),
-    gym_basic.envs.integrator.NDIntegratorEnv(2),
-    gym_basic.envs.integrator.NDIntegratorEnv(3),
-    gym_basic.envs.integrator.NDIntegratorEnv(4),
-    gym_basic.envs.integrator.StochasticNDIntegratorEnv(1),
-    gym_basic.envs.integrator.StochasticNDIntegratorEnv(2),
-    gym_basic.envs.integrator.StochasticNDIntegratorEnv(3),
-    gym_basic.envs.integrator.StochasticNDIntegratorEnv(4),
-    gym_basic.envs.point_mass.NDPointMassEnv(1),
-    gym_basic.envs.point_mass.NDPointMassEnv(2),
-    gym_basic.envs.point_mass.NDPointMassEnv(3),
-    gym_basic.envs.point_mass.NDPointMassEnv(4),
-    gym_basic.envs.point_mass.StochasticNDPointMassEnv(1),
-    gym_basic.envs.point_mass.StochasticNDPointMassEnv(2),
-    gym_basic.envs.point_mass.StochasticNDPointMassEnv(3),
-    gym_basic.envs.point_mass.StochasticNDPointMassEnv(4),
-    gym_basic.envs.nonholonomic.NonholonomicVehicleEnv(),
-    gym_basic.envs.cwh.CWH4DEnv(),
-    gym_basic.envs.cwh.CWH6DEnv(),
-    gym_basic.envs.cwh.StochasticCWH4DEnv(),
-    gym_basic.envs.cwh.StochasticCWH6DEnv(),
-    gym_basic.envs.QUAD20.QuadrotorEnv(),
-    gym_basic.envs.QUAD20.StochasticQuadrotorEnv(),
+    systems.envs.integrator.NDIntegratorEnv(1),
+    systems.envs.integrator.NDIntegratorEnv(2),
+    systems.envs.integrator.NDIntegratorEnv(3),
+    systems.envs.integrator.NDIntegratorEnv(4),
+    systems.envs.integrator.StochasticNDIntegratorEnv(1),
+    systems.envs.integrator.StochasticNDIntegratorEnv(2),
+    systems.envs.integrator.StochasticNDIntegratorEnv(3),
+    systems.envs.integrator.StochasticNDIntegratorEnv(4),
+    systems.envs.point_mass.NDPointMassEnv(1),
+    systems.envs.point_mass.NDPointMassEnv(2),
+    systems.envs.point_mass.NDPointMassEnv(3),
+    systems.envs.point_mass.NDPointMassEnv(4),
+    systems.envs.point_mass.StochasticNDPointMassEnv(1),
+    systems.envs.point_mass.StochasticNDPointMassEnv(2),
+    systems.envs.point_mass.StochasticNDPointMassEnv(3),
+    systems.envs.point_mass.StochasticNDPointMassEnv(4),
+    systems.envs.nonholonomic.NonholonomicVehicleEnv(),
+    systems.envs.cwh.CWH4DEnv(),
+    systems.envs.cwh.CWH6DEnv(),
+    systems.envs.cwh.StochasticCWH4DEnv(),
+    systems.envs.cwh.StochasticCWH6DEnv(),
+    systems.envs.QUAD20.QuadrotorEnv(),
+    systems.envs.QUAD20.StochasticQuadrotorEnv(),
 ]
 
 

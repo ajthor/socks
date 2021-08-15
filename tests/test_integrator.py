@@ -2,18 +2,18 @@ import unittest
 
 import gym
 
-import gym_basic.envs
+import systems.envs
 
 import numpy as np
 
-from gym_basic.envs.sample import generate_sample
-from gym_basic.envs.sample import generate_sample_trajectories
+from systems.sample import generate_sample
+from systems.sample import generate_sample_trajectories
 
 
 class TestIntegratorSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = gym_basic.envs.integrator.NDIntegratorEnv(2)
+        cls.env = systems.envs.integrator.NDIntegratorEnv(2)
 
     def test_known_trajectory(cls):
         """

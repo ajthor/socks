@@ -1,20 +1,21 @@
-from gym_basic.envs.dynamical_system import DynamicalSystem
-from gym_basic.envs.dynamical_system import StochasticMixin
+from systems.envs.dynamical_system import DynamicalSystem
+from systems.envs.dynamical_system import StochasticMixin
 
 import numpy as np
 
-class NDPointMassEnv(DynamicalSystem):
+class NDIntegratorEnv(DynamicalSystem):
     """
-    ND point mass system.
+    ND integrator system.
     """
 
     def __init__(self, dim, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=dim, action_dim=dim, *args, **kwargs)
+        super().__init__(state_dim=dim, action_dim=1, *args, **kwargs)
 
     def dynamics(self, t, x, u):
         """Dynamics for the system."""
-        return u
+        _, *x = x
+        return np.array([*x, *u], dtype=np.float32)
 
     def reset(self):
         self.state = self.np_random.uniform(
@@ -23,9 +24,9 @@ class NDPointMassEnv(DynamicalSystem):
         return np.array(self.state)
 
 
-class StochasticNDPointMassEnv(StochasticMixin, NDPointMassEnv):
+class StochasticNDIntegratorEnv(StochasticMixin, NDIntegratorEnv):
     """
-    Stochastic ND point mass system.
+    Stochastic ND integrator system.
     """
 
     def __init__(self, dim, *args, **kwargs):
@@ -34,4 +35,5 @@ class StochasticNDPointMassEnv(StochasticMixin, NDPointMassEnv):
 
     def dynamics(self, t, x, u, w):
         """Dynamics for the system."""
-        return u + w
+        _, *x = x
+        return np.array([*x, *u], dtype=np.float32) + w

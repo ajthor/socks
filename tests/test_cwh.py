@@ -2,18 +2,18 @@ import unittest
 
 import gym
 
-import gym_basic.envs
+import systems.envs
 
 import numpy as np
 
-from gym_basic.envs.sample import generate_sample
-from gym_basic.envs.sample import generate_sample_trajectories
+from systems.sample import generate_sample
+from systems.sample import generate_sample_trajectories
 
 
 class Test4DCWHSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = gym_basic.envs.cwh.CWH4DEnv()
+        cls.env = systems.envs.cwh.CWH4DEnv()
 
     def test_known_trajectory(cls):
         """
@@ -84,7 +84,7 @@ class Test4DCWHSystem(unittest.TestCase):
 class Test6DCWHSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = gym_basic.envs.cwh.CWH6DEnv()
+        cls.env = systems.envs.cwh.CWH6DEnv()
 
     def test_known_trajectory(cls):
         """

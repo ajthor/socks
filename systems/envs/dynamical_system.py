@@ -67,7 +67,7 @@ class DynamicalSystem(gym.Env, ABC):
         Initialize the dynamical system.
 
         Example usage:
-        env = gym_basic.envs.integrator.DoubleIntegratorEnv
+        env = systems.envs.integrator.DoubleIntegratorEnv
         env.time_horizon = 5
         env.sampling_time = 0.25
         """
@@ -231,7 +231,7 @@ class StochasticMixin(DynamicalSystem):
         Initialize the dynamical system.
 
         Example usage:
-        env = gym_basic.envs.integrator.DoubleIntegratorEnv
+        env = systems.envs.integrator.DoubleIntegratorEnv
         env.time_horizon = 5
         env.sampling_time = 0.25
         """

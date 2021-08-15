@@ -3,8 +3,8 @@ ARCH-COMP20 Category Report: Continuous and Hybrid Systems with Nonlinear Dynami
 https://easychair.org/publications/open/nrdD
 """
 
-from gym_basic.envs.dynamical_system import DynamicalSystem
-from gym_basic.envs.dynamical_system import StochasticMixin
+from systems.envs.dynamical_system import DynamicalSystem
+from systems.envs.dynamical_system import StochasticMixin
 
 import numpy as np
 

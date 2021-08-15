@@ -1,5 +1,5 @@
-from gym_basic.envs.dynamical_system import DynamicalSystem
-from gym_basic.envs.dynamical_system import StochasticMixin
+from systems.envs.dynamical_system import DynamicalSystem
+from systems.envs.dynamical_system import StochasticMixin
 
 import gym
 
@@ -166,8 +166,8 @@ class CWH4DEnv(CWHBase):
         assert self.action_space.contains(action), err_msg
 
         # use closed-form solution
-        self.state = np.matmul(self.state_matrix, self.state.T) + np.matmul(
-            self.input_matrix, action.T
+        self.state = np.matmul(self.state_matrix, self.state) + np.matmul(
+            self.input_matrix, action
         )
 
         reward = self.cost(action)
@@ -312,8 +312,8 @@ class CWH6DEnv(CWHBase):
         assert self.action_space.contains(action), err_msg
 
         # use closed-form solution
-        self.state = np.matmul(self.state_matrix, self.state.T) + np.matmul(
-            self.input_matrix, action.T
+        self.state = np.matmul(self.state_matrix, self.state) + np.matmul(
+            self.input_matrix, action
         )
 
         reward = self.cost(action)
@@ -376,8 +376,8 @@ class StochasticCWH4DEnv(StochasticMixin, CWH4DEnv):
 
         # use closed-form solution
         self.state = (
-            np.matmul(self.state_matrix, self.state.T)
-            + np.matmul(self.input_matrix, action.T)
+            np.matmul(self.state_matrix, self.state)
+            + np.matmul(self.input_matrix, action)
             + disturbance
         )
 
@@ -438,8 +438,8 @@ class StochasticCWH6DEnv(StochasticMixin, CWH6DEnv):
 
         # use closed-form solution
         self.state = (
-            np.matmul(self.state_matrix, self.state.T)
-            + np.matmul(self.input_matrix, action.T)
+            np.matmul(self.state_matrix, self.state)
+            + np.matmul(self.input_matrix, action)
             + disturbance
         )
 

@@ -1,25 +1,22 @@
-# from kernel_basic import Kernel
-
-# if __name__ == '__main__':
 
 import gym
 
-import gym_basic.envs
+import systems.envs
 
 import numpy as np
 
-from gym_basic.envs.sample import generate_sample
-from gym_basic.envs.sample import generate_sample_trajectories
+from systems.sample import generate_sample
+from systems.sample import generate_sample_trajectories
 
-from kernel_basic.kernel import rbf_kernel
-from kernel_basic.kernel import regularized_inverse
+from kernel.metrics import rbf_kernel
+from kernel.metrics import regularized_inverse
 
-# env = gym_basic.envs.integrator.NDIntegratorEnv(2)
-env = gym_basic.envs.integrator.StochasticNDIntegratorEnv(2)
+# env = systems.envs.integrator.NDIntegratorEnv(2)
+env = systems.envs.integrator.StochasticNDIntegratorEnv(2)
 
-# env = gym_basic.envs.point_mass.StochasticNDPointMassEnv(2)
+# env = systems.envs.point_mass.StochasticNDPointMassEnv(2)
 
-# env = gym_basic.envs.cwh.CWH6DEnv()
+# env = systems.envs.cwh.CWH6DEnv()
 
 env.seed(0)
 

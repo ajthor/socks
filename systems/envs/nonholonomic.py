@@ -1,5 +1,5 @@
-from gym_basic.envs.dynamical_system import DynamicalSystem
-from gym_basic.envs.dynamical_system import StochasticMixin
+from systems.envs.dynamical_system import DynamicalSystem
+from systems.envs.dynamical_system import StochasticMixin
 
 import numpy as np
 
