@@ -15,3 +15,7 @@ from systems.envs.QUAD20 import QuadrotorEnv
 from systems.envs.QUAD20 import StochasticQuadrotorEnv
 
 from systems.envs.tora import TORAEnv
+
+# ---- Hybrid system models ----
+
+from systems.envs.temperature import TemperatureRegEnv

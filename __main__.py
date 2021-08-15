@@ -11,28 +11,59 @@ from systems.sample import generate_sample_trajectories
 from kernel.metrics import rbf_kernel
 from kernel.metrics import regularized_inverse
 
-# env = systems.envs.integrator.NDIntegratorEnv(2)
-env = systems.envs.integrator.StochasticNDIntegratorEnv(2)
+# # env = systems.envs.integrator.NDIntegratorEnv(2)
+# env = systems.envs.integrator.StochasticNDIntegratorEnv(2)
+#
+# # env = systems.envs.point_mass.StochasticNDPointMassEnv(2)
+#
+# # env = systems.envs.cwh.CWH6DEnv()
+#
+# env.seed(0)
+#
+# sample_space = gym.spaces.Box(
+#     low=-0.1,
+#     high=0.1,
+#     shape=env.observation_space.shape,
+#     dtype=np.float32,
+# )
+#
+# S = generate_sample(sample_space, env, 5)
+#
+# K = rbf_kernel(S[:,0,:])
+# W = regularized_inverse(S[:,0,:])
+#
+# print(K)
+# print(W)
+#
+# # print(env.__class__.__mro__)
 
-# env = systems.envs.point_mass.StochasticNDPointMassEnv(2)
+env = systems.envs.temperature.StochasticTemperatureRegEnv(3)
 
-# env = systems.envs.cwh.CWH6DEnv()
+# print(env.observation_space.sample())
+# print(env.action_space.sample())
+#
+# env.reset()
+#
+# print(env.state)
 
-env.seed(0)
+obs = env.reset()
 
-sample_space = gym.spaces.Box(
-    low=-0.1,
-    high=0.1,
-    shape=env.observation_space.shape,
-    dtype=np.float32,
-)
+for i in range(20):
 
-S = generate_sample(sample_space, env, 5)
+    print(obs)
 
-K = rbf_kernel(S[:,0,:])
-W = regularized_inverse(S[:,0,:])
+    # get action
+    # action = env.action_space.sample()
 
-print(K)
-print(W)
+    # t = tuple(0 for i in range(env.dim - 1))
+    # action = (1, *t)
 
-# print(env.__class__.__mro__)
+    action = tuple(0 for i in range(env.dim))
+
+    # apply action
+    obs, reward, done, _ = env.step(action)
+
+    if done:
+        break
+
+env.close()
