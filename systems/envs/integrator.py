@@ -38,3 +38,7 @@ class StochasticNDIntegratorEnv(StochasticMixin, NDIntegratorEnv):
         """Dynamics for the system."""
         _, *x = x
         return np.array([*x, *u], dtype=np.float32) + w
+
+    def sample_disturbance(self):
+        w = self.np_random.standard_normal(size=self.disturbance_space.shape)
+        return 1e-2 * np.array(w)
