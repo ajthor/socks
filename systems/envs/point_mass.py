@@ -3,6 +3,7 @@ from systems.envs.dynamical_system import StochasticMixin
 
 import numpy as np
 
+
 class NDPointMassEnv(DynamicalSystem):
     """
     ND point mass system.

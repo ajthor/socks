@@ -128,7 +128,7 @@ def regularized_inverse(
     X,
     Y=None,
     l: "Regularization parameter." = None,
-    kernel: "Kernel function." = None,
+    kernel_fn: "Kernel function." = None,
 ) -> "W":
     """
     Regularized inverse.
@@ -148,7 +148,7 @@ def regularized_inverse(
     l : float
         Regularization parameter, which is a strictly positive real value.
 
-    kernel : function
+    kernel_fn : function
         The kernel function is a function that returns an ndarray where each element is the pairwise evaluation of a kernel function. See sklearn.metrics.pairwise for more info. The default is the RBF kernel.
     """
 
@@ -160,15 +160,15 @@ def regularized_inverse(
     else:
         assert l > 0, "l must be a strictly positive real value."
 
-    if kernel is None:
-        kernel = partial(rbf_kernel, sigma=1)
+    if kernel_fn is None:
+        kernel_fn = partial(rbf_kernel, sigma=1)
 
     err_msg = "Parameters %r, %r must have the same shape." % (X, Y)
     assert X.shape == Y.shape, err_msg
 
     num_rows, num_cols = X.shape
 
-    K = kernel(X, Y)
+    K = kernel_fn(X, Y)
 
     I = np.identity(num_rows)
 

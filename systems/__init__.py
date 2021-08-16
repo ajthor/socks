@@ -1,6 +1,7 @@
 import systems.envs
 
 from systems.sample import generate_sample
+from systems.sample import generate_uniform_sample
 from systems.sample import generate_sample_trajectories
 
 from gym.envs.registration import register

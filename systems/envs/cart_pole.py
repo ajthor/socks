@@ -17,7 +17,6 @@ class CartPoleEnv(DynamicalSystem):
         # system parameters
         self.damping_coefficient = 0.1
 
-
     def dynamics(self, t, x, u):
         """Dynamics for the system."""
         x1, x2, x3 = x

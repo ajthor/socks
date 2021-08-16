@@ -20,7 +20,9 @@ class TemperatureRegEnv(DynamicalSystem):
         self.ambient_temperature = 5
 
         self.ambient_loss = self.np_random.random(size=(dim,))
-        self.room_loss = np.multiply(self.np_random.random(size=(dim, dim)), (-np.eye(dim) + 1))
+        self.room_loss = np.multiply(
+            self.np_random.random(size=(dim, dim)), (-np.eye(dim) + 1)
+        )
         self.heat_rate = self.np_random.random(size=(dim,))
 
         self.dim = dim  # (ON1, ON2, ..., ONr), r = dim
