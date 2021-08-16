@@ -1,5 +1,5 @@
-
 import numpy as np
+
 
 def as_col(arr):
     shape = arr.shape

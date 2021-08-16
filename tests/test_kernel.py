@@ -136,7 +136,6 @@ class TestRBFKernel(unittest.TestCase):
 
 
 class TestRegularizedInverse(unittest.TestCase):
-
     def test_regularized_inverse(cls):
         """
         Test that regularized inverse computes correctly.
@@ -146,7 +145,7 @@ class TestRegularizedInverse(unittest.TestCase):
 
         kernel_fn = partial(kernel.metrics.rbf_kernel, sigma=1)
 
-        W = kernel.metrics.regularized_inverse(Y, Y, kernel=kernel_fn)
+        W = kernel.metrics.regularized_inverse(Y, Y, kernel_fn=kernel_fn)
 
         groundTruth = np.array(
             [
@@ -177,4 +176,4 @@ class TestRegularizedInverse(unittest.TestCase):
         kernel_fn = partial(kernel.metrics.rbf_kernel, sigma=1)
 
         with cls.assertRaises(AssertionError) as exception_context:
-            W = kernel.metrics.regularized_inverse(X, Y, kernel=kernel_fn)
+            W = kernel.metrics.regularized_inverse(X, Y, kernel_fn=kernel_fn)

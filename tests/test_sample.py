@@ -33,6 +33,7 @@ system_list = [
     systems.envs.QUAD20.StochasticQuadrotorEnv(),
 ]
 
+
 class TestGenerateSample(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

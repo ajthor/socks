@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+import itertools
+
 import gym
 
 from systems.envs.dynamical_system import DynamicalSystem
@@ -46,6 +48,45 @@ def generate_sample(
     S = np.array([(x0, generate_next_state(x0)) for x0 in x])
 
     return S
+
+
+def generate_uniform_sample(
+    sample_space: gym.spaces, system: DynamicalSystem, n: "Number of samples." = 10
+):
+    """
+    Generate a uniform sample from a dynamical system.
+    """
+
+    # assert sample space and observation space are the same dimensionality
+    err_msg = "%r (%s) invalid shape" % (sample_space, type(sample_space))
+    assert system.observation_space.shape == sample_space.shape, err_msg
+
+    # assert space is of type Box
+
+    # generate initial conditions
+    num_dims = sample_space.shape[0]
+
+    # assert is 1D
+
+    # assert n is num_dims
+
+    low = sample_space.low
+    high = sample_space.high
+
+    xn = [np.round(np.linspace(low[i], high[i], n[i]), 3) for i in range(num_dims)]
+    x = list(itertools.product(*xn))
+
+    def generate_next_state(x0):
+        system.state = x0
+
+        action = system.action_space.sample()
+        next_state, reward, done, _ = system.step(action)
+
+        return next_state
+
+    S = np.array([(x0, generate_next_state(x0)) for x0 in x])
+
+    return S, np.array(x)
 
 
 def generate_sample_trajectories(
