@@ -45,7 +45,7 @@ class TestEnvironmentsRun(unittest.TestCase):
                 try:
                     obs = env.reset()
 
-                    for i in range(int(np.floor(env.time_horizon / env.sampling_time))):
+                    for i in range(env.num_time_steps):
 
                         # get action
                         action = env.action_space.sample()

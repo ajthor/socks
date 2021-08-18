@@ -47,7 +47,7 @@ class DynamicalSystem(gym.Env, ABC):
     env = CustomDynamicalSystem()
     obs = env.reset()
 
-    num_steps = int(np.floor(env.time_horizon/env.sampling_time))
+    num_steps = env.num_time_steps
 
     for i in range(num_steps):
 
@@ -90,6 +90,10 @@ class DynamicalSystem(gym.Env, ABC):
         self.action_dim = action_dim
 
         self.state = None
+
+    @property
+    def num_time_steps(self):
+        return int(np.floor(self.time_horizon / self.sampling_time))
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -213,7 +217,7 @@ class StochasticMixin(DynamicalSystem):
     env = CustomDynamicalSystem()
     obs = env.reset()
 
-    num_steps = int(np.floor(env.time_horizon/env.sampling_time))
+    num_steps = env.num_time_steps
 
     for i in range(num_steps):
 

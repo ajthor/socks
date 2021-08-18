@@ -90,7 +90,7 @@ def generate_uniform_sample(
 
 
 def generate_sample_trajectories(
-    sample_space: gym.spaces, system: DynamicalSystem, n: "Number of samples." = 10
+    sample_space: gym.spaces, system: DynamicalSystem, n: "Number of trajectories." = 10
 ):
     """
     Generate a sample of trajectories from a dynamical system.
@@ -115,8 +115,8 @@ def generate_sample_trajectories(
     # generate initial conditions
     x = generate_initial_conditions(sample_space, system, n)
 
-    N = system.time_horizon
-    Ts = system.sampling_time
+    # N = system.time_horizon
+    # Ts = system.sampling_time
 
     def generate_state_trajectory(x0):
         system.state = x0
@@ -126,7 +126,7 @@ def generate_sample_trajectories(
             next_state, reward, done, _ = system.step(action)
             return next_state
 
-        return np.array([generate_next_state() for i in range(int(np.floor(N / Ts)))])
+        return np.array([generate_next_state() for i in range(system.num_time_steps)])
 
     S = [(x0, *generate_state_trajectory(x0)) for x0 in x]
 

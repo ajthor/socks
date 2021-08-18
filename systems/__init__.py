@@ -7,11 +7,6 @@ from systems.sample import generate_sample_trajectories
 from gym.envs.registration import register
 
 register(
-    id="doubleIntegrator-v0",
-    entry_point="systems.envs:DoubleIntegratorEnv",
-)
-
-register(
     id="CWH4DEnv-v0",
     entry_point="systems.envs:CWH4DEnv",
 )
@@ -22,23 +17,8 @@ register(
 )
 
 register(
-    id="StochasticNDIntegratorEnv-v0",
-    entry_point="systems.envs:StochasticNDIntegratorEnv",
-)
-
-register(
     id="NonholonomicVehicleEnv-v0",
     entry_point="systems.envs:NonholonomicVehicleEnv",
-)
-
-register(
-    id="NDPointMassEnv-v0",
-    entry_point="systems.envs:NDPointMassEnv",
-)
-
-register(
-    id="StochasticNDPointMassEnv-v0",
-    entry_point="systems.envs:StochasticNDPointMassEnv",
 )
 
 register(

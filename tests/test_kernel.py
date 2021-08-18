@@ -8,6 +8,13 @@ import kernel
 
 import numpy as np
 
+from sklearn.metrics.pairwise import linear_kernel
+from sklearn.metrics.pairwise import polynomial_kernel
+from sklearn.metrics.pairwise import rbf_kernel
+from sklearn.metrics.pairwise import laplacian_kernel
+
+sklearn_kernel_list = [linear_kernel, polynomial_kernel, rbf_kernel, laplacian_kernel]
+
 
 class TestEuclideanDistance(unittest.TestCase):
     def test_euclidean_distance(cls):
@@ -134,6 +141,27 @@ class TestRBFKernel(unittest.TestCase):
             "Kernel matrix should match known ground truth.",
         )
 
+    def test_close_to_sklearn(cls):
+        """
+        Assert that result is close to sklearn.
+        """
+
+        X = np.array([[1, 1], [1, 1]])
+        Y = np.array([[2, 2], [3, 3]])
+
+        K = kernel.metrics.rbf_kernel(X, Y, sigma=1)
+
+        groundTruth = rbf_kernel(X, Y, gamma=1 / 2)
+
+        # print(K)
+        # print(groundTruth)
+
+        # tests if the two arrays are equivalent, within tolerance
+        cls.assertTrue(
+            np.allclose(K, groundTruth),
+            "Kernel matrix should match known ground truth.",
+        )
+
 
 class TestRegularizedInverse(unittest.TestCase):
     def test_regularized_inverse(cls):
@@ -177,3 +205,15 @@ class TestRegularizedInverse(unittest.TestCase):
 
         with cls.assertRaises(AssertionError) as exception_context:
             W = kernel.metrics.regularized_inverse(X, Y, kernel_fn=kernel_fn)
+
+    def test_sklearn_kernels(cls):
+        """
+        Assert that sklearn kernels should work with regularized_inverse.
+        """
+
+        Y = np.array([[2, 2], [3, 3]])
+
+        for kernel_fn in sklearn_kernel_list:
+            with cls.subTest(msg=f"Testing with {type(kernel_fn)}."):
+
+                W = kernel.metrics.regularized_inverse(Y, Y, kernel_fn=kernel_fn)

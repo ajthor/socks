@@ -105,7 +105,7 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
 
                 S = generate_sample_trajectories(sample_space, env, 5)
 
-                len = int(np.floor(env.time_horizon / env.sampling_time)) + 1
+                len = env.num_time_steps + 1
 
                 cls.assertIsInstance(S, np.ndarray, "Should be an ndarray.")
                 cls.assertEqual(
@@ -165,7 +165,3 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
 
         # tests if the two arrays are equivalent, within tolerance
         cls.assertTrue(np.allclose(S, groundTruth))
-
-
-if __name__ == "__main__":
-    unittest.main()
