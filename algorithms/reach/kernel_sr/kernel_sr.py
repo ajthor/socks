@@ -28,15 +28,21 @@ class KernelSR(AlgorithmInterface):
         # Global algorithm parameters go here.
 
     def run(self, system=None, sample=None, test_points=None, constraint_tube=None):
+        """
+        Run the algorithm.
+        """
 
         if system is None:
             print("Must supply a system.")
+            return None
 
         if sample is None:
             print("Must supply a sample.")
+            return None
 
         if test_points is None:
             print("Must supply test points.")
+            return None
 
         kernel_fn = getattr(self, "kernel_fn", None)
         if kernel_fn is None:
@@ -56,10 +62,6 @@ class KernelSR(AlgorithmInterface):
         S = np.array(sample)
         X = S[:, 0, :]
         Y = S[:, 1, :]
-
-        # print(S)
-        # print(X)
-        # print(Y)
 
         W = kernel.regularized_inverse(X, kernel_fn=kernel_fn, l=l)
 
@@ -88,7 +90,7 @@ class KernelSR(AlgorithmInterface):
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
 
-            # print(f"Computing for k={t}")
+            print(f"Computing for k={t}")
 
             Vt_betaXY = np.matmul(Vt[t + 1, :], betaXY)
             Vt_betaXXt = np.matmul(Vt[t + 1, :], betaXXt)

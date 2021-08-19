@@ -13,6 +13,8 @@ class NDIntegratorEnv(DynamicalSystem):
         """Initialize the system."""
         super().__init__(state_dim=dim, action_dim=1, *args, **kwargs)
 
+        self.sampling_time = 0.25
+
     def dynamics(self, t, x, u):
         """Dynamics for the system."""
         _, *x = x
