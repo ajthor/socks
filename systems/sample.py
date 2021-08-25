@@ -37,17 +37,45 @@ def generate_sample(
     # generate initial conditions
     x = generate_initial_conditions(sample_space, system, n)
 
+    # def generate_next_state(x0):
+    #     system.state = x0
+    #
+    #     action = system.action_space.sample()
+    #     next_state, reward, done, _ = system.step(action)
+    #
+    #     return next_state
+
+    # S = np.array([(x0, generate_next_state(x0)) for x0 in x])
+
     def generate_next_state(x0):
         system.state = x0
 
         action = system.action_space.sample()
+        # print(action)
         next_state, reward, done, _ = system.step(action)
 
-        return next_state
+        return next_state, action
 
-    S = np.array([(x0, generate_next_state(x0)) for x0 in x])
+    # print([(generate_next_state(x0),) for x0 in x])
+    # print(Sx)
+    # print(U)
+    # S = [np.array([(x0, generate_next_state(x0)) for x0 in x])]
 
-    return S
+    result = []
+    for x0 in x:
+        # print(generate_next_state(x0))
+        x1, u0 = generate_next_state(x0)
+        # for x1, u0 in generate_next_state(x0):
+        result.append(((x0, x1), u0))
+    # S = [((x0, x1), u0) for x0 in x for x1, u0 in generate_next_state(x0)]
+    S, U = zip(*result)
+
+    # print(result)
+    print(np.array(S))
+    print(np.array(U))
+
+    # return S
+    return None, None
 
 
 def generate_uniform_sample(

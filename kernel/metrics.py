@@ -5,6 +5,7 @@ Most of the functions are implemented already in sklearn.metrics.pairwise. They 
 
 The only kernel implemented here is the RBF (Gaussian) kernel. If other kernels or distance metrics are desired, then import the kernel from sklearn.
 
+E.g.
 from sklearn.metrics import pairwise_distances
 from sklearn.metrics.pairwise import pairwise_kernels
 from sklearn.metrics.pairwise import rbf_kernel

@@ -11,33 +11,24 @@ from systems.sample import generate_sample_trajectories
 from kernel.metrics import rbf_kernel
 from kernel.metrics import regularized_inverse
 
-env = systems.envs.integrator.NDIntegratorEnv(2)
-# env = systems.envs.integrator.StochasticNDIntegratorEnv(2)
+# env = systems.envs.integrator.NDIntegratorEnv(2)
+# # env = systems.envs.integrator.StochasticNDIntegratorEnv(2)
+# #
+# # # env = systems.envs.point_mass.StochasticNDPointMassEnv(2)
+# #
+# # env.seed(0)
 #
-# # env = systems.envs.point_mass.StochasticNDPointMassEnv(2)
+# sample_space = gym.spaces.Box(
+#     low=-0.1,
+#     high=0.1,
+#     shape=env.observation_space.shape,
+#     dtype=np.float32,
+# )
 #
-# # env = systems.envs.cwh.CWH6DEnv()
-#
-# env.seed(0)
+# S, U = generate_sample(sample_space, env, 5)
 
-sample_space = gym.spaces.Box(
-    low=-0.1,
-    high=0.1,
-    shape=env.observation_space.shape,
-    dtype=np.float32,
-)
+# print(S)
 
-S, x = generate_uniform_sample(sample_space, env, [21, 21])
-
-print(S)
-
-# K = rbf_kernel(S[:,0,:])
-# W = regularized_inverse(S[:,0,:])
-#
-# print(K)
-# print(W)
-#
-# # print(env.__class__.__mro__)
 
 # env = systems.envs.temperature.StochasticTemperatureRegEnv(3)
 #
@@ -69,3 +60,29 @@ print(S)
 #         break
 #
 # env.close()
+
+
+# env = systems.envs.cwh.CWH4DEnv()
+#
+# print(env.state_matrix)
+
+# Monte-Carlo
+# Control
+# Do that one paragrah on scalability.
+
+
+# np.random.seed(0)
+#
+# def get_pt():
+#     return np.random.rand(2), np.random.rand(1)
+#
+# S = [get_pt() for i in range(10)]
+#
+# Sx, Sy = zip(*[get_pt() for i in range(10)])
+#
+# # Sx, Sy = [(x, y) for x, y in [get_pt() for i in range(10)]]
+#
+# print(S)
+#
+# print(Sx)
+# print(Sy)
