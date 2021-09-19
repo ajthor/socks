@@ -1,3 +1,3 @@
-from setuptools import setup
+import setuptools
 
-setup(name="systems", version="0.0.1", install_requires=["gym", "numpy", "scipy"])
+setuptools.setup()

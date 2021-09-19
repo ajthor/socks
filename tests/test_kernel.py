@@ -4,7 +4,7 @@ from functools import partial
 
 import gym
 
-import kernel
+import gym_socks.kernel.metrics
 
 import numpy as np
 
@@ -25,12 +25,9 @@ class TestEuclideanDistance(unittest.TestCase):
         X = np.array([[1, 1], [1, 1]])
         Y = np.array([[2, 2], [3, 3]])
 
-        distance = kernel.metrics.euclidean_distance(X, Y, squared=True)
+        distance = gym_socks.kernel.metrics.euclidean_distance(X, Y, squared=True)
 
         groundTruth = np.array([[2, 8], [2, 8]], dtype=np.float32)
-
-        # print(distance)
-        # print(groundTruth)
 
         # tests if the two arrays are equivalent, within tolerance
         cls.assertTrue(
@@ -48,7 +45,7 @@ class TestRBFKernel(unittest.TestCase):
         X = np.array([[1, 1], [1, 1]])
         Y = np.array([[2, 2], [3, 3]])
 
-        K = kernel.metrics.rbf_kernel(X, Y, sigma=1)
+        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, sigma=1)
 
         groundTruth = np.array(
             [
@@ -58,16 +55,13 @@ class TestRBFKernel(unittest.TestCase):
             dtype=np.float32,
         )
 
-        # print(K)
-        # print(groundTruth)
-
         # tests if the two arrays are equivalent, within tolerance
         cls.assertTrue(
             np.allclose(K, groundTruth),
             "Kernel matrix should match known ground truth.",
         )
 
-        K = kernel.metrics.rbf_kernel(Y, Y, sigma=1)
+        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y, sigma=1)
 
         groundTruth = np.array(
             [
@@ -78,9 +72,6 @@ class TestRBFKernel(unittest.TestCase):
             ],
             dtype=np.float32,
         )
-
-        # print(K)
-        # print(groundTruth)
 
         # tests if the two arrays are equivalent, within tolerance
         cls.assertTrue(
@@ -96,7 +87,7 @@ class TestRBFKernel(unittest.TestCase):
         X = np.array([[1, 1], [1, 1]])
         Y = np.array([[1, 1], [2, 2], [3, 3]])
 
-        K = kernel.metrics.rbf_kernel(X, Y, sigma=1)
+        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, sigma=1)
 
         groundTruth = np.array(
             [
@@ -107,9 +98,6 @@ class TestRBFKernel(unittest.TestCase):
             ],
             dtype=np.float32,
         )
-
-        # print(K)
-        # print(groundTruth)
 
         # tests if the two arrays are equivalent, within tolerance
         cls.assertTrue(
@@ -120,7 +108,7 @@ class TestRBFKernel(unittest.TestCase):
         X = np.array([[1, 1], [1, 1]])
         Y = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
 
-        K = kernel.metrics.rbf_kernel(X, Y, sigma=1)
+        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, sigma=1)
 
         groundTruth = np.array(
             [
@@ -131,9 +119,6 @@ class TestRBFKernel(unittest.TestCase):
             ],
             dtype=np.float32,
         )
-
-        # print(K)
-        # print(groundTruth)
 
         # tests if the two arrays are equivalent, within tolerance
         cls.assertTrue(
@@ -149,12 +134,9 @@ class TestRBFKernel(unittest.TestCase):
         X = np.array([[1, 1], [1, 1]])
         Y = np.array([[2, 2], [3, 3]])
 
-        K = kernel.metrics.rbf_kernel(X, Y, sigma=1)
+        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, sigma=1)
 
         groundTruth = rbf_kernel(X, Y, gamma=1 / 2)
-
-        # print(K)
-        # print(groundTruth)
 
         # tests if the two arrays are equivalent, within tolerance
         cls.assertTrue(
@@ -171,9 +153,9 @@ class TestRegularizedInverse(unittest.TestCase):
 
         Y = np.array([[2, 2], [3, 3]])
 
-        kernel_fn = partial(kernel.metrics.rbf_kernel, sigma=1)
+        kernel_fn = partial(gym_socks.kernel.metrics.rbf_kernel, sigma=1)
 
-        W = kernel.metrics.regularized_inverse(Y, Y, kernel_fn=kernel_fn)
+        W = gym_socks.kernel.metrics.regularized_inverse(Y, Y, kernel_fn=kernel_fn)
 
         groundTruth = np.array(
             [
@@ -184,9 +166,6 @@ class TestRegularizedInverse(unittest.TestCase):
             ],
             dtype=np.float32,
         )
-
-        # print(W)
-        # print(groundTruth)
 
         # tests if the two arrays are equivalent, within tolerance
         cls.assertTrue(
@@ -201,10 +180,10 @@ class TestRegularizedInverse(unittest.TestCase):
 
         X = np.array([[1, 1], [1, 1]])
         Y = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
-        kernel_fn = partial(kernel.metrics.rbf_kernel, sigma=1)
+        kernel_fn = partial(gym_socks.kernel.metrics.rbf_kernel, sigma=1)
 
         with cls.assertRaises(AssertionError) as exception_context:
-            W = kernel.metrics.regularized_inverse(X, Y, kernel_fn=kernel_fn)
+            W = gym_socks.kernel.metrics.regularized_inverse(X, Y, kernel_fn=kernel_fn)
 
     def test_sklearn_kernels(cls):
         """
@@ -216,4 +195,6 @@ class TestRegularizedInverse(unittest.TestCase):
         for kernel_fn in sklearn_kernel_list:
             with cls.subTest(msg=f"Testing with {type(kernel_fn)}."):
 
-                W = kernel.metrics.regularized_inverse(Y, Y, kernel_fn=kernel_fn)
+                W = gym_socks.kernel.metrics.regularized_inverse(
+                    Y, Y, kernel_fn=kernel_fn
+                )

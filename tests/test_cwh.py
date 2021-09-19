@@ -2,18 +2,18 @@ import unittest
 
 import gym
 
-import systems.envs
+import gym_socks.envs
 
 import numpy as np
 
-from systems.sample import generate_sample
-from systems.sample import generate_sample_trajectories
+from gym_socks.envs.sample import generate_sample
+from gym_socks.envs.sample import generate_sample_trajectories
 
 
 class Test4DCWHSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = systems.envs.cwh.CWH4DEnv()
+        cls.env = gym_socks.envs.cwh.CWH4DEnv()
 
     def test_known_trajectory(cls):
         """
@@ -84,7 +84,7 @@ class Test4DCWHSystem(unittest.TestCase):
 class Test6DCWHSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = systems.envs.cwh.CWH6DEnv()
+        cls.env = gym_socks.envs.cwh.CWH6DEnv()
 
     def test_known_trajectory(cls):
         """

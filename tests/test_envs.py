@@ -2,34 +2,34 @@ import unittest
 
 import gym
 
-import systems.envs
+import gym_socks.envs
 
 import numpy as np
 
 system_list = [
-    systems.envs.integrator.NDIntegratorEnv(1),
-    systems.envs.integrator.NDIntegratorEnv(2),
-    systems.envs.integrator.NDIntegratorEnv(3),
-    systems.envs.integrator.NDIntegratorEnv(4),
-    systems.envs.integrator.StochasticNDIntegratorEnv(1),
-    systems.envs.integrator.StochasticNDIntegratorEnv(2),
-    systems.envs.integrator.StochasticNDIntegratorEnv(3),
-    systems.envs.integrator.StochasticNDIntegratorEnv(4),
-    systems.envs.point_mass.NDPointMassEnv(1),
-    systems.envs.point_mass.NDPointMassEnv(2),
-    systems.envs.point_mass.NDPointMassEnv(3),
-    systems.envs.point_mass.NDPointMassEnv(4),
-    systems.envs.point_mass.StochasticNDPointMassEnv(1),
-    systems.envs.point_mass.StochasticNDPointMassEnv(2),
-    systems.envs.point_mass.StochasticNDPointMassEnv(3),
-    systems.envs.point_mass.StochasticNDPointMassEnv(4),
-    systems.envs.nonholonomic.NonholonomicVehicleEnv(),
-    systems.envs.cwh.CWH4DEnv(),
-    systems.envs.cwh.CWH6DEnv(),
-    systems.envs.cwh.StochasticCWH4DEnv(),
-    systems.envs.cwh.StochasticCWH6DEnv(),
-    systems.envs.QUAD20.QuadrotorEnv(),
-    systems.envs.QUAD20.StochasticQuadrotorEnv(),
+    gym_socks.envs.NDIntegratorEnv(1),
+    gym_socks.envs.NDIntegratorEnv(2),
+    gym_socks.envs.NDIntegratorEnv(3),
+    gym_socks.envs.NDIntegratorEnv(4),
+    gym_socks.envs.StochasticNDIntegratorEnv(1),
+    gym_socks.envs.StochasticNDIntegratorEnv(2),
+    gym_socks.envs.StochasticNDIntegratorEnv(3),
+    gym_socks.envs.StochasticNDIntegratorEnv(4),
+    gym_socks.envs.NDPointMassEnv(1),
+    gym_socks.envs.NDPointMassEnv(2),
+    gym_socks.envs.NDPointMassEnv(3),
+    gym_socks.envs.NDPointMassEnv(4),
+    gym_socks.envs.StochasticNDPointMassEnv(1),
+    gym_socks.envs.StochasticNDPointMassEnv(2),
+    gym_socks.envs.StochasticNDPointMassEnv(3),
+    gym_socks.envs.StochasticNDPointMassEnv(4),
+    gym_socks.envs.NonholonomicVehicleEnv(),
+    gym_socks.envs.CWH4DEnv(),
+    gym_socks.envs.CWH6DEnv(),
+    gym_socks.envs.StochasticCWH4DEnv(),
+    gym_socks.envs.StochasticCWH6DEnv(),
+    gym_socks.envs.QuadrotorEnv(),
+    gym_socks.envs.StochasticQuadrotorEnv(),
 ]
 
 

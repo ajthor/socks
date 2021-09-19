@@ -2,36 +2,72 @@ import unittest
 
 import gym
 
-import systems.envs
+import gym_socks.envs
 
 import numpy as np
 
-from systems.sample import generate_sample
-from systems.sample import generate_sample_trajectories
+from gym_socks.envs.sample import random_initial_conditions
+from gym_socks.envs.sample import uniform_initial_conditions
+
+from gym_socks.envs.sample import generate_sample
+from gym_socks.envs.sample import generate_sample_trajectories
 
 system_list = [
-    systems.envs.integrator.NDIntegratorEnv(1),
-    systems.envs.integrator.NDIntegratorEnv(2),
-    systems.envs.integrator.NDIntegratorEnv(3),
-    systems.envs.integrator.NDIntegratorEnv(4),
-    systems.envs.integrator.StochasticNDIntegratorEnv(1),
-    systems.envs.integrator.StochasticNDIntegratorEnv(2),
-    systems.envs.integrator.StochasticNDIntegratorEnv(3),
-    systems.envs.integrator.StochasticNDIntegratorEnv(4),
-    systems.envs.point_mass.NDPointMassEnv(1),
-    systems.envs.point_mass.NDPointMassEnv(2),
-    systems.envs.point_mass.NDPointMassEnv(3),
-    systems.envs.point_mass.NDPointMassEnv(4),
-    systems.envs.point_mass.StochasticNDPointMassEnv(1),
-    systems.envs.point_mass.StochasticNDPointMassEnv(2),
-    systems.envs.point_mass.StochasticNDPointMassEnv(3),
-    systems.envs.point_mass.StochasticNDPointMassEnv(4),
-    systems.envs.nonholonomic.NonholonomicVehicleEnv(),
-    systems.envs.cwh.CWH4DEnv(),
-    systems.envs.cwh.CWH6DEnv(),
-    systems.envs.QUAD20.QuadrotorEnv(),
-    systems.envs.QUAD20.StochasticQuadrotorEnv(),
+    gym_socks.envs.NDIntegratorEnv(1),
+    gym_socks.envs.NDIntegratorEnv(2),
+    gym_socks.envs.NDIntegratorEnv(3),
+    gym_socks.envs.NDIntegratorEnv(4),
+    gym_socks.envs.StochasticNDIntegratorEnv(1),
+    gym_socks.envs.StochasticNDIntegratorEnv(2),
+    gym_socks.envs.StochasticNDIntegratorEnv(3),
+    gym_socks.envs.StochasticNDIntegratorEnv(4),
+    gym_socks.envs.NDPointMassEnv(1),
+    gym_socks.envs.NDPointMassEnv(2),
+    gym_socks.envs.NDPointMassEnv(3),
+    gym_socks.envs.NDPointMassEnv(4),
+    gym_socks.envs.StochasticNDPointMassEnv(1),
+    gym_socks.envs.StochasticNDPointMassEnv(2),
+    gym_socks.envs.StochasticNDPointMassEnv(3),
+    gym_socks.envs.StochasticNDPointMassEnv(4),
+    gym_socks.envs.NonholonomicVehicleEnv(),
+    gym_socks.envs.CWH4DEnv(),
+    gym_socks.envs.CWH6DEnv(),
+    gym_socks.envs.QuadrotorEnv(),
+    gym_socks.envs.StochasticQuadrotorEnv(),
 ]
+
+
+class TestGenerateInitialConditions(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.envs = system_list
+
+    def test_incorrect_sample_space_dimensionality(cls):
+        """
+        Test for failure if sample_space is incorrect dimensionality.
+        """
+
+        for env in cls.envs:
+            with cls.subTest(msg=f"Testing with {type(env)}."):
+
+                sample_space = gym.spaces.Box(
+                    low=-1,
+                    high=1,
+                    shape=(env.observation_space.shape[0] + 1,),
+                    dtype=np.float32,
+                )
+
+                cls.assertNotEqual(env.observation_space.shape, sample_space.shape)
+                with cls.assertRaises(AssertionError) as exception_context:
+                    ic = random_initial_conditions(
+                        sample_space=sample_space, system=env, n=5
+                    )
+
+                cls.assertNotEqual(env.observation_space.shape, sample_space.shape)
+                with cls.assertRaises(AssertionError) as exception_context:
+                    ic = uniform_initial_conditions(
+                        sample_space=sample_space, system=env, n=5
+                    )
 
 
 class TestGenerateSample(unittest.TestCase):
@@ -39,7 +75,7 @@ class TestGenerateSample(unittest.TestCase):
     def setUpClass(cls):
         cls.envs = system_list
 
-    def test_sample_is_ndarray(cls):
+    def test_generate_sample(cls):
         """
         Assert that generate_sample generates a list of state observations.
         """
@@ -47,40 +83,72 @@ class TestGenerateSample(unittest.TestCase):
         for env in cls.envs:
             with cls.subTest(msg=f"Testing with {type(env)}."):
 
+                obs_shape = env.observation_space.shape
+
                 sample_space = gym.spaces.Box(
-                    low=-0.1,
-                    high=0.1,
-                    shape=env.observation_space.shape,
+                    low=-1,
+                    high=1,
+                    shape=obs_shape,
                     dtype=np.float32,
                 )
 
-                S = generate_sample(sample_space, env, 5)
-
-                cls.assertIsInstance(S, np.ndarray, "Should be an ndarray.")
-                cls.assertEqual(
-                    np.shape(S),
-                    (5, 2, env.observation_space.shape[0]),
-                    "Should return the correct dimensions.",
+                initial_conditions = (
+                    [[1] * obs_shape[0]],
+                    [[1] * obs_shape[0], [2] * obs_shape[0]],
+                    random_initial_conditions(system=env, sample_space=sample_space),
+                    uniform_initial_conditions(system=env, sample_space=sample_space),
                 )
 
-    def test_incorrect_sample_space_dimensionality(cls):
+                for ic in initial_conditions:
+                    with cls.subTest(msg=f"Testing with different ICs."):
+
+                        S, U = generate_sample(system=env, initial_conditions=ic)
+
+                        cls.assertIsInstance(S, np.ndarray, "Should be an ndarray.")
+                        cls.assertEqual(
+                            np.shape(S),
+                            (np.array(ic).shape[0], 2, obs_shape[0]),
+                            "Should return the correct dimensions.",
+                        )
+
+                        cls.assertIsInstance(U, np.ndarray, "Should be an ndarray.")
+                        cls.assertEqual(
+                            np.shape(U),
+                            (np.array(ic).shape[0], 1, env.action_space.shape[0]),
+                            "Should return the correct dimensions.",
+                        )
+
+    def test_known_sample(cls):
         """
-        Test for failure if sample_space is incorrect dimensionality.
+        Test against specific known sample.
         """
 
-        for env in cls.envs:
-            with cls.subTest(msg=f"Testing with {type(env)}."):
+        env = gym_socks.envs.integrator.NDIntegratorEnv(2)
 
-                sample_space = gym.spaces.Box(
-                    low=-0.1,
-                    high=0.1,
-                    shape=(env.observation_space.shape[0] + 1,),
-                    dtype=np.float32,
-                )
+        def controller(state):
+            return [0]
 
-                cls.assertNotEqual(env.observation_space.shape, sample_space.shape)
-                with cls.assertRaises(AssertionError) as exception_context:
-                    S = generate_sample(sample_space, env, 5)
+        S, U = generate_sample(
+            system=env,
+            initial_conditions=[[0.1, 0.1], [0.125, 0.1]],
+            controller=controller,
+        )
+
+        groundTruth = np.array(
+            [
+                [
+                    [0.100, 0.1],
+                    [0.125, 0.1],
+                ],
+                [
+                    [0.125, 0.1],
+                    [0.150, 0.1],
+                ],
+            ]
+        )
+
+        # tests if the two arrays are equivalent, within tolerance
+        cls.assertTrue(np.allclose(S, groundTruth))
 
 
 class TestGenerateSampleTrajectories(unittest.TestCase):
@@ -88,7 +156,7 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
     def setUpClass(cls):
         cls.envs = system_list
 
-    def test_sample_trajectories(cls):
+    def test_generate_sample_trajectories(cls):
         """
         Assert that generate_state_trajectory generates a list of state observations.
         """
@@ -96,69 +164,79 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
         for env in cls.envs:
             with cls.subTest(msg=f"Testing with {type(env)}."):
 
+                obs_shape = env.observation_space.shape
+
                 sample_space = gym.spaces.Box(
-                    low=-0.1,
-                    high=0.1,
-                    shape=env.observation_space.shape,
+                    low=-1,
+                    high=1,
+                    shape=obs_shape,
                     dtype=np.float32,
                 )
 
-                S = generate_sample_trajectories(sample_space, env, 5)
-
-                len = env.num_time_steps + 1
-
-                cls.assertIsInstance(S, np.ndarray, "Should be an ndarray.")
-                cls.assertEqual(
-                    np.shape(S),
-                    (5, len, env.observation_space.shape[0]),
-                    "Should return the correct dimensions.",
+                initial_conditions = (
+                    [[1] * obs_shape[0]],
+                    [[1] * obs_shape[0], [2] * obs_shape[0]],
+                    random_initial_conditions(system=env, sample_space=sample_space),
+                    uniform_initial_conditions(system=env, sample_space=sample_space),
                 )
 
-    def test_incorrect_sample_space_dimensionality(cls):
-        """
-        Test for failure if sample_space is incorrect dimensionality.
-        """
+                for ic in initial_conditions:
+                    with cls.subTest(msg=f"Testing with different ICs."):
 
-        for env in cls.envs:
-            with cls.subTest(msg=f"Testing with {type(env)}."):
+                        S, U = generate_sample_trajectories(
+                            system=env, initial_conditions=ic
+                        )
 
-                sample_space = gym.spaces.Box(
-                    low=-0.1,
-                    high=0.1,
-                    shape=(env.observation_space.shape[0] + 1,),
-                    dtype=np.float32,
-                )
+                        len = env.num_time_steps + 1
 
-                cls.assertNotEqual(env.observation_space.shape, sample_space.shape)
-                with cls.assertRaises(AssertionError) as exception_context:
-                    S = generate_sample_trajectories(sample_space, env, 5)
+                        cls.assertIsInstance(S, np.ndarray, "Should be an ndarray.")
+                        cls.assertEqual(
+                            np.shape(S),
+                            (np.array(ic).shape[0], len, obs_shape[0]),
+                            "Should return the correct dimensions.",
+                        )
+
+                        cls.assertIsInstance(U, np.ndarray, "Should be an ndarray.")
+                        cls.assertEqual(
+                            np.shape(U),
+                            (np.array(ic).shape[0], len - 1, env.action_space.shape[0]),
+                            "Should return the correct dimensions.",
+                        )
 
     def test_known_trajectory(cls):
         """
         Test against specific known trajectory.
         """
 
-        env = systems.envs.integrator.NDIntegratorEnv(2)
-        env.action_space = gym.spaces.Box(low=0, high=0, shape=(1,), dtype=np.float32)
+        env = gym_socks.envs.integrator.NDIntegratorEnv(2)
 
-        sample_space = gym.spaces.Box(low=0.1, high=0.1, shape=(2,), dtype=np.float32)
+        def controller(state):
+            return [0]
 
-        S = generate_sample_trajectories(sample_space, env, 1)
+        S, U = generate_sample_trajectories(
+            system=env, initial_conditions=[[0.1, 0.1]], controller=controller
+        )
 
         groundTruth = np.array(
             [
                 [
-                    [0.1, 0.1],
-                    [0.11, 0.1],
-                    [0.12, 0.1],
-                    [0.13, 0.1],
-                    [0.14, 0.1],
-                    [0.15, 0.1],
-                    [0.16, 0.1],
-                    [0.17, 0.1],
-                    [0.18, 0.1],
-                    [0.19, 0.1],
-                    [0.2, 0.1],
+                    [0.100, 0.1],
+                    [0.125, 0.1],
+                    [0.150, 0.1],
+                    [0.175, 0.1],
+                    [0.200, 0.1],
+                    [0.225, 0.1],
+                    [0.250, 0.1],
+                    [0.275, 0.1],
+                    [0.300, 0.1],
+                    [0.325, 0.1],
+                    [0.350, 0.1],
+                    [0.375, 0.1],
+                    [0.400, 0.1],
+                    [0.425, 0.1],
+                    [0.450, 0.1],
+                    [0.475, 0.1],
+                    [0.500, 0.1],
                 ]
             ]
         )

@@ -2,18 +2,18 @@ import unittest
 
 import gym
 
-import systems.envs
+import gym_socks.envs
 
 import numpy as np
 
-from systems.sample import generate_sample
-from systems.sample import generate_sample_trajectories
+from gym_socks.envs.sample import generate_sample
+from gym_socks.envs.sample import generate_sample_trajectories
 
 
 class TestIntegratorSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = systems.envs.integrator.NDIntegratorEnv(2)
+        cls.env = gym_socks.envs.NDIntegratorEnv(2)
 
     def test_known_trajectory(cls):
         """
@@ -28,7 +28,7 @@ class TestIntegratorSystem(unittest.TestCase):
         trajectory = []
         trajectory.append(env.state)
 
-        for i in range(10):
+        for i in range(cls.env.num_time_steps):
             obs, reward, done, _ = env.step(action)
             trajectory.append(obs)
 
@@ -36,19 +36,23 @@ class TestIntegratorSystem(unittest.TestCase):
 
         groundTruth = np.array(
             [
-                [
-                    [0.1, 0.1],
-                    [0.11, 0.1],
-                    [0.12, 0.1],
-                    [0.13, 0.1],
-                    [0.14, 0.1],
-                    [0.15, 0.1],
-                    [0.16, 0.1],
-                    [0.17, 0.1],
-                    [0.18, 0.1],
-                    [0.19, 0.1],
-                    [0.2, 0.1],
-                ]
+                [0.100, 0.1],
+                [0.125, 0.1],
+                [0.150, 0.1],
+                [0.175, 0.1],
+                [0.200, 0.1],
+                [0.225, 0.1],
+                [0.250, 0.1],
+                [0.275, 0.1],
+                [0.300, 0.1],
+                [0.325, 0.1],
+                [0.350, 0.1],
+                [0.375, 0.1],
+                [0.400, 0.1],
+                [0.425, 0.1],
+                [0.450, 0.1],
+                [0.475, 0.1],
+                [0.500, 0.1],
             ]
         )
 
