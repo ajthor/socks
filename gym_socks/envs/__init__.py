@@ -1,4 +1,13 @@
-__all__ = ["cwh", "integrator", "nonholonomic", "point_mass", "QUAD20", "tora"]
+__all__ = [
+    "cwh",
+    "integrator",
+    "nonholonomic",
+    "point_mass",
+    "QUAD20",
+    "tora",
+    "sample",
+    "policy",
+]
 
 from gym_socks.envs.cwh import CWH4DEnv
 from gym_socks.envs.cwh import StochasticCWH4DEnv
@@ -24,14 +33,6 @@ from gym_socks.envs.tora import StochasticTORAEnv
 # ---- Hybrid system models ----
 
 from gym_socks.envs.temperature import TemperatureRegEnv
-
-# ---- Sample generation functions ----
-
-from gym_socks.envs.sample import random_initial_conditions
-from gym_socks.envs.sample import uniform_initial_conditions
-
-from gym_socks.envs.sample import generate_sample
-from gym_socks.envs.sample import generate_sample_trajectories
 
 # ---- Register gym envs ----
 

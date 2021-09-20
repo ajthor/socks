@@ -128,6 +128,8 @@ def rbf_kernel(
 def regularized_inverse(
     X,
     Y=None,
+    U=None,
+    V=None,
     l: "Regularization parameter." = None,
     kernel_fn: "Kernel function." = None,
 ) -> "W":
@@ -170,6 +172,16 @@ def regularized_inverse(
     num_rows, num_cols = X.shape
 
     K = kernel_fn(X, Y)
+
+    if U is not None:
+        err_msg = "Parameters %r, %r must have the same sample size." % (X, U)
+        assert X.shape[0] == U.shape[0], err_msg
+
+        if V is not None:
+            err_msg = "Parameters %r, %r must have the same shape." % (U, V)
+            assert U.shape == V.shape, err_msg
+
+        K = np.multiply(kernel_fn(U, V), K)
 
     I = np.identity(num_rows)
 

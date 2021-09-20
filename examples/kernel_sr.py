@@ -8,7 +8,8 @@ import numpy as np
 
 import gym_socks.kernel.metrics as kernel
 from gym_socks.envs.sample import generate_sample
-from gym_socks.envs.sample import generate_uniform_sample
+from gym_socks.envs.sample import uniform_initial_conditions
+from gym_socks.envs.sample import uniform_grid
 
 import matplotlib
 
@@ -32,7 +33,7 @@ def main():
     # the system is a 2D integrator with no action space
     system = gym_socks.envs.StochasticNDIntegratorEnv(2)
 
-    def controller(state):
+    def policy(time, state):
         return [0]
 
     num_time_steps = system.num_time_steps
@@ -46,40 +47,50 @@ def main():
             shape=system.observation_space.shape,
             dtype=np.float32,
         )
-        for i in range(num_time_steps - 1)
+        for i in range(num_time_steps)
     ]
-    constraint_tube = [
-        *constraint_tube,
-        gym.spaces.Box(
-            low=-0.5,
-            high=0.5,
-            shape=system.observation_space.shape,
-            dtype=np.float32,
-        ),
-    ]
+    # constraint_tube = [
+    #     *constraint_tube,
+    #     gym.spaces.Box(
+    #         low=-0.5,
+    #         high=0.5,
+    #         shape=system.observation_space.shape,
+    #         dtype=np.float32,
+    #     ),
+    # ]
 
-    # define the sample space to generate the sample from the stochastic kernel
-    sample_space = gym.spaces.Box(
-        low=-1.1,
-        high=1.1,
-        shape=system.observation_space.shape,
-        dtype=np.float32,
-    )
+    target_tube = [
+        gym.spaces.Box(
+            low=-0.5, high=0.5, shape=system.observation_space.shape, dtype=np.float32
+        )
+        for i in range(num_time_steps)
+    ]
 
     # generate the sample
     initial_conditions = uniform_initial_conditions(
-        system=system, sample_space=sample_space, n=[50, 50]
+        system=system,
+        sample_space=gym.spaces.Box(
+            low=-1.1,
+            high=1.1,
+            shape=system.observation_space.shape,
+            dtype=np.float32,
+        ),
+        n=[50, 50],
     )
     S, U = generate_sample(
-        system=system, initial_conditions=initial_conditions, controller=controller
+        system=system, initial_conditions=initial_conditions, policy=policy
     )
 
     # generate the test points
-    x1 = np.round(np.linspace(-1, 1, 100), 3)
-    x2 = np.round(np.linspace(-1, 1, 100), 3)
-    # rounding to avoid numpy floating point precision errors
-    T = [(xx1, xx2) for xx1 in x1 for xx2 in x2]
-    # _, T = generate_uniform_sample(sample_space, system, [21, 21])
+    T, x = uniform_grid(
+        sample_space=gym.spaces.Box(
+            low=-1, high=1, shape=system.observation_space.shape, dtype=np.float32
+        ),
+        n=[100, 100],
+    )
+
+    x1 = x[0]
+    x2 = x[1]
 
     t0 = time()
 
@@ -87,7 +98,12 @@ def main():
 
     # run the algorithm
     Pr, _ = alg.run(
-        system=system, sample=S, test_points=T, constraint_tube=constraint_tube
+        system=system,
+        S=S,
+        T=T,
+        constraint_tube=constraint_tube,
+        target_tube=target_tube,
+        problem="THT",
     )
 
     t1 = time()

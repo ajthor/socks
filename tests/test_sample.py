@@ -12,6 +12,8 @@ from gym_socks.envs.sample import uniform_initial_conditions
 from gym_socks.envs.sample import generate_sample
 from gym_socks.envs.sample import generate_sample_trajectories
 
+from gym_socks.envs.policy import ZeroPolicy
+
 system_list = [
     gym_socks.envs.NDIntegratorEnv(1),
     gym_socks.envs.NDIntegratorEnv(2),
@@ -125,13 +127,12 @@ class TestGenerateSample(unittest.TestCase):
 
         env = gym_socks.envs.integrator.NDIntegratorEnv(2)
 
-        def controller(state):
-            return [0]
+        policy = ZeroPolicy(env)
 
         S, U = generate_sample(
             system=env,
             initial_conditions=[[0.1, 0.1], [0.125, 0.1]],
-            controller=controller,
+            policy=policy,
         )
 
         groundTruth = np.array(
@@ -210,11 +211,10 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
 
         env = gym_socks.envs.integrator.NDIntegratorEnv(2)
 
-        def controller(state):
-            return [0]
+        policy = ZeroPolicy(env)
 
         S, U = generate_sample_trajectories(
-            system=env, initial_conditions=[[0.1, 0.1]], controller=controller
+            system=env, initial_conditions=[[0.1, 0.1]], policy=policy
         )
 
         groundTruth = np.array(
