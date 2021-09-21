@@ -17,13 +17,20 @@ class KernelSR(AlgorithmInterface):
     Stochastic reachability using kernel distribution embeddings.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, kernel_fn=None, l=None, *args, **kwargs):
         """
         Initialize the algorithm.
         """
         super().__init__(*args, **kwargs)
 
-        # Global algorithm parameters go here.
+        if kernel_fn is None:
+            kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
+
+        if l is None:
+            l = 1
+
+        self.kernel_fn = kernel_fn
+        self.l = l
 
     def run(
         self,
@@ -61,19 +68,12 @@ class KernelSR(AlgorithmInterface):
         if problem != "THT" and problem != "FHT":
             raise ValueError("problem is not in {'THT', 'FHT'}")
 
-        kernel_fn = getattr(self, "kernel_fn", None)
-        if kernel_fn is None:
-            kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
-
-        l = getattr(self, "l", None)
-        if l is None:
-            l = 1
+        kernel_fn = self.kernel_fn
+        l = self.l
 
         T = np.array(T)
         num_time_steps = system.num_time_steps - 1
         num_test_points = len(T)
-
-        # make sure shape of sample is (:, 2, :)
 
         S = np.array(S)
         X = S[:, 0, :]
@@ -84,23 +84,24 @@ class KernelSR(AlgorithmInterface):
         CXY = kernel_fn(X, Y)
         CXT = kernel_fn(X, T)
 
-        betaXY = normalize(np.matmul(W, CXY))
-        betaXT = normalize(np.matmul(W, CXT))
+        betaXY = normalize(np.einsum("ii,ij->ij", W, CXY))
+        betaXT = normalize(np.einsum("ii,ij->ij", W, CXT))
+
+        tt_low = target_tube[num_time_steps].low
+        tt_high = target_tube[num_time_steps].high
 
         # set up empty array to hold value functions
         Vt = np.zeros((num_time_steps + 1, len(X)))
 
         Vt[num_time_steps, :] = np.array(
-            [constraint_tube[num_time_steps].contains(np.array(point)) for point in Y],
-            dtype=np.float32,
+            np.all(Y >= tt_low, axis=1) & np.all(Y <= tt_high, axis=1), dtype=np.float32
         )
 
         # set up empty array to hold safety probabilities
         Pr = np.zeros((num_time_steps + 1, len(T)))
 
         Pr[num_time_steps, :] = np.array(
-            [constraint_tube[num_time_steps].contains(np.array(point)) for point in T],
-            dtype=np.float32,
+            np.all(T >= tt_low, axis=1) & np.all(T <= tt_high, axis=1), dtype=np.float32
         )
 
         # run backwards in time and compute the safety probabilities
@@ -108,16 +109,14 @@ class KernelSR(AlgorithmInterface):
 
             print(f"Computing for k={t}")
 
-            Vt_betaXY = np.matmul(Vt[t + 1, :], betaXY)
-            Vt_betaXT = np.matmul(Vt[t + 1, :], betaXT)
+            Vt_betaXY = np.einsum("i,ij->j", Vt[t + 1, :], betaXY)
+            Vt_betaXT = np.einsum("i,ij->j", Vt[t + 1, :], betaXT)
 
-            Y_in_safe_set = [
-                constraint_tube[t].contains(np.array(point)) for point in Y
-            ]
+            ct_low = constraint_tube[t].low
+            ct_high = constraint_tube[t].high
 
-            T_in_safe_set = [
-                constraint_tube[t].contains(np.array(point)) for point in T
-            ]
+            Y_in_safe_set = np.all(Y >= ct_low, axis=1) & np.all(Y <= ct_high, axis=1)
+            T_in_safe_set = np.all(T >= ct_low, axis=1) & np.all(T <= ct_high, axis=1)
 
             if problem == "THT":
 
@@ -126,9 +125,12 @@ class KernelSR(AlgorithmInterface):
 
             elif problem == "FHT":
 
-                Y_in_target_set = [
-                    target_tube[t].contains(np.array(point)) for point in Y
-                ]
+                tt_low = target_tube[t].low
+                tt_high = target_tube[t].high
+
+                Y_in_target_set = np.all(Y >= tt_low, axis=1) & np.all(
+                    Y <= tt_high, axis=1
+                )
 
                 Vt[t, :] = (
                     np.array(Y_in_target_set, dtype=np.float32)
@@ -139,9 +141,9 @@ class KernelSR(AlgorithmInterface):
                     * Vt_betaXY
                 )
 
-                T_in_target_set = [
-                    target_tube[t].contains(np.array(point)) for point in T
-                ]
+                T_in_target_set = np.all(T >= tt_low, axis=1) & np.all(
+                    T <= tt_high, axis=1
+                )
 
                 Pr[t, :] = (
                     np.array(T_in_target_set, dtype=np.float32)
@@ -161,13 +163,20 @@ class KernelMaximalSR(AlgorithmInterface):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, kernel_fn=None, l=None, *args, **kwargs):
         """
         Initialize the algorithm.
         """
         super().__init__(*args, **kwargs)
 
-        # Global algorithm parameters go here.
+        if kernel_fn is None:
+            kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
+
+        if l is None:
+            l = 1
+
+        self.kernel_fn = kernel_fn
+        self.l = l
 
     def run(
         self,
@@ -215,13 +224,8 @@ class KernelMaximalSR(AlgorithmInterface):
         if problem != "THT" and problem != "FHT":
             raise ValueError("problem is not in {'THT', 'FHT'}")
 
-        kernel_fn = getattr(self, "kernel_fn", None)
-        if kernel_fn is None:
-            kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
-
-        l = getattr(self, "l", None)
-        if l is None:
-            l = 1
+        kernel_fn = self.kernel_fn
+        l = self.l
 
         Xt = np.array(T)
         num_time_steps = system.num_time_steps - 1
@@ -243,60 +247,68 @@ class KernelMaximalSR(AlgorithmInterface):
 
         CXY = kernel_fn(X, Y)
 
-        CUA = np.expand_dims(kernel_fn(U, A), axis=2)
+        CUA = kernel_fn(U, A)
 
         CXT = kernel_fn(X, T)
 
-        betaXY = np.repeat(np.expand_dims(np.matmul(W, CXY), axis=2), len(A), axis=2)
-        betaXY = np.moveaxis(betaXY, 1, 2)
-        betaXY = np.multiply(betaXY, CUA)
-        betaXY = normalize(betaXY)
+        betaXY = normalize(
+            np.einsum("ii,ij,ik->ikj", W, CXY, CUA, optimize=["einsum_path", (0, 1, 2)])
+        )
 
-        betaXT = np.repeat(np.expand_dims(np.matmul(W, CXT), axis=2), len(A), axis=2)
-        betaXT = np.moveaxis(betaXT, 1, 2)
-        betaXT = np.multiply(betaXT, CUA)
-        betaXT = normalize(betaXT)
+        betaXT = normalize(
+            np.einsum("ii,ij,ik->ikj", W, CXT, CUA, optimize=["einsum_path", (0, 1, 2)])
+        )
+
+        tt_low = target_tube[num_time_steps].low
+        tt_high = target_tube[num_time_steps].high
 
         # set up empty array to hold value functions
-        Vt = np.zeros((num_time_steps + 1, len(X)))
+        Vt = np.zeros((num_time_steps + 1, len(X)), dtype=np.float32)
 
         Vt[num_time_steps, :] = np.array(
-            [constraint_tube[num_time_steps].contains(np.array(point)) for point in Y],
-            dtype=np.float32,
+            np.all(Y >= tt_low, axis=1) & np.all(Y <= tt_high, axis=1), dtype=np.float32
         )
 
         # set up empty array to hold safety probabilities
-        Pr = np.zeros((num_time_steps + 1, len(T)))
+        Pr = np.zeros((num_time_steps + 1, len(T)), dtype=np.float32)
 
         Pr[num_time_steps, :] = np.array(
-            [constraint_tube[num_time_steps].contains(np.array(point)) for point in T],
-            dtype=np.float32,
+            np.all(T >= tt_low, axis=1) & np.all(T <= tt_high, axis=1), dtype=np.float32
         )
+
+        # optimize the matrix multiplications we perform at each time step
+        path = ["einsum_path", (0, 1)]
 
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
 
             print(f"Computing for k={t}")
 
-            wX = np.zeros((len(X), len(A)))
-            wT = np.zeros((len(T), len(A)))
-
-            for p in range(len(A)):
-                wX[:, p] = np.matmul(Vt[t + 1, :], np.squeeze(betaXY[:, p, :]))
-                wT[:, p] = np.matmul(Vt[t + 1, :], np.squeeze(betaXT[:, p, :]))
+            # use optimized multiplications
+            wX = np.einsum("i,ijk->kj", Vt[t + 1, :], betaXY, optimize=path)
+            wT = np.einsum("i,ijk->kj", Vt[t + 1, :], betaXT, optimize=path)
 
             VX = np.max(wX, axis=1)
             VT = np.max(wT, axis=1)
 
-            # compute value functions
-            Y_in_safe_set = [
-                constraint_tube[t].contains(np.array(point)) for point in Y
-            ]
+            # # compute value functions
+            # Y_in_safe_set = [
+            #     constraint_tube[t].contains(np.array(point)) for point in Y
+            # ]
+            #
+            # # compute safety probabilities
+            # T_in_safe_set = [
+            #     constraint_tube[t].contains(np.array(point)) for point in T
+            # ]
 
-            # compute safety probabilities
-            T_in_safe_set = [
-                constraint_tube[t].contains(np.array(point)) for point in T
-            ]
+            ct_low = constraint_tube[t].low
+            ct_high = constraint_tube[t].high
+
+            Y_in_safe_set = np.all(Y >= ct_low, axis=1) & np.all(Y <= ct_high, axis=1)
+            T_in_safe_set = np.all(T >= ct_low, axis=1) & np.all(T <= ct_high, axis=1)
+
+            # Y_in_safe_set = constraint_tube[t].contains(Y)
+            # T_in_safe_set = constraint_tube[t].contains(T)
 
             if problem == "THT":
 
@@ -305,9 +317,12 @@ class KernelMaximalSR(AlgorithmInterface):
 
             elif problem == "FHT":
 
-                Y_in_target_set = [
-                    target_tube[t].contains(np.array(point)) for point in Y
-                ]
+                tt_low = target_tube[t].low
+                tt_high = target_tube[t].high
+
+                Y_in_target_set = np.all(Y >= tt_low, axis=1) & np.all(
+                    Y <= tt_high, axis=1
+                )
 
                 Vt[t, :] = (
                     np.array(Y_in_target_set, dtype=np.float32)
@@ -318,9 +333,9 @@ class KernelMaximalSR(AlgorithmInterface):
                     * VX
                 )
 
-                T_in_target_set = [
-                    target_tube[t].contains(np.array(point)) for point in T
-                ]
+                T_in_target_set = np.all(T >= tt_low, axis=1) & np.all(
+                    T <= tt_high, axis=1
+                )
 
                 Pr[t, :] = (
                     np.array(T_in_target_set, dtype=np.float32)
@@ -403,12 +418,11 @@ class MaximallySafePolicy(BasePolicy):
         W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
 
         CXY = kernel_fn(X, Y)
-        CUA = np.expand_dims(kernel_fn(U, A), axis=2)
+        CUA = kernel_fn(U, A)
 
-        # betaXY = normalize(np.matmul(W, CXY))
-        betaXY = np.repeat(np.expand_dims(np.matmul(W, CXY), axis=2), len(A), axis=2)
-        betaXY = np.moveaxis(betaXY, 1, 2)
-        betaXY = np.multiply(betaXY, CUA)
+        betaXY = np.einsum(
+            "ii,ij,ik->ikj", W, CXY, CUA, optimize=["einsum_path", (0, 1, 2)]
+        )
         betaXY = normalize(betaXY)
 
         # set up empty array to hold value functions
@@ -426,10 +440,12 @@ class MaximallySafePolicy(BasePolicy):
 
             # Vt_betaXY = np.matmul(Vt[t + 1, :], betaXY)
 
-            w = np.zeros((len(X), len(A)))
+            # w = np.zeros((len(X), len(A)))
+            #
+            # for p in range(len(A)):
+            #     w[:, p] = np.matmul(Vt[t + 1, :], np.squeeze(betaXY[:, p, :]))
 
-            for p in range(len(A)):
-                w[:, p] = np.matmul(Vt[t + 1, :], np.squeeze(betaXY[:, p, :]))
+            w = np.einsum("i,ijk->kj", Vt[t + 1, :], betaXY)
 
             V = np.max(w, axis=1)
 
@@ -478,18 +494,15 @@ class MaximallySafePolicy(BasePolicy):
         n = len(self.A)
 
         CXT = self.kernel_fn(self.X, T)
-        # betaXT = np.multiply(self.W, CXT)
-        # betaXT = np.expand_dims(betaXT, axis=2)
-        # betaXT = np.repeat(betaXT, n, axis=2)
-        betaXT = np.repeat(np.expand_dims(np.matmul(self.W, CXT), axis=2), n, axis=2)
-        betaXT = np.moveaxis(betaXT, 1, 2)
-        betaXT = np.multiply(betaXT, self.CUA)
+
+        betaXT = np.einsum(
+            "ii,ij,ik->ikj", self.W, CXT, self.CUA, optimize=["einsum_path", (0, 1, 2)]
+        )
         betaXT = normalize(betaXT)
 
-        w = np.zeros((len(T), len(self.A)))
-
-        for p in range(len(self.A)):
-            w[:, p] = np.matmul(self.Vt[time + 1, :], np.squeeze(betaXT[:, p, :]))
+        w = np.einsum(
+            "i,ijk->kj", self.Vt[time + 1, :], betaXT, optimize=["einsum_path", (0, 1)]
+        )
 
         idx = np.argmax(w, axis=1)
 

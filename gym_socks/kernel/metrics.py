@@ -11,7 +11,7 @@ from sklearn.metrics.pairwise import pairwise_kernels
 from sklearn.metrics.pairwise import rbf_kernel
 
 """
-from functools import partial
+from functools import partial, reduce
 
 import numpy as np
 import numpy.matlib
@@ -47,15 +47,16 @@ def euclidean_distance(X, Y=None, squared: bool = False) -> "D":
     num_rows_X, num_cols_X = X.shape
     num_rows_Y, num_cols_Y = Y.shape
 
-    distances = np.zeros(shape=(num_rows_X, num_rows_Y))
-
-    for i in range(num_cols_X):
-
-        distances += np.power(
-            np.matlib.repmat(Y[:, i], num_rows_X, 1)
-            - np.matlib.repmat(X[:, i], num_rows_Y, 1).T,
+    def calc_dim(prev, next):
+        x, y = next
+        return prev + np.power(
+            np.tile(y, (num_rows_X, 1)) - np.tile(x, (num_rows_Y, 1)).T,
             2,
         )
+
+    distances = reduce(
+        calc_dim, zip(X.T, Y.T), np.zeros(shape=(num_rows_X, num_rows_Y))
+    )
 
     return distances if squared else np.sqrt(distances)
 

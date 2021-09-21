@@ -6,7 +6,7 @@ import gym_socks
 import numpy as np
 
 import gym_socks.kernel.metrics as kernel
-from gym_socks.envs.sample import generate_sample
+from gym_socks.envs.sample import sample
 from gym_socks.envs.sample import generate_uniform_sample
 
 import matplotlib

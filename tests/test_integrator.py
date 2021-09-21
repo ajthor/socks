@@ -6,8 +6,8 @@ import gym_socks.envs
 
 import numpy as np
 
-from gym_socks.envs.sample import generate_sample
-from gym_socks.envs.sample import generate_sample_trajectories
+from gym_socks.envs.sample import sample
+from gym_socks.envs.sample import sample_trajectories
 
 
 class TestIntegratorSystem(unittest.TestCase):

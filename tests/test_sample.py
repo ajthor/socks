@@ -9,8 +9,8 @@ import numpy as np
 from gym_socks.envs.sample import random_initial_conditions
 from gym_socks.envs.sample import uniform_initial_conditions
 
-from gym_socks.envs.sample import generate_sample
-from gym_socks.envs.sample import generate_sample_trajectories
+from gym_socks.envs.sample import sample
+from gym_socks.envs.sample import sample_trajectories
 
 from gym_socks.envs.policy import ZeroPolicy
 
@@ -77,9 +77,9 @@ class TestGenerateSample(unittest.TestCase):
     def setUpClass(cls):
         cls.envs = system_list
 
-    def test_generate_sample(cls):
+    def test_sample(cls):
         """
-        Assert that generate_sample generates a list of state observations.
+        Assert that sample generates a list of state observations.
         """
 
         for env in cls.envs:
@@ -104,7 +104,7 @@ class TestGenerateSample(unittest.TestCase):
                 for ic in initial_conditions:
                     with cls.subTest(msg=f"Testing with different ICs."):
 
-                        S, U = generate_sample(system=env, initial_conditions=ic)
+                        S, U = sample(system=env, initial_conditions=ic)
 
                         cls.assertIsInstance(S, np.ndarray, "Should be an ndarray.")
                         cls.assertEqual(
@@ -129,7 +129,7 @@ class TestGenerateSample(unittest.TestCase):
 
         policy = ZeroPolicy(env)
 
-        S, U = generate_sample(
+        S, U = sample(
             system=env,
             initial_conditions=[[0.1, 0.1], [0.125, 0.1]],
             policy=policy,
@@ -157,7 +157,7 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
     def setUpClass(cls):
         cls.envs = system_list
 
-    def test_generate_sample_trajectories(cls):
+    def test_sample_trajectories(cls):
         """
         Assert that generate_state_trajectory generates a list of state observations.
         """
@@ -184,9 +184,7 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
                 for ic in initial_conditions:
                     with cls.subTest(msg=f"Testing with different ICs."):
 
-                        S, U = generate_sample_trajectories(
-                            system=env, initial_conditions=ic
-                        )
+                        S, U = sample_trajectories(system=env, initial_conditions=ic)
 
                         len = env.num_time_steps + 1
 
@@ -213,7 +211,7 @@ class TestGenerateSampleTrajectories(unittest.TestCase):
 
         policy = ZeroPolicy(env)
 
-        S, U = generate_sample_trajectories(
+        S, U = sample_trajectories(
             system=env, initial_conditions=[[0.1, 0.1]], policy=policy
         )
 

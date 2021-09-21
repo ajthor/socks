@@ -7,9 +7,12 @@ import gym_socks
 import numpy as np
 
 import gym_socks.kernel.metrics as kernel
-from gym_socks.envs.sample import generate_sample
+from gym_socks.envs.sample import sample_action
 from gym_socks.envs.sample import uniform_initial_conditions
 from gym_socks.envs.sample import uniform_grid
+
+from functools import partial
+from sklearn.metrics.pairwise import rbf_kernel
 
 import matplotlib
 
@@ -32,8 +35,6 @@ def main():
 
     # the system is a 2D integrator
     system = gym_socks.envs.StochasticNDIntegratorEnv(2)
-
-    system.action_space = gym.spaces.Box(low=-1, high=1, shape=system.action_space.shape, dtype=np.float32)
 
     num_time_steps = system.num_time_steps
 
@@ -67,7 +68,11 @@ def main():
         ),
         n=[25, 25],
     )
-    S, U = generate_sample(system=system, initial_conditions=initial_conditions)
+    S, U = sample_action(
+        system=system,
+        initial_conditions=initial_conditions,
+        action_set=np.linspace(-1.1, 1.1, 5),
+    )
 
     # generate the test points
     T, x = uniform_grid(
@@ -84,6 +89,8 @@ def main():
     A = np.linspace(-1, 1, 10)
     A = A[:, np.newaxis, np.newaxis]
 
+    alg = KernelMaximalSR(kernel_fn=partial(rbf_kernel, gamma=50))
+
     t0 = time()
 
     # policy = MaximallySafePolicy()
@@ -97,8 +104,6 @@ def main():
     # )
     #
     # print(policy(time=0, state=[[0.1, 0.1]]))
-
-    alg = KernelMaximalSR()
 
     # run the algorithm
     Pr, _ = alg.run(

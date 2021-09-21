@@ -7,9 +7,12 @@ import gym_socks
 import numpy as np
 
 import gym_socks.kernel.metrics as kernel
-from gym_socks.envs.sample import generate_sample
+from gym_socks.envs.sample import sample
 from gym_socks.envs.sample import uniform_initial_conditions
 from gym_socks.envs.sample import uniform_grid
+
+from functools import partial
+from sklearn.metrics.pairwise import rbf_kernel
 
 import matplotlib
 
@@ -77,9 +80,7 @@ def main():
         ),
         n=[50, 50],
     )
-    S, U = generate_sample(
-        system=system, initial_conditions=initial_conditions, policy=policy
-    )
+    S, U = sample(system=system, initial_conditions=initial_conditions, policy=policy)
 
     # generate the test points
     T, x = uniform_grid(
@@ -92,9 +93,9 @@ def main():
     x1 = x[0]
     x2 = x[1]
 
-    t0 = time()
+    alg = KernelSR(kernel_fn=partial(rbf_kernel, gamma=50))
 
-    alg = KernelSR()
+    t0 = time()
 
     # run the algorithm
     Pr, _ = alg.run(

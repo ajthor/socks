@@ -3,7 +3,7 @@ from functools import partial
 from algorithms.algorithm import AlgorithmInterface
 
 import kernel.metrics as kernel
-from systems.sample import generate_sample_trajectories
+from systems.sample import sample_trajectories
 
 import gym
 

@@ -9,6 +9,7 @@ import gym
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
 from gym_socks.envs.policy import RandomizedPolicy
+from gym_socks.envs.policy import ConstantPolicy
 
 import numpy as np
 from scipy.integrate import solve_ivp
@@ -94,7 +95,7 @@ def uniform_initial_conditions(
     return np.array(x)
 
 
-def generate_sample(
+def sample(
     system: DynamicalSystem,
     initial_conditions: "Set of initial conditions." = None,
     policy: "Policy." = None,
@@ -138,7 +139,42 @@ def generate_sample(
     return np.array(S), np.array(U)
 
 
-def generate_sample_trajectories(
+def sample_action(
+    system: DynamicalSystem,
+    initial_conditions: "Set of initial conditions." = None,
+    action_set: "Action set." = None,
+) -> "S, U":
+    """
+    Generate sample using each action in the action_set.
+    """
+
+    if system is None:
+        return None, None
+
+    if action_set is None:
+        action_set = [system.action_space.sample() for i in range(3)]
+
+    S = []
+    U = []
+
+    for action in action_set:
+        _S, _U = sample(
+            system=system,
+            initial_conditions=initial_conditions,
+            policy=ConstantPolicy(system, action),
+        )
+
+        if S == []:
+            S = _S
+            U = _U
+        else:
+            S = np.concatenate((S, _S), axis=0)
+            U = np.concatenate((U, _U), axis=0)
+
+    return S, U
+
+
+def sample_trajectories(
     system: DynamicalSystem,
     initial_conditions: "Set of initial conditions." = None,
     policy: "Policy." = None,

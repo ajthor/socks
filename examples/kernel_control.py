@@ -7,7 +7,7 @@ import gym_socks
 import numpy as np
 
 import gym_socks.kernel.metrics as kernel
-from gym_socks.envs.sample import generate_sample
+from gym_socks.envs.sample import sample
 from gym_socks.envs.sample import generate_uniform_sample
 
 import matplotlib
@@ -40,7 +40,7 @@ def main():
         dtype=np.float32,
     )
 
-    # S = generate_sample(sample_space, env, 5000)
+    # S = sample(sample_space, env, 5000)
     S, _ = generate_uniform_sample(sample_space=sample_space, system=env, n=[71, 71])
 
     # rounding to avoid numpy floating point precision errors

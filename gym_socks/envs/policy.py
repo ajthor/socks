@@ -25,6 +25,20 @@ class RandomizedPolicy(BasePolicy):
         return self.system.action_space.sample()
 
 
+class ConstantPolicy(BasePolicy):
+    """Constant policy."""
+
+    def __init__(self, system, constant=0, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.system = system
+        self.constant = constant
+
+    def __call__(self, *args, **kwargs):
+        return [self.constant] * self.system.action_space.shape[0]
+
+
 class ZeroPolicy(BasePolicy):
     """Zero policy."""
 
