@@ -14,6 +14,8 @@ from gym_socks.envs.sample import uniform_grid
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
 
+from time import time
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -28,8 +30,6 @@ matplotlib.rcParams.update(
 )
 
 import matplotlib.pyplot as plt
-
-from time import time
 
 
 def main():
@@ -53,15 +53,6 @@ def main():
         )
         for i in range(num_time_steps)
     ]
-    # constraint_tube = [
-    #     *constraint_tube,
-    #     gym.spaces.Box(
-    #         low=-0.5,
-    #         high=0.5,
-    #         shape=system.observation_space.shape,
-    #         dtype=np.float32,
-    #     ),
-    # ]
 
     target_tube = [
         gym.spaces.Box(

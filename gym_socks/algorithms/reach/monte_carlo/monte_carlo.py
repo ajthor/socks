@@ -1,9 +1,9 @@
 from functools import partial
 
-from algorithms.algorithm import AlgorithmInterface
+from gym_socks.algorithms.algorithm import AlgorithmInterface
 
-import kernel.metrics as kernel
-from systems.sample import sample_trajectories
+import gym_socks.kernel.metrics as kernel
+from gym_socks.envs.sample import sample_trajectories
 
 import gym
 
@@ -31,66 +31,80 @@ class MonteCarloSR(AlgorithmInterface):
     def run(
         self,
         system=None,
-        test_points=None,
-        controller=None,
+        T=None,
+        policy=None,
         constraint_tube=None,
-        num_mc_samples=None,
+        target_tube=None,
+        problem: "Stochastic reachability problem." = "THT",
+        num_iterations=None,
     ):
 
         if system is None:
             print("Must supply a system.")
 
-        if test_points is None:
+        if T is None:
             print("Must supply test points.")
 
         if constraint_tube is None:
             print("Must supply a constrint tube.")
 
-        if num_mc_samples is None:
-            num_mc_samples = 100
+        if target_tube is None:
+            print("Must supply target tube.")
+            return None
 
-        if controller is None:
+        if num_iterations is None:
+            num_iterations = 100
 
-            def random_controller(state):
-                return system.action_space.sample()
-
-            controller = random_controller
-
-        Xt = np.array(test_points)
+        T = np.array(T)
         num_time_steps = system.num_time_steps - 1
-        num_test_points = len(test_points)
+        num_test_points = len(T)
 
-        Pr = np.zeros((num_test_points, num_time_steps))
+        Pr = np.zeros((num_time_steps + 1, len(T)))
 
-        def generate_state_trajectory(x0):
-            system.state = x0
+        tt_low = target_tube[num_time_steps].low
+        tt_high = target_tube[num_time_steps].high
 
-            def generate_next_state():
-                action = controller(state=system.state)
-                next_state, reward, done, _ = system.step(action)
-                return next_state
+        for i in range(num_iterations):
 
-            return np.array(
-                [generate_next_state() for i in range(system.num_time_steps)]
-            )
+            print(f"Computing iteration={i}")
 
-        for i, point in enumerate(test_points):
+            S, _ = sample_trajectories(system=system, initial_conditions=T)
 
-            S = np.array(
-                [generate_state_trajectory(point) for j in range(num_mc_samples)]
-            )
+            S = np.flip(S, 1)
 
-            in_safe_set = np.array(
-                [
-                    [
-                        constraint_tube[j].contains(np.array(trajectory[j]))
-                        for j in range(num_time_steps)
-                    ]
-                    for trajectory in S
-                ],
+            Pr[num_time_steps, :] += np.array(
+                np.all(S[:, num_time_steps, :] >= tt_low, axis=1)
+                & np.all(S[:, num_time_steps, :] <= tt_high, axis=1),
                 dtype=np.float32,
             )
 
-            Pr[i, :] = np.sum(in_safe_set, axis=0) / num_mc_samples
+            for t in range(num_time_steps - 1, -1, -1):
 
-        return np.flipud(Pr.T)
+                ct_low = constraint_tube[t].low
+                ct_high = constraint_tube[t].high
+
+                S_in_safe_set = np.all(S[:, t, :] >= ct_low, axis=1) & np.all(
+                    S[:, t, :] <= ct_high, axis=1
+                )
+
+                if problem == "THT":
+
+                    Pr[t, :] += np.array(S_in_safe_set, dtype=np.float32)
+
+                elif problem == "FHT":
+
+                    tt_low = target_tube[t].low
+                    tt_high = target_tube[t].high
+
+                    S_in_target_set = np.all(S[:, t, :] >= tt_low, axis=1) & np.all(
+                        S[:, t, :] <= tt_high, axis=1
+                    )
+
+                    Pr[t, :] += np.array(S_in_target_set, dtype=np.float32) + np.array(
+                        S_in_safe_set & ~np.array(S_in_target_set, dtype=bool),
+                        dtype=np.float32,
+                    )
+
+        Pr /= num_iterations
+
+        return Pr
