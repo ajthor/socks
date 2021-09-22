@@ -93,7 +93,7 @@ class DynamicalSystem(gym.Env, ABC):
 
     @property
     def num_time_steps(self):
-        return int(np.floor(self.time_horizon / self.sampling_time))
+        return int(self.time_horizon // self.sampling_time)
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)

@@ -15,6 +15,8 @@ from gym_socks.envs.sample import uniform_grid
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
 
+from time import time
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -88,11 +90,16 @@ def main():
             2,
         )
 
+    t0 = time()
+
     # compute policy
     policy = KernelControlFwd(
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (0.15 ** 2))), l=1 / (len(S) ** 2)
     )
     policy.train(system=system, S=S, U=U, A=A, cost_fn=tracking_cost)
+
+    t1 = time()
+    print(f"Total time: {t1 - t0} s")
 
     # initial condition
     system.state = [-0.5, 0]

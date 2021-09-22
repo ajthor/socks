@@ -61,8 +61,9 @@ class StochasticNonholonomicVehicleEnv(StochasticMixin, NonholonomicVehicleEnv):
         *_, self.state = sol.y.T
 
         # correct the angle
-        if self.state[2] >= 2 * np.pi:
-            self.state[2] = self.state[2] % 2 * np.pi
+        if np.abs(self.state[2]) >= 2 * np.pi:
+            self.state[2] %= 2 * np.pi
+            # self.state[2] = self.state[2] % 2 * np.pi
         # if self.state[2] < 0:
         #     self.state[2] += 2 * np.pi
 

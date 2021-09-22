@@ -41,12 +41,12 @@ def main():
     initial_conditions = random_initial_conditions(
         system=system,
         sample_space=gym.spaces.Box(
-            low=np.array([-1.1, -1.1, -2 * np.pi - 0.1]),
-            high=np.array([1.1, 1.1, 2 * np.pi + 0.1]),
+            low=np.array([-1.1, -1.1, -2 * np.pi]),
+            high=np.array([1.1, 1.1, 2 * np.pi]),
             # shape=system.observation_space.shape,
             dtype=np.float32,
         ),
-        n=4000,
+        n=1800,
     )
     S, U = sample(
         system=system,
@@ -78,7 +78,7 @@ def main():
                         ]
                     ]
                 ),
-                ord=1,
+                ord=2,
                 axis=1,
             ),
             2,
@@ -91,14 +91,14 @@ def main():
     policy.train(system=system, S=S, U=U, A=A, cost_fn=tracking_cost)
 
     # initial condition
-    system.state = [-0.8, 0, -np.pi]
+    system.state = [-0.8, 0, np.pi]
     trajectory = [system.state]
 
     for t in range(num_time_steps):
 
         action = np.array(policy(time=t, state=[system.state]))
 
-        obs, reward, done, _ = system.step(action[0])
+        obs, reward, done, _ = system.step(action)
 
         # action = system.action_space.sample()
         # obs, reward, done, _ = system.step(action)
