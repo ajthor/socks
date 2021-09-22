@@ -20,10 +20,17 @@ from time import time
 import matplotlib
 
 matplotlib.use("Agg")
-matplotlib.rcParams["text.usetex"] = True
-import matplotlib.pyplot as plt
+matplotlib.rcParams.update(
+    {
+        "pgf.texsystem": "pdflatex",
+        "font.family": "serif",
+        "font.size": 8,
+        "text.usetex": True,
+        "pgf.rcfonts": False,
+    }
+)
 
-plt.rcParams.update({"font.size": 8})
+import matplotlib.pyplot as plt
 
 
 def main():
@@ -109,10 +116,7 @@ def main():
 
         action = np.array(policy(time=t, state=[system.state]))
 
-        obs, reward, done, _ = system.step(action[0])
-
-        # action = system.action_space.sample()
-        # obs, reward, done, _ = system.step(action)
+        obs, reward, done, _ = system.step(action)
 
         trajectory.append(list(obs))
 

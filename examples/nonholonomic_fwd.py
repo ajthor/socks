@@ -1,5 +1,5 @@
 # from algorithms.algorithm import AlgorithmRunner
-from gym_socks.algorithms.control.kernel_control.kernel_control import KernelControlBwd
+from gym_socks.algorithms.control.kernel_control.kernel_control import KernelControlFwd
 
 import gym
 import gym_socks
@@ -35,16 +35,16 @@ import matplotlib.pyplot as plt
 
 def main():
 
-    system = gym_socks.envs.StochasticNDPointMassEnv(2)
+    system = gym_socks.envs.StochasticNonholonomicVehicleEnv()
 
     system.action_space = gym.spaces.Box(
-        low=-1.1,
-        high=1.1,
-        shape=system.action_space.shape,
+        low=np.array([-0.1, -10.1]),
+        high=np.array([1.1, 10.1]),
+        # shape=system.action_space.shape,
         dtype=np.float32,
     )
 
-    system.sampling_time = 0.25
+    system.sampling_time = 0.1
     system.time_horizon = 2
     num_time_steps = system.num_time_steps
 
@@ -52,14 +52,13 @@ def main():
     initial_conditions = random_initial_conditions(
         system=system,
         sample_space=gym.spaces.Box(
-            low=-1.1,
-            high=1.1,
-            shape=system.observation_space.shape,
+            low=np.array([-1.1, -1.1, -2 * np.pi]),
+            high=np.array([1.1, 1.1, 2 * np.pi]),
+            # shape=system.observation_space.shape,
             dtype=np.float32,
         ),
-        n=5000,
+        n=1800,
     )
-
     S, U = sample(
         system=system,
         initial_conditions=initial_conditions,
@@ -67,22 +66,21 @@ def main():
 
     A, _ = uniform_grid(
         sample_space=gym.spaces.Box(
-            low=-1,
-            high=1,
-            shape=system.action_space.shape,
+            low=np.array([0, -10]),
+            high=np.array([1, 10]),
+            # shape=system.observation_space.shape,
             dtype=np.float32,
         ),
-        n=[21, 21],
+        n=[10, 20],
     )
 
     A = np.expand_dims(A, axis=1)
 
-    # define the cost function
     def tracking_cost(time=0, state=None):
 
         return np.power(
             norm(
-                state
+                state[:, :2]
                 - np.array(
                     [
                         [
@@ -100,8 +98,8 @@ def main():
     t0 = time()
 
     # compute policy
-    policy = KernelControlBwd(
-        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (0.15 ** 2))), l=1 / (len(S) ** 2)
+    policy = KernelControlFwd(
+        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (3 ** 2))), l=1 / (len(S) ** 2)
     )
     policy.train(system=system, S=S, U=U, A=A, cost_fn=tracking_cost)
 
@@ -109,7 +107,7 @@ def main():
     print(f"Total time: {t1 - t0} s")
 
     # initial condition
-    system.state = [-0.5, 0]
+    system.state = [-0.8, 0, np.pi]
     trajectory = [system.state]
 
     for t in range(num_time_steps):
@@ -117,6 +115,11 @@ def main():
         action = np.array(policy(time=t, state=[system.state]))
 
         obs, reward, done, _ = system.step(action)
+
+        # action = system.action_space.sample()
+        # obs, reward, done, _ = system.step(action)
+
+        # print(obs)
 
         trajectory.append(list(obs))
 
@@ -141,12 +144,12 @@ def plot_results():
 
         cm = 1 / 2.54
 
-        # trajectory plot
+        # flat color map
         fig = plt.figure(figsize=(5 * cm, 5 * cm))
         ax = fig.add_subplot(111)
 
         # plot target trajectory
-        target_trajectory = np.array([[-1 + i * 0.25, -1 + i * 0.25] for i in range(9)])
+        target_trajectory = np.array([[-1 + i * 0.1, -1 + i * 0.1] for i in range(21)])
         plt.plot(
             target_trajectory[:, 0],
             target_trajectory[:, 1],

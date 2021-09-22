@@ -12,7 +12,16 @@ from gym_socks.envs.sample import generate_uniform_sample
 import matplotlib
 
 matplotlib.use("Agg")
-matplotlib.rcParams["text.usetex"] = True
+matplotlib.rcParams.update(
+    {
+        "pgf.texsystem": "pdflatex",
+        "font.family": "serif",
+        "font.size": 8,
+        "text.usetex": True,
+        "pgf.rcfonts": False,
+    }
+)
+
 import matplotlib.pyplot as plt
 
 

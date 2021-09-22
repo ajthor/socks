@@ -105,18 +105,21 @@ class KernelControlFwd(BasePolicy):
         #     optimize=["einsum_path", (0, 1)],
         # )
 
-        w = np.einsum(
-            "i,ii,ij,ik->jk",
-            np.array(self.cost(time=time), dtype=np.float32),
-            self.W,
-            CXT,
-            self.CUA,
-            optimize="greedy",
-        )
+        # w = np.einsum(
+        #     "i,ii,ij,ik->jk",
+        #     np.array(self.cost(time=time), dtype=np.float32),
+        #     self.W,
+        #     CXT,
+        #     self.CUA,
+        #     optimize="greedy",
+        # )
 
-        idx = np.argmin(w, axis=1)
+        betaXT = self.W @ (CXT * self.CUA)
+        w = np.matmul(np.array(self.cost(time=time), dtype=np.float32), betaXT)
 
-        return self.A[idx]
+        idx = np.argmin(w)
+
+        return np.array(self.A[idx], dtype=np.float32)
 
 
 class KernelControlBwd(BasePolicy):
@@ -199,8 +202,6 @@ class KernelControlBwd(BasePolicy):
             cost_fn(time=num_time_steps, state=Y), dtype=np.float32
         )
 
-        # batches = generate_batches(num_elements=len(X), batch_size=10)
-
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
 
@@ -211,15 +212,29 @@ class KernelControlBwd(BasePolicy):
             # w = np.einsum('i,ikj->jk', Vt[t + 1, :], betaXY)
 
             # Z = np.einsum('i,ii->i', Vt[t + 1, :], W)
+
+            # Z = np.matmul(Vt[t + 1, :], W)
+            #
+            # w = np.zeros((len(X), len(A)))
+            # for p in range(len(X)):
+            #     # beta = np.einsum('i,ik->ik', CXY[p], CUA)
+            #     # w[p, :] = np.einsum('i,ik->k', Z, beta)
+            #
+            #     w[p, :] = np.matmul(Z, np.multiply(CXY[p][np.newaxis, :], CUA))
+            #
+            #     # w[p, :] = np.matmul(Z, np.multiply(kernel_fn(X, Y[p].reshape(1, -1)), CUA))
+
             Z = np.matmul(Vt[t + 1, :], W)
 
             w = np.zeros((len(X), len(A)))
-            for p in range(len(X)):
-                w[p, :] = np.matmul(Z, np.multiply(kernel_fn(X, Y[p].reshape(1, -1)), CUA))
-            # for batch in batches:
-            #     # w[batch, :] = np.matmul(Z, np.multiply(kernel_fn(X, Y[batch, :]), CUA))
-            #     # print(f"shape batch {CXY[batch].shape}")
-            #     w[batch, :] = np.einsum('i,ij,ik->jk', Z, CXY[:, batch], CUA)
+
+            for batch in generate_batches(num_elements=len(X), batch_size=5):
+                # w[batch, :] = np.matmul(Z, np.multiply(kernel_fn(X, Y[batch, :]), CUA))
+                # print(f"shape batch {CXY[batch].shape}")
+                # w[batch, :] = np.matmul(Z, np.multiply(kernel_fn(X, Y[batch]), CUA))
+                # print(CXY[batch, :].shape)
+                beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
+                w[batch, :] = np.einsum("i,ijk->jk", Z, beta)
 
             V = np.min(w, axis=1)
 
@@ -273,4 +288,4 @@ class KernelControlBwd(BasePolicy):
 
         # idx = np.argmin(w, axis=1)
 
-        return self.A[idx]
+        return np.array(self.A[idx], dtype=np.float32)
