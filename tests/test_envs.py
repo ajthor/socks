@@ -24,6 +24,7 @@ system_list = [
     gym_socks.envs.StochasticNDPointMassEnv(3),
     gym_socks.envs.StochasticNDPointMassEnv(4),
     gym_socks.envs.NonholonomicVehicleEnv(),
+    gym_socks.envs.StochasticNonholonomicVehicleEnv(),
     gym_socks.envs.CWH4DEnv(),
     gym_socks.envs.CWH6DEnv(),
     gym_socks.envs.StochasticCWH4DEnv(),

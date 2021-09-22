@@ -104,7 +104,7 @@ def main():
         T=T,
         constraint_tube=constraint_tube,
         target_tube=target_tube,
-        problem="THT",
+        problem="FHT",
     )
 
     t1 = time()
@@ -154,7 +154,6 @@ def plot_results():
         plt.colorbar()
 
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
-        plt.savefig("results/plot.pgf")
 
         # 3D projection
         fig = plt.figure(figsize=(5 * cm, 5 * cm))
@@ -167,7 +166,6 @@ def plot_results():
         ax.set_zlabel(r"$\Pr$")
 
         plt.savefig("results/plot_3d.png", dpi=300, bbox_inches="tight")
-        plt.savefig("results/plot_3d.pgf")
 
 
 if __name__ == "__main__":

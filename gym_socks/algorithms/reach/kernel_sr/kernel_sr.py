@@ -107,7 +107,7 @@ class KernelSR(AlgorithmInterface):
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
 
-            print(f"Computing for k={t}")
+            # print(f"Computing for k={t}")
 
             Vt_betaXY = np.einsum("i,ij->j", Vt[t + 1, :], betaXY)
             Vt_betaXT = np.einsum("i,ij->j", Vt[t + 1, :], betaXT)
@@ -227,7 +227,7 @@ class KernelMaximalSR(AlgorithmInterface):
         kernel_fn = self.kernel_fn
         l = self.l
 
-        Xt = np.array(T)
+        T = np.array(T)
         num_time_steps = system.num_time_steps - 1
         num_test_points = len(T)
 
@@ -276,39 +276,27 @@ class KernelMaximalSR(AlgorithmInterface):
             np.all(T >= tt_low, axis=1) & np.all(T <= tt_high, axis=1), dtype=np.float32
         )
 
-        # optimize the matrix multiplications we perform at each time step
-        path = ["einsum_path", (0, 1)]
-
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
 
-            print(f"Computing for k={t}")
+            # print(f"Computing for k={t}")
 
             # use optimized multiplications
-            wX = np.einsum("i,ijk->kj", Vt[t + 1, :], betaXY, optimize=path)
-            wT = np.einsum("i,ijk->kj", Vt[t + 1, :], betaXT, optimize=path)
+            wX = np.einsum(
+                "i,ikj->jk", Vt[t + 1, :], betaXY, optimize=["einsum_path", (0, 1)]
+            )
+            wT = np.einsum(
+                "i,ikj->jk", Vt[t + 1, :], betaXT, optimize=["einsum_path", (0, 1)]
+            )
 
             VX = np.max(wX, axis=1)
             VT = np.max(wT, axis=1)
-
-            # # compute value functions
-            # Y_in_safe_set = [
-            #     constraint_tube[t].contains(np.array(point)) for point in Y
-            # ]
-            #
-            # # compute safety probabilities
-            # T_in_safe_set = [
-            #     constraint_tube[t].contains(np.array(point)) for point in T
-            # ]
 
             ct_low = constraint_tube[t].low
             ct_high = constraint_tube[t].high
 
             Y_in_safe_set = np.all(Y >= ct_low, axis=1) & np.all(Y <= ct_high, axis=1)
             T_in_safe_set = np.all(T >= ct_low, axis=1) & np.all(T <= ct_high, axis=1)
-
-            # Y_in_safe_set = constraint_tube[t].contains(Y)
-            # T_in_safe_set = constraint_tube[t].contains(T)
 
             if problem == "THT":
 
@@ -352,8 +340,20 @@ class KernelMaximalSR(AlgorithmInterface):
 class MaximallySafePolicy(BasePolicy):
     """Maximally safe policy."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, kernel_fn=None, l=None, *args, **kwargs):
+        """
+        Initialize the algorithm.
+        """
         super().__init__(*args, **kwargs)
+
+        if kernel_fn is None:
+            kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
+
+        if l is None:
+            l = 1
+
+        self.kernel_fn = kernel_fn
+        self.l = l
 
     def train(
         self,
@@ -393,13 +393,8 @@ class MaximallySafePolicy(BasePolicy):
         if problem != "THT" and problem != "FHT":
             raise ValueError("problem is not in {'THT', 'FHT'}")
 
-        kernel_fn = getattr(self, "kernel_fn", None)
-        if kernel_fn is None:
-            kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
-
-        l = getattr(self, "l", None)
-        if l is None:
-            l = 1
+        kernel_fn = self.kernel_fn
+        l = self.l
 
         num_time_steps = system.num_time_steps - 1
 
@@ -436,7 +431,7 @@ class MaximallySafePolicy(BasePolicy):
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
 
-            print(f"Computing for k={t}")
+            # print(f"Computing for k={t}")
 
             # Vt_betaXY = np.matmul(Vt[t + 1, :], betaXY)
 
