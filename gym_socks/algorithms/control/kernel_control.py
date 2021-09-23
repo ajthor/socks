@@ -36,6 +36,7 @@ class KernelControlFwd(BasePolicy):
         U: "Action sample." = None,
         A: "Admissible action sample." = None,
         cost_fn: "Cost function." = None,
+        constraint_fn: "Constraint function." = None,
     ):
 
         if system is None:
@@ -54,6 +55,10 @@ class KernelControlFwd(BasePolicy):
 
         if cost_fn is None:
             print("Must supply a cost function.")
+            return None
+
+        if constraint_fn is None:
+            print("Must supply a constraint function.")
             return None
 
         kernel_fn = self.kernel_fn
@@ -81,6 +86,7 @@ class KernelControlFwd(BasePolicy):
         self.W = W
 
         self.cost = partial(cost_fn, state=Y)
+        self.constraint = partial(constraint_fn, state=Y)
 
     def __call__(self, time=0, state=None, *args, **kwargs):
 
@@ -94,32 +100,16 @@ class KernelControlFwd(BasePolicy):
 
         CXT = self.kernel_fn(self.X, T)
 
-        # betaXT = np.einsum(
-        #     "ii,ij,ik->ikj", self.W, CXT, self.CUA, optimize=["einsum_path", (0, 1, 2)]
-        # )
-        #
-        # w = np.einsum(
-        #     "i,ijk->kj",
-        #     np.array(self.cost(time=time)),
-        #     betaXT,
-        #     optimize=["einsum_path", (0, 1)],
-        # )
-
-        # w = np.einsum(
-        #     "i,ii,ij,ik->jk",
-        #     np.array(self.cost(time=time), dtype=np.float32),
-        #     self.W,
-        #     CXT,
-        #     self.CUA,
-        #     optimize="greedy",
-        # )
-
         betaXT = self.W @ (CXT * self.CUA)
-        w = np.matmul(np.array(self.cost(time=time), dtype=np.float32), betaXT)
+        C = np.matmul(np.array(self.cost(time=time), dtype=np.float32), betaXT)
+        D = np.matmul(np.array(self.constraint(time=time), dtype=np.float32), betaXT)
 
-        idx = np.argmin(w)
+        satisfies_constraints = np.where(D <= 0)
+        CA = C[satisfies_constraints]
 
-        return np.array(self.A[idx], dtype=np.float32)
+        idx = np.argmin(CA)
+
+        return np.array(self.A[satisfies_constraints][idx], dtype=np.float32)
 
 
 class KernelControlBwd(BasePolicy):
@@ -147,6 +137,7 @@ class KernelControlBwd(BasePolicy):
         U: "Action sample." = None,
         A: "Admissible action sample." = None,
         cost_fn: "Cost function." = None,
+        constraint_fn: "Constraint function." = None,
     ):
 
         if system is None:
@@ -188,13 +179,6 @@ class KernelControlBwd(BasePolicy):
 
         CXY = kernel_fn(X, Y)
 
-        # betaXY = np.einsum(
-        #     "ii,ij,ik->jk", W, CXY, CUA, optimize=["einsum_path", (0, 1), (0, 1)]
-        # )
-
-        # betaXY = np.multiply(CXY, CUA)
-        # betaXY = np.einsum('ii,ik->ik', W, betaXY)
-
         # set up empty array to hold value functions
         Vt = np.zeros((num_time_steps + 1, len(X)), dtype=np.float32)
 
@@ -207,36 +191,16 @@ class KernelControlBwd(BasePolicy):
 
             print(f"Computing for k={t}")
 
-            # w = np.einsum("i,ik->ik", Vt[t + 1, :], betaXY)
-
-            # w = np.einsum('i,ikj->jk', Vt[t + 1, :], betaXY)
-
-            # Z = np.einsum('i,ii->i', Vt[t + 1, :], W)
-
-            # Z = np.matmul(Vt[t + 1, :], W)
-            #
-            # w = np.zeros((len(X), len(A)))
-            # for p in range(len(X)):
-            #     # beta = np.einsum('i,ik->ik', CXY[p], CUA)
-            #     # w[p, :] = np.einsum('i,ik->k', Z, beta)
-            #
-            #     w[p, :] = np.matmul(Z, np.multiply(CXY[p][np.newaxis, :], CUA))
-            #
-            #     # w[p, :] = np.matmul(Z, np.multiply(kernel_fn(X, Y[p].reshape(1, -1)), CUA))
-
             Z = np.matmul(Vt[t + 1, :], W)
 
-            w = np.zeros((len(X), len(A)))
+            C = np.zeros((len(X), len(A)))
 
             for batch in generate_batches(num_elements=len(X), batch_size=5):
-                # w[batch, :] = np.matmul(Z, np.multiply(kernel_fn(X, Y[batch, :]), CUA))
-                # print(f"shape batch {CXY[batch].shape}")
-                # w[batch, :] = np.matmul(Z, np.multiply(kernel_fn(X, Y[batch]), CUA))
-                # print(CXY[batch, :].shape)
-                beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
-                w[batch, :] = np.einsum("i,ijk->jk", Z, beta)
 
-            V = np.min(w, axis=1)
+                beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
+                C[batch, :] = np.einsum("i,ijk->jk", Z, beta)
+
+            V = np.min(C, axis=1)
 
             Vt[t, :] = cost_fn(time=t, state=Y) + V
 
@@ -248,6 +212,7 @@ class KernelControlBwd(BasePolicy):
         self.W = W
 
         self.cost = Vt
+        self.constraint = partial(constraint_fn, state=Y)
 
     def __call__(self, time=0, state=None, *args, **kwargs):
 
@@ -261,31 +226,9 @@ class KernelControlBwd(BasePolicy):
 
         CXT = self.kernel_fn(self.X, T)
 
-        # betaXT = np.einsum(
-        #     "ii,ij,ik->ikj", self.W, CXT, self.CUA, optimize=["einsum_path", (0, 1, 2)]
-        # )
-
-        # w = np.einsum(
-        #     "i,ikj->jk",
-        #     np.array(self.cost[time], dtype=np.float32),
-        #     betaXT,
-        #     optimize=["einsum_path", (0, 1)],
-        # )
-
-        # w = np.einsum(
-        #     "i,ii,ij,ik->jk",
-        #     np.array(self.cost[time], dtype=np.float32),
-        #     self.W,
-        #     CXT,
-        #     self.CUA,
-        #     optimize="greedy",
-        # )
-
         betaXT = self.W @ (CXT * self.CUA)
-        w = np.matmul(np.array(self.cost[time], dtype=np.float32), betaXT)
+        C = np.matmul(np.array(self.cost[time], dtype=np.float32), betaXT)
 
-        idx = np.argmin(w)
-
-        # idx = np.argmin(w, axis=1)
+        idx = np.argmin(C)
 
         return np.array(self.A[idx], dtype=np.float32)

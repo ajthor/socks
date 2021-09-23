@@ -1,5 +1,4 @@
-# from algorithms.algorithm import AlgorithmRunner
-from gym_socks.algorithms.reach.kernel_sr.kernel_sr import KernelSR
+from gym_socks.algorithms.reach.stochastic_reachability import KernelSR
 
 import gym
 import gym_socks

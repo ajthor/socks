@@ -1,1 +1,1 @@
-__all__ = ["kernel_sr", "monte_carlo"]
+__all__ = ["monte_carlo", "random_fourier_features", "stochastic_reachability"]

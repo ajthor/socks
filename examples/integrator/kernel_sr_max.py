@@ -1,4 +1,4 @@
-from gym_socks.algorithms.reach.monte_carlo.monte_carlo import MonteCarloSR
+from gym_socks.algorithms.reach.stochastic_reachability import KernelMaximalSR
 
 import gym
 import gym_socks
@@ -6,9 +6,12 @@ import gym_socks
 import numpy as np
 
 import gym_socks.kernel.metrics as kernel
-from gym_socks.envs.sample import sample
+from gym_socks.envs.sample import sample_action
 from gym_socks.envs.sample import uniform_initial_conditions
 from gym_socks.envs.sample import uniform_grid
+
+from functools import partial
+from sklearn.metrics.pairwise import rbf_kernel
 
 from time import time
 
@@ -30,15 +33,12 @@ import matplotlib.pyplot as plt
 
 def main():
 
-    # the system is a 2D integrator with no action space
+    # the system is a 2D integrator
     system = gym_socks.envs.StochasticNDIntegratorEnv(2)
-
-    def policy(time, state):
-        return [0]
 
     num_time_steps = system.num_time_steps
 
-    # we define the constraint tube such that at the final time step, the system is in a
+    # we define the constraints such that at the final time step, the system is in a
     # box [-0.5, 0.5]^d, but that all prior time steps the system is in a box [-1, 1]^d.
     constraint_tube = [
         gym.spaces.Box(
@@ -52,37 +52,92 @@ def main():
 
     target_tube = [
         gym.spaces.Box(
-            low=-0.5, high=0.5, shape=system.observation_space.shape, dtype=np.float32
+            low=-1, high=1, shape=system.observation_space.shape, dtype=np.float32
         )
         for i in range(num_time_steps)
     ]
+
+    # generate the sample
+    initial_conditions = uniform_initial_conditions(
+        system=system,
+        sample_space=gym.spaces.Box(
+            low=-1.1,
+            high=1.1,
+            shape=system.observation_space.shape,
+            dtype=np.float32,
+        ),
+        n=[25, 25],
+    )
+    S, U = sample_action(
+        system=system,
+        initial_conditions=initial_conditions,
+        action_set=np.linspace(-1.1, 1.1, 5),
+    )
 
     # generate the test points
     T, x = uniform_grid(
         sample_space=gym.spaces.Box(
             low=-1, high=1, shape=system.observation_space.shape, dtype=np.float32
         ),
-        n=[10, 10],
+        n=[50, 50],
     )
 
-    alg = MonteCarloSR()
+    x1 = x[0]
+    x2 = x[1]
+
+    # generate the admissible control actions
+    A = np.linspace(-1, 1, 10)
+    A = A[:, np.newaxis, np.newaxis]
+
+    alg = KernelMaximalSR(kernel_fn=partial(rbf_kernel, gamma=50))
 
     t0 = time()
 
-    Pr = alg.run(
+    # policy = MaximallySafePolicy()
+    # policy.train(
+    #     system=system,
+    #     S=S,
+    #     U=U,
+    #     A=A,
+    #     constraint_tube=constraint_tube,
+    #     target_tube=target_tube,
+    # )
+    #
+    # print(policy(time=0, state=[[0.1, 0.1]]))
+
+    # run the algorithm
+    Pr, _ = alg.run(
         system=system,
+        S=S,
+        U=U,
+        A=A,
         T=T,
         constraint_tube=constraint_tube,
         target_tube=target_tube,
-        num_iterations=50,
+        problem="THT",
     )
 
     t1 = time()
     print(f"Total time: {t1 - t0} s")
 
+    # save the result to NPY file
     with open("results/data.npy", "wb") as f:
         np.save(f, Pr)
 
+    # save the result to CSV file
+    XX, YY = np.meshgrid(x1, x2, indexing="ij")
+    Z = Pr[0].reshape(XX.shape)
+
+    np.savetxt(
+        "results/data.csv",
+        np.column_stack((np.ravel(XX), np.ravel(YY), np.ravel(Z))),
+        header="x, y, pr",
+        comments="# ",
+        delimiter=",",
+        newline="\n",
+    )
+
+    # plot the result
     plot_results()
 
 
@@ -95,8 +150,9 @@ def plot_results():
 
         cm = 1 / 2.54
 
-        x1 = np.round(np.linspace(-1, 1, 10), 3)
-        x2 = np.round(np.linspace(-1, 1, 10), 3)
+        # data
+        x1 = np.round(np.linspace(-1, 1, 50), 3)
+        x2 = np.round(np.linspace(-1, 1, 50), 3)
         XX, YY = np.meshgrid(x1, x2, indexing="ij")
         Z = Pr[0].reshape(XX.shape)
 
@@ -108,6 +164,7 @@ def plot_results():
         plt.colorbar()
 
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
+        plt.savefig("results/plot.pgf")
 
         # 3D projection
         fig = plt.figure(figsize=(5 * cm, 5 * cm))
@@ -120,6 +177,7 @@ def plot_results():
         ax.set_zlabel(r"$\Pr$")
 
         plt.savefig("results/plot_3d.png", dpi=300, bbox_inches="tight")
+        plt.savefig("results/plot_3d.pgf")
 
 
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ from gym_socks.algorithms.algorithm import AlgorithmInterface
 import gym_socks.kernel.metrics as kernel
 from gym_socks.envs.sample import sample_trajectories
 
+from gym_socks.utils import indicator_fn
+
 import gym
 
 import numpy as np
@@ -80,12 +82,7 @@ class MonteCarloSR(AlgorithmInterface):
 
             for t in range(num_time_steps - 1, -1, -1):
 
-                ct_low = constraint_tube[t].low
-                ct_high = constraint_tube[t].high
-
-                S_in_safe_set = np.all(S[:, t, :] >= ct_low, axis=1) & np.all(
-                    S[:, t, :] <= ct_high, axis=1
-                )
+                S_in_safe_set = indicator_fn(S[:, t, :], constraint_tube[t])
 
                 if problem == "THT":
 
@@ -93,15 +90,10 @@ class MonteCarloSR(AlgorithmInterface):
 
                 elif problem == "FHT":
 
-                    tt_low = target_tube[t].low
-                    tt_high = target_tube[t].high
+                    S_in_target_set = indicator_fn(S[:, t, :], target_tube[t])
 
-                    S_in_target_set = np.all(S[:, t, :] >= tt_low, axis=1) & np.all(
-                        S[:, t, :] <= tt_high, axis=1
-                    )
-
-                    Pr[t, :] += np.array(S_in_target_set, dtype=np.float32) + np.array(
-                        S_in_safe_set & ~np.array(S_in_target_set, dtype=bool),
+                    Pr[t, :] += np.array(
+                        S_in_target_set + (S_in_safe_set & ~S_in_target_set),
                         dtype=np.float32,
                     )
 

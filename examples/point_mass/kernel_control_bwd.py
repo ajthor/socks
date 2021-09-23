@@ -1,5 +1,4 @@
-# from algorithms.algorithm import AlgorithmRunner
-from gym_socks.algorithms.control.kernel_control.kernel_control import KernelControlFwd
+from gym_socks.algorithms.control.kernel_control import KernelControlBwd
 
 import gym
 import gym_socks
@@ -100,7 +99,7 @@ def main():
     t0 = time()
 
     # compute policy
-    policy = KernelControlFwd(
+    policy = KernelControlBwd(
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (0.15 ** 2))), l=1 / (len(S) ** 2)
     )
     policy.train(system=system, S=S, U=U, A=A, cost_fn=tracking_cost)

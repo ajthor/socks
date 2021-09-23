@@ -1,5 +1,4 @@
-# from algorithms.algorithm import AlgorithmRunner
-from gym_socks.algorithms.control.kernel_control.kernel_control import KernelControlFwd
+from gym_socks.algorithms.control.kernel_control import KernelControlFwd
 
 import gym
 import gym_socks
@@ -95,13 +94,27 @@ def main():
             2,
         )
 
+    def tracking_constraint(time=0, state=None):
+
+        return np.array(
+            np.all(state[:, :2] >= -0.2, axis=1) & np.all(state[:, :2] <= 0.2, axis=1),
+            dtype=np.float32,
+        )
+
     t0 = time()
 
     # compute policy
     policy = KernelControlFwd(
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (3 ** 2))), l=1 / (len(S) ** 2)
     )
-    policy.train(system=system, S=S, U=U, A=A, cost_fn=tracking_cost)
+    policy.train(
+        system=system,
+        S=S,
+        U=U,
+        A=A,
+        cost_fn=tracking_cost,
+        constraint_fn=tracking_constraint,
+    )
 
     t1 = time()
     print(f"Total time: {t1 - t0} s")
@@ -113,13 +126,7 @@ def main():
     for t in range(num_time_steps):
 
         action = np.array(policy(time=t, state=[system.state]))
-
         obs, reward, done, _ = system.step(action)
-
-        # action = system.action_space.sample()
-        # obs, reward, done, _ = system.step(action)
-
-        # print(obs)
 
         trajectory.append(list(obs))
 
@@ -168,6 +175,9 @@ def plot_results():
             linewidth=0.5,
             linestyle="--",
         )
+
+        # plot constraint box
+        plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.4, fc=None, ec="red"))
 
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
 
