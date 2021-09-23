@@ -1,1 +1,6 @@
-__all__ = ["monte_carlo", "random_fourier_features", "stochastic_reachability"]
+__all__ = [
+    "maximally_safe",
+    "monte_carlo",
+    "random_fourier_features",
+    "stochastic_reachability",
+]

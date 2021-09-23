@@ -102,7 +102,7 @@ def main():
     policy = KernelControlBwd(
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (0.15 ** 2))), l=1 / (len(S) ** 2)
     )
-    policy.train(system=system, S=S, U=U, A=A, cost_fn=tracking_cost)
+    policy.train_batch(system=system, S=S, U=U, A=A, cost_fn=tracking_cost)
 
     t1 = time()
     print(f"Total time: {t1 - t0} s")

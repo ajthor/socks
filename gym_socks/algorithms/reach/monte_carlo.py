@@ -28,7 +28,28 @@ class MonteCarloSR(AlgorithmInterface):
         """
         super().__init__(*args, **kwargs)
 
-        # Global algorithm parameters go here.
+    def _validate_inputs(
+        self,
+        system=None,
+        T=None,
+        policy=None,
+        constraint_tube=None,
+        target_tube=None,
+        problem: "Stochastic reachability problem." = "THT",
+        num_iterations=None,
+    ):
+
+        if system is None:
+            raise ValueError("Must supply a system.")
+
+        if T is None:
+            raise ValueError("Must supply test points.")
+
+        if constraint_tube is None:
+            raise ValueError("Must supply a constrint tube.")
+
+        if target_tube is None:
+            raise ValueError("Must supply target tube.")
 
     def run(
         self,
@@ -41,18 +62,15 @@ class MonteCarloSR(AlgorithmInterface):
         num_iterations=None,
     ):
 
-        if system is None:
-            print("Must supply a system.")
-
-        if T is None:
-            print("Must supply test points.")
-
-        if constraint_tube is None:
-            print("Must supply a constrint tube.")
-
-        if target_tube is None:
-            print("Must supply target tube.")
-            return None
+        self._validate_inputs(
+            system=None,
+            T=None,
+            policy=None,
+            constraint_tube=None,
+            target_tube=None,
+            problem="THT",
+            num_iterations=None,
+        )
 
         if num_iterations is None:
             num_iterations = 100

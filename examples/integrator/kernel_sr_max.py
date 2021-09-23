@@ -93,18 +93,6 @@ def main():
 
     t0 = time()
 
-    # policy = MaximallySafePolicy()
-    # policy.train(
-    #     system=system,
-    #     S=S,
-    #     U=U,
-    #     A=A,
-    #     constraint_tube=constraint_tube,
-    #     target_tube=target_tube,
-    # )
-    #
-    # print(policy(time=0, state=[[0.1, 0.1]]))
-
     # run the algorithm
     Pr, _ = alg.run(
         system=system,

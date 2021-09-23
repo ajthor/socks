@@ -1,4 +1,4 @@
-from gym_socks.algorithms.control.kernel_control import KernelControlFwd
+from gym_socks.algorithms.reach.maximally_safe import MaximallySafePolicy
 
 import gym
 import gym_socks
@@ -39,6 +39,7 @@ def main():
     system.action_space = gym.spaces.Box(
         low=np.array([-0.1, -10.1]),
         high=np.array([1.1, 10.1]),
+        # shape=system.action_space.shape,
         dtype=np.float32,
     )
 
@@ -46,15 +47,46 @@ def main():
     system.time_horizon = 2
     num_time_steps = system.num_time_steps
 
+    constraint_tube = [
+        gym.spaces.Box(
+            low=np.array([-1, -1, -np.inf]),
+            high=np.array([1, 1, np.inf]),
+            dtype=np.float32,
+        )
+        for i in range(num_time_steps)
+    ]
+
+    target_tube = [
+        gym.spaces.Box(
+            low=np.array(
+                [
+                    -1.2 + i * system.sampling_time,
+                    -1.2 + i * system.sampling_time,
+                    -np.inf,
+                ]
+            ),
+            high=np.array(
+                [
+                    -0.8 + i * system.sampling_time,
+                    -0.8 + i * system.sampling_time,
+                    np.inf,
+                ]
+            ),
+            dtype=np.float32,
+        )
+        for i in range(num_time_steps)
+    ]
+
     # generate the sample
     initial_conditions = random_initial_conditions(
         system=system,
         sample_space=gym.spaces.Box(
             low=np.array([-1.1, -1.1, -2 * np.pi]),
             high=np.array([1.1, 1.1, 2 * np.pi]),
+            # shape=system.observation_space.shape,
             dtype=np.float32,
         ),
-        n=1500,
+        n=1800,
     )
     S, U = sample(
         system=system,
@@ -65,6 +97,7 @@ def main():
         sample_space=gym.spaces.Box(
             low=np.array([0, -10]),
             high=np.array([1, 10]),
+            # shape=system.observation_space.shape,
             dtype=np.float32,
         ),
         n=[10, 20],
@@ -72,45 +105,18 @@ def main():
 
     A = np.expand_dims(A, axis=1)
 
-    def tracking_cost(time=0, state=None):
-
-        return np.power(
-            norm(
-                state[:, :2]
-                - np.array(
-                    [
-                        [
-                            -1 + time * system.sampling_time,
-                            -1 + time * system.sampling_time,
-                        ]
-                    ]
-                ),
-                ord=2,
-                axis=1,
-            ),
-            2,
-        )
-
-    def tracking_constraint(time=0, state=None):
-
-        return np.array(
-            np.all(state[:, :2] >= -0.2, axis=1) & np.all(state[:, :2] <= 0.2, axis=1),
-            dtype=np.float32,
-        )
-
     t0 = time()
 
     # compute policy
-    policy = KernelControlFwd(
-        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (3 ** 2))), l=1 / (len(S) ** 2)
-    )
-    policy.train(
+    policy = MaximallySafePolicy(kernel_fn=partial(rbf_kernel, gamma=50))
+    policy.train_batch(
         system=system,
         S=S,
         U=U,
         A=A,
-        cost_fn=tracking_cost,
-        constraint_fn=tracking_constraint,
+        constraint_tube=constraint_tube,
+        target_tube=target_tube,
+        problem="FHT",
     )
 
     t1 = time()
@@ -120,7 +126,7 @@ def main():
     system.state = [-0.8, 0.5, np.pi]
     trajectory = [system.state]
 
-    for t in range(num_time_steps):
+    for t in range(num_time_steps - 1):
 
         action = np.array(policy(time=t, state=[system.state]))
         obs, reward, done, _ = system.step(action)
@@ -174,7 +180,18 @@ def plot_results():
         )
 
         # plot constraint box
-        plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.4, fc="none", ec="red"))
+        # plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.4, fc='none', ec="red"))
+        for i in range(21):
+            plt.gca().add_patch(
+                plt.Rectangle(
+                    (-1.2 + (i * 0.1), -1.2 + (i * 0.1)),
+                    0.4,
+                    0.4,
+                    fc="none",
+                    ec="green",
+                    linewidth=0.25,
+                )
+            )
 
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
 

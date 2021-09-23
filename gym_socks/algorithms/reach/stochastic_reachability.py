@@ -4,8 +4,7 @@ from gym_socks.algorithms.algorithm import AlgorithmInterface
 
 import gym_socks.kernel.metrics as kernel
 
-from gym_socks.utils import normalize, indicator_fn
-from gym_socks.utils.batch import generate_batches
+from gym_socks.utils import normalize, indicator_fn, generate_batches
 
 import numpy as np
 
@@ -41,24 +40,19 @@ class KernelSR(AlgorithmInterface):
     ):
 
         if system is None:
-            print("Must supply a system.")
-            return None
+            raise ValueError("Must supply a system.")
 
         if S is None:
-            print("Must supply a sample.")
-            return None
+            raise ValueError("Must supply a sample.")
 
         if T is None:
-            print("Must supply test points.")
-            return None
+            raise ValueError("Must supply test points.")
 
         if constraint_tube is None:
-            print("Must supply constraint tube.")
-            return None
+            raise ValueError("Must supply constraint tube.")
 
         if target_tube is None:
-            print("Must supply target tube.")
-            return None
+            raise ValueError("Must supply target tube.")
 
         if problem != "THT" and problem != "FHT":
             raise ValueError("problem is not in {'THT', 'FHT'}")
@@ -292,32 +286,25 @@ class KernelMaximalSR(AlgorithmInterface):
     ):
 
         if system is None:
-            print("Must supply a system.")
-            return None
+            raise ValueError("Must supply a system.")
 
         if S is None:
-            print("Must supply a sample.")
-            return None
+            raise ValueError("Must supply a sample.")
 
         if U is None:
-            print("Must supply a sample.")
-            return None
+            raise ValueError("Must supply a sample.")
 
         if A is None:
-            print("Must supply a sample.")
-            return None
+            raise ValueError("Must supply a sample.")
 
         if T is None:
-            print("Must supply test points.")
-            return None
+            raise ValueError("Must supply test points.")
 
         if constraint_tube is None:
-            print("Must supply constraint tube.")
-            return None
+            raise ValueError("Must supply constraint tube.")
 
         if target_tube is None:
-            print("Must supply target tube.")
-            return None
+            raise ValueError("Must supply target tube.")
 
         if problem != "THT" and problem != "FHT":
             raise ValueError("problem is not in {'THT', 'FHT'}")

@@ -54,7 +54,7 @@ def main():
             high=np.array([1.1, 1.1, 2 * np.pi]),
             dtype=np.float32,
         ),
-        n=1800,
+        n=1500,
     )
     S, U = sample(
         system=system,
@@ -104,7 +104,7 @@ def main():
     policy = KernelControlBwd(
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (3 ** 2))), l=1 / (len(S) ** 2)
     )
-    policy.train(
+    policy.train_batch(
         system=system,
         S=S,
         U=U,
@@ -117,7 +117,7 @@ def main():
     print(f"Total time: {t1 - t0} s")
 
     # initial condition
-    system.state = [-0.8, 0, np.pi]
+    system.state = [-0.8, 0.5, np.pi]
     trajectory = [system.state]
 
     for t in range(num_time_steps):
@@ -172,6 +172,9 @@ def plot_results():
             linewidth=0.5,
             linestyle="--",
         )
+
+        # plot constraint box
+        plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.4, fc="none", ec="red"))
 
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
 
