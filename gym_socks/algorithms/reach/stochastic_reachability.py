@@ -12,6 +12,14 @@ import numpy as np
 class KernelSR(AlgorithmInterface):
     """
     Stochastic reachability using kernel distribution embeddings.
+
+    References
+    ----------
+    .. [1] `Model-Free Stochastic Reachability
+            Using Kernel Distribution Embeddings, 2019
+           Adam J. Thorpe, Meeko M. K. Oishi
+           IEEE Control Systems Letters,
+           <https://arxiv.org/abs/1908.00697>`_
     """
 
     def __init__(self, kernel_fn=None, l=None, *args, **kwargs):

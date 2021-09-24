@@ -1,4 +1,4 @@
-from gym_socks.algorithms.control.kernel_control import KernelControlBwd
+from gym_socks.algorithms.control import KernelControlBwd
 
 import gym
 import gym_socks
@@ -110,7 +110,7 @@ def main():
         U=U,
         A=A,
         cost_fn=tracking_cost,
-        constraint_fn=tracking_constraint,
+        # constraint_fn=tracking_constraint,
     )
 
     t1 = time()

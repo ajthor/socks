@@ -1,9 +1,13 @@
 """
 Kernel functions and helper utilities for kernel-based calculations.
 
-Most of the functions are implemented already in sklearn.metrics.pairwise. They are re-implemented here as a lightweight alternative. Most, if not all of the kernel functions defined in sklearn.metrics.pairwise should be compatible with the functions defined here.
+Most of the functions are implemented already in sklearn.metrics.pairwise. They are
+re-implemented here as an alternative, in case sklearn is unavailable. Most, if not all
+of the kernel functions defined in sklearn.metrics.pairwise should be compatible with
+the functions defined here.
 
-The only kernel implemented here is the RBF (Gaussian) kernel. If other kernels or distance metrics are desired, then import the kernel from sklearn.
+The only kernel implemented here is the RBF (Gaussian) kernel. If other kernels or
+distance metrics are desired, then import the kernel from sklearn.
 
 E.g.
 from sklearn.metrics import pairwise_distances
@@ -124,6 +128,26 @@ def rbf_kernel(
     np.exp(K, K)
 
     return K
+
+
+def rbf_kernel_derivative(
+    X,
+    Y=None,
+    sigma: "Bandwidth parameter." = None,
+    distance: "Distance function." = None,
+) -> "D":
+
+    if distance is None:
+        distance = euclidean_distance
+
+    D = distance(X, Y, squared=False)
+
+    if sigma is None:
+        sigma = np.median(D)
+    else:
+        assert sigma > 0, "sigma must be a strictly positive real valued."
+
+    D *= 2 / (2 * (sigma ** 2))
 
 
 def regularized_inverse(

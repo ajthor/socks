@@ -12,6 +12,13 @@ import numpy as np
 class KernelSR_RFF(AlgorithmInterface):
     """
     Stochastic reachability using kernel distribution embeddings (RFF).
+
+    References
+    ----------
+    .. [1] `Approximate Stochastic Reachability for High Dimensional Systems, 2021
+           Adam J. Thorpe, Vignesh Sivaramakrishnan, Meeko M. K. Oishi
+           IEEE American Control Conference,
+           <https://arxiv.org/abs/1910.10818>`_
     """
 
     def __init__(self, kernel_fn=None, l=None, *args, **kwargs):

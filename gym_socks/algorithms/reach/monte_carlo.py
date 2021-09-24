@@ -81,9 +81,6 @@ class MonteCarloSR(AlgorithmInterface):
 
         Pr = np.zeros((num_time_steps + 1, len(T)))
 
-        tt_low = target_tube[num_time_steps].low
-        tt_high = target_tube[num_time_steps].high
-
         for i in range(num_iterations):
 
             print(f"Computing iteration={i}")
@@ -92,10 +89,8 @@ class MonteCarloSR(AlgorithmInterface):
 
             S = np.flip(S, 1)
 
-            Pr[num_time_steps, :] += np.array(
-                np.all(S[:, num_time_steps, :] >= tt_low, axis=1)
-                & np.all(S[:, num_time_steps, :] <= tt_high, axis=1),
-                dtype=np.float32,
+            Pr[num_time_steps, :] += indicator_fn(
+                S[:, num_time_steps, :], target_tube[num_time_steps]
             )
 
             for t in range(num_time_steps - 1, -1, -1):

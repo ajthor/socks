@@ -1,4 +1,4 @@
-from gym_socks.algorithms.control.kernel_control import KernelControlBwd
+from gym_socks.algorithms.control import KernelControlBwd
 
 import gym
 import gym_socks

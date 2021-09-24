@@ -12,6 +12,13 @@ import numpy as np
 class KernelForwardReachClassifier(AlgorithmInterface):
     """
     Stochastic reachability using kernel distribution embeddings (RFF).
+
+    References
+    ----------
+    .. [1] `Learning Approximate Forward Reachable Sets Using Separating Kernels, 2021
+           Adam J. Thorpe, Kendric R. Ortiz, Meeko M. K. Oishi
+           Learning for Dynamics and Control,
+           <https://arxiv.org/abs/2011.09678>`_
     """
 
     def __init__(self, kernel_fn=None, l=None, *args, **kwargs):
