@@ -7,7 +7,7 @@ import numpy as np
 
 import gym_socks.kernel.metrics as kernel
 from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import uniform_initial_conditions
+from gym_socks.envs.sample import random_initial_conditions
 from gym_socks.envs.sample import uniform_grid
 
 from gym_socks.envs.policy import ZeroPolicy
@@ -33,42 +33,43 @@ matplotlib.rcParams.update(
 import matplotlib.pyplot as plt
 
 
+def CWHSafeSet(points):
+
+    return np.array(
+        (np.abs(points[:, 0]) < np.abs(points[:, 1]))
+        & (np.abs(points[:, 2]) <= 0.05)
+        & (np.abs(points[:, 3]) <= 0.05),
+        dtype=bool,
+    )
+
+
 def main():
 
-    # the system is a 2D integrator with no action space
-    system = gym_socks.envs.StochasticNDIntegratorEnv(2)
+    # the system is a 4D CWH system
+    system = gym_socks.envs.StochasticCWH4DEnv()
 
     num_time_steps = system.num_time_steps
 
-    # we define the constraint tube such that at the final time step, the system is in a
-    # box [-0.5, 0.5]^d, but that all prior time steps the system is in a box [-1, 1]^d.
-    constraint_tube = [
-        gym.spaces.Box(
-            low=-1,
-            high=1,
-            shape=system.observation_space.shape,
-            dtype=np.float32,
-        )
-        for i in range(num_time_steps)
-    ]
+    constraint_tube = [CWHSafeSet for i in range(num_time_steps)]
 
     target_tube = [
         gym.spaces.Box(
-            low=-0.5, high=0.5, shape=system.observation_space.shape, dtype=np.float32
+            low=np.array([-0.1, -0.1, -0.01, -0.01]),
+            high=np.array([0.1, 0, 0.01, 0.01]),
+            dtype=np.float32,
         )
         for i in range(num_time_steps)
     ]
 
     # generate the sample
-    initial_conditions = uniform_initial_conditions(
+    initial_conditions = random_initial_conditions(
         system=system,
         sample_space=gym.spaces.Box(
-            low=-1.1,
-            high=1.1,
-            shape=system.observation_space.shape,
+            low=np.array([-1, -1, -0.06, -0.06]),
+            high=np.array([1, 0, 0.06, 0.06]),
             dtype=np.float32,
         ),
-        n=[50, 50],
+        n=10000,
     )
     S, U = sample(
         system=system, initial_conditions=initial_conditions, policy=ZeroPolicy(system)
@@ -77,9 +78,9 @@ def main():
     # generate the test points
     T, x = uniform_grid(
         sample_space=gym.spaces.Box(
-            low=-1, high=1, shape=system.observation_space.shape, dtype=np.float32
+            low=np.array([-1, -1, 0, 0]), high=np.array([1, 0, 0, 0]), dtype=np.float32
         ),
-        n=[100, 100],
+        n=[100, 100, 1, 1],
     )
 
     x1 = x[0]
@@ -136,16 +137,14 @@ def plot_results():
         x1 = np.round(np.linspace(-1, 1, 100), 3)
         x2 = np.round(np.linspace(-1, 1, 100), 3)
         XX, YY = np.meshgrid(x1, x2, indexing="ij")
-        Z = Pr[0].reshape(XX.shape)
+        Z = Pr[-2].reshape(XX.shape)
 
         # flat color map
-        fig = plt.figure(figsize=(3.33, 1.5))
+        fig = plt.figure(figsize=(5 * cm, 5 * cm))
         ax = fig.add_subplot(111)
 
         plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")
         plt.colorbar()
-
-        # fig.tight_layout()
 
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
 
@@ -153,14 +152,11 @@ def plot_results():
         fig = plt.figure(figsize=(5 * cm, 5 * cm))
         ax = fig.add_subplot(111, projection="3d")
 
-        ax.tick_params(direction="out", pad=-1)
         ax.plot_surface(XX, YY, Z, cmap=colormap, linewidth=0, antialiased=False)
         ax.set_zlim(0, 1)
         ax.set_xlabel(r"$x_1$")
         ax.set_ylabel(r"$x_2$")
         ax.set_zlabel(r"$\Pr$")
-
-        fig.tight_layout()
 
         plt.savefig("results/plot_3d.png", dpi=300, bbox_inches="tight")
 

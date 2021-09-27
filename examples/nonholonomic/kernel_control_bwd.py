@@ -157,7 +157,7 @@ def plot_results():
         plt.plot(
             target_trajectory[:, 0],
             target_trajectory[:, 1],
-            marker="X",
+            marker="x",
             markersize=2.5,
             linewidth=0.5,
             linestyle="--",

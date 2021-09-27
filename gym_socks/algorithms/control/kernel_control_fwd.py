@@ -130,6 +130,10 @@ class KernelControlFwd(BasePolicy):
             satisfies_constraints = np.where(D <= 0)
             CA = C[satisfies_constraints]
 
+            if CA.size == 0:
+                idx = np.argmin(C)
+                return np.array(self.A[idx], dtype=np.float32)
+
             idx = np.argmin(CA)
             return np.array(self.A[satisfies_constraints][idx], dtype=np.float32)
 

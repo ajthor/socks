@@ -1,4 +1,4 @@
-from gym_socks.algorithms.control import KernelControlFwd
+from gym_socks.algorithms.control import KernelControlBwd
 
 import gym
 import gym_socks
@@ -32,42 +32,48 @@ matplotlib.rcParams.update(
 import matplotlib.pyplot as plt
 
 
-def main():
+def CWHSafeSet(points):
 
-    system = gym_socks.envs.StochasticNonholonomicVehicleEnv()
-
-    system.action_space = gym.spaces.Box(
-        low=np.array([-0.1, -10.1]),
-        high=np.array([1.1, 10.1]),
-        dtype=np.float32,
+    return np.array(
+        (np.abs(points[:, 0]) < np.abs(points[:, 1]))
+        & (np.abs(points[:, 2]) <= 0.05)
+        & (np.abs(points[:, 3]) <= 0.05),
+        dtype=bool,
     )
 
-    system.sampling_time = 0.1
-    system.time_horizon = 2
+
+def main():
+
+    # the system is a 4D CWH system
+    system = gym_socks.envs.StochasticCWH4DEnv()
+
+    system.action_space = gym.spaces.Box(
+        low=-0.1, high=0.1, shape=system.action_space.shape, dtype=np.float32
+    )
+
+    system.time_horizon = 100
     num_time_steps = system.num_time_steps
 
     # generate the sample
     initial_conditions = random_initial_conditions(
         system=system,
         sample_space=gym.spaces.Box(
-            low=np.array([-1.1, -1.1, -2 * np.pi]),
-            high=np.array([1.1, 1.1, 2 * np.pi]),
+            low=np.array([-1.1, -1.1, -0.06, -0.06]),
+            high=np.array([1.1, 0.1, 0.06, 0.06]),
             dtype=np.float32,
         ),
-        n=1500,
+        n=2000,
     )
-    S, U = sample(
-        system=system,
-        initial_conditions=initial_conditions,
-    )
+    S, U = sample(system=system, initial_conditions=initial_conditions)
 
     A, _ = uniform_grid(
         sample_space=gym.spaces.Box(
-            low=np.array([0, -10]),
-            high=np.array([1, 10]),
+            low=-0.1,
+            high=0.1,
+            shape=system.action_space.shape,
             dtype=np.float32,
         ),
-        n=[10, 20],
+        n=[25, 25],
     )
 
     A = np.expand_dims(A, axis=1)
@@ -76,12 +82,14 @@ def main():
 
         return np.power(
             norm(
-                state[:, :2]
+                state
                 - np.array(
                     [
                         [
-                            -1 + time * system.sampling_time,
-                            -1 + time * system.sampling_time,
+                            0,
+                            0,
+                            0,
+                            0,
                         ]
                     ]
                 ),
@@ -93,18 +101,19 @@ def main():
 
     def tracking_constraint(time=0, state=None):
 
-        return np.array(
-            np.all(state[:, :2] >= -0.2, axis=1) & np.all(state[:, :2] <= 0.2, axis=1),
-            dtype=np.float32,
-        )
+        return CWHSafeSet(state)
+        # return np.array(
+        #     np.all(state[:, :2] >= -0.2, axis=1) & np.all(state[:, :2] <= 0.2, axis=1),
+        #     dtype=np.float32,
+        # )
 
     t0 = time()
 
     # compute policy
-    policy = KernelControlFwd(
-        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (3 ** 2))), l=1 / (len(S) ** 2)
+    policy = KernelControlBwd(
+        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (0.35 ** 2))), l=1 / (len(S) ** 2)
     )
-    policy.train(
+    policy.train_batch(
         system=system,
         S=S,
         U=U,
@@ -117,7 +126,7 @@ def main():
     print(f"Total time: {t1 - t0} s")
 
     # initial condition
-    system.state = [-0.8, 0.5, np.pi]
+    system.state = [-0.7, -0.75, 0, 0]
     trajectory = [system.state]
 
     for t in range(num_time_steps):
@@ -152,16 +161,16 @@ def plot_results():
         fig = plt.figure(figsize=(5 * cm, 5 * cm))
         ax = fig.add_subplot(111)
 
-        # plot target trajectory
-        target_trajectory = np.array([[-1 + i * 0.1, -1 + i * 0.1] for i in range(21)])
-        plt.plot(
-            target_trajectory[:, 0],
-            target_trajectory[:, 1],
-            marker="x",
-            markersize=2.5,
-            linewidth=0.5,
-            linestyle="--",
-        )
+        # # plot target trajectory
+        # target_trajectory = np.array([[-1 + i * 0.1, -1 + i * 0.1] for i in range(21)])
+        # plt.plot(
+        #     target_trajectory[:, 0],
+        #     target_trajectory[:, 1],
+        #     marker="X",
+        #     markersize=2.5,
+        #     linewidth=0.5,
+        #     linestyle="--",
+        # )
 
         # plot generated trajectory
         plt.plot(
@@ -174,7 +183,19 @@ def plot_results():
         )
 
         # plot constraint box
-        plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.4, fc="none", ec="red"))
+        verts = [(-1, -1), (1, -1), (0, 0), (-1, -1)]
+        codes = [
+            matplotlib.path.Path.MOVETO,
+            matplotlib.path.Path.LINETO,
+            matplotlib.path.Path.LINETO,
+            matplotlib.path.Path.CLOSEPOLY,
+        ]
+
+        path = matplotlib.path.Path(verts, codes)
+        plt.gca().add_patch(matplotlib.patches.PathPatch(path, fc="none", ec="green", lw=0.1))
+
+        ax.set_xlim(-1.1, 1.1)
+        ax.set_ylim(-1.1, 0.1)
 
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
 
