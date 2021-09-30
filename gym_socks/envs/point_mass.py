@@ -1,6 +1,8 @@
 from gym_socks.envs.dynamical_system import DynamicalSystem
 from gym_socks.envs.dynamical_system import StochasticMixin
 
+import gym
+
 import numpy as np
 
 
@@ -11,7 +13,16 @@ class NDPointMassEnv(DynamicalSystem):
 
     def __init__(self, dim, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=dim, action_dim=dim, *args, **kwargs)
+        super().__init__(
+            observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            ),
+            action_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
     def dynamics(self, t, x, u):
         """Dynamics for the system."""
@@ -31,7 +42,14 @@ class StochasticNDPointMassEnv(StochasticMixin, NDPointMassEnv):
 
     def __init__(self, dim, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(dim=dim, disturbance_dim=dim, *args, **kwargs)
+        super().__init__(
+            dim=dim,
+            disturbance_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
     def dynamics(self, t, x, u, w):
         """Dynamics for the system."""

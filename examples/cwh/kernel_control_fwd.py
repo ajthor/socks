@@ -32,34 +32,27 @@ matplotlib.rcParams.update(
 import matplotlib.pyplot as plt
 
 
-def CWHSafeSet(points):
-
-    # return np.array(
-    #     (np.abs(points[:, 0]) < np.abs(points[:, 1]))
-    #     & (np.abs(points[:, 2]) <= 0.05)
-    #     & (np.abs(points[:, 3]) <= 0.05),
-    #     dtype=bool,
-    # )
-    return np.array(
-        (np.abs(points[:, 0]) < np.abs(points[:, 1]))
-        & (np.abs(points[:, 1]) >= -1),
-        dtype=bool,
-    )
-
-
 def main():
 
-    # the system is a 4D CWH system
+    # Define a 4D CWH system.
     system = gym_socks.envs.StochasticCWH4DEnv()
 
+    # Set the action space such that the control actions are bounded by -0.1 and 0.1.
     system.action_space = gym.spaces.Box(
         low=-0.1, high=0.1, shape=system.action_space.shape, dtype=np.float32
     )
 
+    # We define a short time horizon for the problem. The sampling time is Ts = 20s.
     system.time_horizon = 100
     num_time_steps = system.num_time_steps
 
-    # generate the sample
+    """
+    Generate the sample.
+
+    For this example, we choose points randomly from the region of interest. We choose
+    points which have velocity and position just outside of the safe set region, to
+    ensure we have examples of infeasible states.
+    """
     initial_conditions = random_initial_conditions(
         system=system,
         sample_space=gym.spaces.Box(
@@ -71,6 +64,7 @@ def main():
     )
     S, U = sample(system=system, initial_conditions=initial_conditions)
 
+    # Generate a sample of admissible control actions.
     A, _ = uniform_grid(
         sample_space=gym.spaces.Box(
             low=-0.1,
@@ -83,8 +77,14 @@ def main():
 
     A = np.expand_dims(A, axis=1)
 
-    def tracking_cost(time=0, state=None):
+    # Define the cost and constraint functions.
 
+    def cost_fn(time=0, state=None):
+        """
+        The cost is defined such that we seek to minimize the distance from the system
+        to the origin. This would indicate a fully "docked" spacecraft with zero
+        terminal velocity.
+        """
         return np.power(
             norm(
                 state
@@ -104,17 +104,24 @@ def main():
             2,
         )
 
-    def tracking_constraint(time=0, state=None):
+    def constraint_fn(time=0, state=None):
+        """
+        The CWH constraint function is defined as the line of sight (LOS) cone from the
+        spacecraft, where the velocity components are sufficiently small.
+        """
 
-        return np.array(CWHSafeSet(state), dtype=np.float32)
-        # return np.array(
-        #     np.all(state[:, :2] >= -0.2, axis=1) & np.all(state[:, :2] <= 0.2, axis=1),
-        #     dtype=np.float32,
-        # )
+        return np.array(
+            (np.abs(state[:, 0]) < np.abs(state[:, 1]))
+            & (np.abs(state[:, 2]) <= 0.05)
+            & (np.abs(state[:, 3]) <= 0.05),
+            dtype=bool,
+        )
+
+    # Run the algorithm.
 
     t0 = time()
 
-    # compute policy
+    # Compute policy.
     policy = KernelControlFwd(
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (0.25 ** 2))), l=1 / (len(S) ** 2)
     )
@@ -123,12 +130,17 @@ def main():
         S=S,
         U=U,
         A=A,
-        cost_fn=tracking_cost,
-        constraint_fn=tracking_constraint,
+        cost_fn=cost_fn,
+        constraint_fn=constraint_fn,
     )
 
     t1 = time()
     print(f"Total time: {t1 - t0} s")
+
+    """
+    We now simulate the system under the computed policy from a pre-defined initial
+    condition.
+    """
 
     # initial condition
     system.state = [-0.7, -0.75, 0, 0]
@@ -162,20 +174,8 @@ def plot_results():
 
         cm = 1 / 2.54
 
-        # flat color map
-        fig = plt.figure(figsize=(5 * cm, 5 * cm))
+        fig = plt.figure(figsize=(3.33, 3.33))
         ax = fig.add_subplot(111)
-
-        # # plot target trajectory
-        # target_trajectory = np.array([[-1 + i * 0.1, -1 + i * 0.1] for i in range(21)])
-        # plt.plot(
-        #     target_trajectory[:, 0],
-        #     target_trajectory[:, 1],
-        #     marker="X",
-        #     markersize=2.5,
-        #     linewidth=0.5,
-        #     linestyle="--",
-        # )
 
         # plot generated trajectory
         plt.plot(
@@ -197,7 +197,9 @@ def plot_results():
         ]
 
         path = matplotlib.path.Path(verts, codes)
-        plt.gca().add_patch(matplotlib.patches.PathPatch(path, fc="none", ec="green", lw=0.1))
+        plt.gca().add_patch(
+            matplotlib.patches.PathPatch(path, fc="none", ec="green", lw=0.1)
+        )
 
         ax.set_xlim(-1.1, 1.1)
         ax.set_ylim(-1.1, 0.1)

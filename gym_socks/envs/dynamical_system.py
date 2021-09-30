@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import warnings
 
 import gym
 from gym.utils import seeding
@@ -62,7 +63,9 @@ class DynamicalSystem(gym.Env, ABC):
 
     metadata = {"render.modes": ["human"]}
 
-    def __init__(self, state_dim, action_dim, *args, **kwargs):
+    def __init__(
+        self, observation_space=None, action_space=None, seed=None, *args, **kwargs
+    ):
         """
         Initialize the dynamical system.
 
@@ -72,32 +75,73 @@ class DynamicalSystem(gym.Env, ABC):
         env.sampling_time = 0.25
         """
 
+        if observation_space is not None:
+            self.observation_space = observation_space
+        else:
+            raise ValueError("observation space must be provided")
+
+        if action_space is not None:
+            self.action_space = action_space
+        else:
+            raise ValueError("action space must be provided")
+
         # time parameters
-        self.time_horizon = 1
-        self.sampling_time = 0.1
-
-        self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
-        )
-
-        self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(action_dim,), dtype=np.float32
-        )
-
-        self.seed()
-
-        self.state_dim = state_dim
-        self.action_dim = action_dim
+        self._time_horizon = 1
+        self._sampling_time = 0.1
 
         self.state = None
 
+        self._seed = None
+        self._np_random = None
+        if seed is not None:
+            self._seed = self.seed(seed)
+
     @property
-    def num_time_steps(self):
-        return int(self.time_horizon // self.sampling_time)
+    def np_random(self):
+        if self._np_random is None:
+            self._seed = self.seed()
+
+        return self._np_random
 
     def seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
+        self._np_random, seed = seeding.np_random(seed)
         return [seed]
+
+    @property
+    def sampling_time(self):
+        return self._sampling_time
+
+    @sampling_time.setter
+    def sampling_time(self, value):
+        if value > self._time_horizon:
+            warnings.warn(
+                f"Sampling time {value} is less than time horizon {self._time_horizon}."
+            )
+        self._sampling_time = value
+
+    @property
+    def time_horizon(self):
+        return self._time_horizon
+
+    @time_horizon.setter
+    def time_horizon(self, value):
+        if value < self._sampling_time:
+            warnings.warn(
+                f"Sampling time {value} is less than time horizon {self._time_horizon}."
+            )
+        self._time_horizon = value
+
+    @property
+    def num_time_steps(self):
+        return int(self._time_horizon // self._sampling_time)
+
+    @property
+    def state_dim(self):
+        return self.observation_space.shape
+
+    @property
+    def action_dim(self):
+        return self.action_space.shape
 
     def step(self, action):
         """
@@ -109,13 +153,17 @@ class DynamicalSystem(gym.Env, ABC):
         -------
 
         obs : ndarray
-            The observation vector. If the system is fully observable, this is the state of the system at the next time step.
+            The observation vector. If the system is fully observable, this is the state
+            of the system at the next time step.
 
-        reward : float32
-            The reward (cost) obtained by the system for taking action u in state x and transitioning to state y.
+        cost : float32
+            The cost (reward) obtained by the system for taking action u in state x and
+            transitioning to state y.
 
         done : bool
-            Flag to indicate the simulation has terminated. Usually toggled by guard conditions, which terminates the simulation if the system violates certain operating constraints.
+            Flag to indicate the simulation has terminated. Usually toggled by guard
+            conditions, which terminates the simulation if the system violates certain
+            operating constraints.
 
         info : {}
             Extra information.
@@ -129,17 +177,15 @@ class DynamicalSystem(gym.Env, ABC):
         )
         *_, self.state = sol.y.T
 
-        reward = self.cost(action)
+        cost = self.cost(action)
 
         done = False
         info = {}
 
-        return np.array(self.state), reward, done, info
+        return np.array(self.state), cost, done, info
 
     def reset(self):
-        """
-        Resets the system to a random initial condition.
-        """
+        """Resets the system to a random initial condition."""
 
         self.state = self.np_random.uniform(
             low=0, high=1, size=self.observation_space.shape
@@ -148,16 +194,12 @@ class DynamicalSystem(gym.Env, ABC):
         return np.array(self.state)
 
     def render(self, mode="human"):
-        """
-        Render function for displaying the system graphically.
-        """
-        ...
+        """Render function for displaying the system graphically."""
+        raise NotImplementedError
 
     def close(self):
-        """
-        Deconstructor method.
-        """
-        ...
+        """Deconstructor method."""
+        raise NotImplementedError
 
     @abstractmethod
     def dynamics(
@@ -168,7 +210,7 @@ class DynamicalSystem(gym.Env, ABC):
 
         Required to be overloaded by subclasses.
         """
-        ...
+        raise NotImplementedError
 
     def cost(self, u: "Input vector.") -> "R":
         """
@@ -212,7 +254,7 @@ class StochasticMixin(DynamicalSystem):
 
     """
 
-    def __init__(self, disturbance_dim, *args, **kwargs):
+    def __init__(self, disturbance_space=None, *args, **kwargs):
         """
         Initialize the dynamical system.
 
@@ -224,11 +266,11 @@ class StochasticMixin(DynamicalSystem):
 
         super().__init__(*args, **kwargs)
 
-        self.disturbance_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(disturbance_dim,), dtype=np.float32
-        )
-
-        self.disturbance_dim = disturbance_dim
+        if disturbance_space is not None:
+            self.disturbance_space = disturbance_space
+            self.disturbance_dim = self.disturbance_space.shape
+        else:
+            raise ValueError("disturbance space must be provided")
 
     def step(self, action):
         """
@@ -240,13 +282,17 @@ class StochasticMixin(DynamicalSystem):
         -------
 
         obs : ndarray
-            The observation vector. If the system is fully observable, this is the state of the system at the next time step.
+            The observation vector. If the system is fully observable, this is the state
+            of the system at the next time step.
 
-        reward : float32
-            The reward (cost) obtained by the system for taking action u in state x and transitioning to state y.
+        cost : float32
+            The cost (reward) obtained by the system for taking action u in state x and
+            transitioning to state y.
 
         done : bool
-            Flag to indicate the simulation has terminated. Usually toggled by guard conditions, which terminates the simulation if the system violates certain operating constraints.
+            Flag to indicate the simulation has terminated. Usually toggled by guard
+            conditions, which terminates the simulation if the system violates certain
+            operating constraints.
 
         info : {}
             Extra information.
@@ -269,12 +315,12 @@ class StochasticMixin(DynamicalSystem):
         )
         *_, self.state = sol.y.T
 
-        reward = self.cost(action)
+        cost = self.cost(action)
 
         done = False
         info = {}
 
-        return np.array(self.state), reward, done, info
+        return np.array(self.state), cost, done, info
 
     @abstractmethod
     def dynamics(
@@ -289,7 +335,7 @@ class StochasticMixin(DynamicalSystem):
 
         Required to be overloaded by subclasses.
         """
-        ...
+        raise NotImplementedError
 
     def sample_disturbance(self):
         """

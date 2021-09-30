@@ -6,7 +6,7 @@ import gym
 import numpy as np
 
 
-class CWHBase(DynamicalSystem):
+class CWHBase(object):
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
         super().__init__(*args, **kwargs)
@@ -22,15 +22,6 @@ class CWHBase(DynamicalSystem):
 
         self.compute_mu()
         self.compute_angular_velocity()
-
-    # @property
-    # def sampling_time(self):
-    #     return self._sampling_time
-    #
-    # @sampling_time.setter
-    # def sampling_time(self, value):
-    #     self._sampling_time = value
-    #     self.compute_angular_velocity()
 
     @property
     def orbital_radius(self):
@@ -84,17 +75,22 @@ class CWHBase(DynamicalSystem):
         ...
 
 
-class CWH4DEnv(CWHBase):
+class CWH4DEnv(CWHBase, DynamicalSystem):
     """
     4D Clohessy-Wiltshire-Hill system.
     """
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=4, action_dim=2, *args, **kwargs)
-
-        self.action_space = gym.spaces.Box(
-            low=-0.01, high=0.01, shape=(2,), dtype=np.float32
+        super().__init__(
+            observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+            ),
+            action_space=gym.spaces.Box(
+                low=-0.01, high=0.01, shape=(2,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
         )
 
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
@@ -209,17 +205,22 @@ class CWH4DEnv(CWHBase):
         return np.array(self.state)
 
 
-class CWH6DEnv(CWHBase):
+class CWH6DEnv(CWHBase, DynamicalSystem):
     """
     6D Clohessy-Wiltshire-Hill system.
     """
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=6, action_dim=3, *args, **kwargs)
-
-        self.action_space = gym.spaces.Box(
-            low=-0.01, high=0.01, shape=(3,), dtype=np.float32
+        super().__init__(
+            observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+            ),
+            action_space=gym.spaces.Box(
+                low=-0.01, high=0.01, shape=(3,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
         )
 
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
@@ -366,7 +367,13 @@ class StochasticCWH4DEnv(StochasticMixin, CWH4DEnv):
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(disturbance_dim=4, *args, **kwargs)
+        super().__init__(
+            disturbance_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
     def step(self, action):
         err_msg = "%r (%s) invalid" % (action, type(action))
@@ -428,7 +435,13 @@ class StochasticCWH6DEnv(StochasticMixin, CWH6DEnv):
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(disturbance_dim=6, *args, **kwargs)
+        super().__init__(
+            disturbance_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
     def step(self, action):
         err_msg = "%r (%s) invalid" % (action, type(action))

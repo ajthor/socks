@@ -1,6 +1,8 @@
 from gym_socks.envs.dynamical_system import DynamicalSystem
 from gym_socks.envs.dynamical_system import StochasticMixin
 
+import gym
+
 import numpy as np
 from scipy.integrate import solve_ivp
 
@@ -12,7 +14,40 @@ class NonholonomicVehicleEnv(DynamicalSystem):
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=3, action_dim=2, *args, **kwargs)
+        super().__init__(
+            observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+            ),
+            action_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
+
+    def step(self, action):
+        err_msg = "%r (%s) invalid" % (action, type(action))
+        assert self.action_space.contains(action), err_msg
+
+        # solve the initial value problem
+        sol = solve_ivp(
+            self.dynamics,
+            [0, self.sampling_time],
+            self.state,
+            args=(action,),
+        )
+        *_, self.state = sol.y.T
+
+        # correct the angle
+        if np.abs(self.state[2]) >= 2 * np.pi:
+            self.state[2] %= 2 * np.pi
+
+        reward = self.cost(action)
+
+        done = False
+        info = {}
+
+        return np.array(self.state), reward, done, info
 
     def dynamics(self, t, x, u):
         """Dynamics for the system."""
@@ -40,7 +75,13 @@ class StochasticNonholonomicVehicleEnv(StochasticMixin, NonholonomicVehicleEnv):
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(disturbance_dim=3, *args, **kwargs)
+        super().__init__(
+            disturbance_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
     def step(self, action):
         err_msg = "%r (%s) invalid" % (action, type(action))
@@ -63,9 +104,6 @@ class StochasticNonholonomicVehicleEnv(StochasticMixin, NonholonomicVehicleEnv):
         # correct the angle
         if np.abs(self.state[2]) >= 2 * np.pi:
             self.state[2] %= 2 * np.pi
-            # self.state[2] = self.state[2] % 2 * np.pi
-        # if self.state[2] < 0:
-        #     self.state[2] += 2 * np.pi
 
         reward = self.cost(action)
 

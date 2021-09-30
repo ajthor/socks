@@ -35,6 +35,9 @@ def indicator_fn(points, set):
 
 
 def generate_batches(num_elements=1, batch_size=1):
+    """
+    Generate batches.
+    """
 
     start = 0
 
@@ -46,4 +49,4 @@ def generate_batches(num_elements=1, batch_size=1):
         start = end
 
     if start < num_elements:
-        yield slice(start, n)
+        yield slice(start, num_elements)

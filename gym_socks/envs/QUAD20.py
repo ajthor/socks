@@ -6,10 +6,12 @@ https://easychair.org/publications/open/nrdD
 from gym_socks.envs.dynamical_system import DynamicalSystem
 from gym_socks.envs.dynamical_system import StochasticMixin
 
+import gym
+
 import numpy as np
 
 
-class QuadrotorBase(DynamicalSystem):
+class QuadrotorBase(object):
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
         super().__init__(*args, **kwargs)
@@ -83,14 +85,23 @@ class QuadrotorBase(DynamicalSystem):
         ) * self.rotor_mass
 
 
-class QuadrotorEnv(QuadrotorBase):
+class QuadrotorEnv(QuadrotorBase, DynamicalSystem):
     """
     Quadrotor system.
     """
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=12, action_dim=3, *args, **kwargs)
+        super().__init__(
+            observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+            ),
+            action_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
     def dynamics(self, t, x, u):
         """Dynamics for the system."""
@@ -153,7 +164,13 @@ class StochasticQuadrotorEnv(StochasticMixin, QuadrotorEnv):
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(disturbance_dim=12, *args, **kwargs)
+        super().__init__(
+            disturbance_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
     def dynamics(self, t, x, u, w):
         """Dynamics for the system."""

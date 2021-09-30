@@ -18,179 +18,102 @@ sklearn_kernel_list = [linear_kernel, polynomial_kernel, rbf_kernel, laplacian_k
 
 class TestEuclideanDistance(unittest.TestCase):
     def test_euclidean_distance(cls):
-        """
-        Test that euclidean distance computes correctly.
-        """
+        """Test that euclidean distance computes correctly."""
 
-        X = np.array([[1, 1], [1, 1]])
-        Y = np.array([[2, 2], [3, 3]])
+        X = np.arange(4).reshape((2, 2))
+        Y = np.arange(4).reshape((2, 2))
+
+        groundTruth = np.array([[0.0, 8.0], [8.0, 0.0]], dtype=np.float32)
+
+        distance = gym_socks.kernel.metrics.euclidean_distance(Y, squared=True)
+        cls.assertTrue(np.allclose(distance, groundTruth))
 
         distance = gym_socks.kernel.metrics.euclidean_distance(X, Y, squared=True)
-
-        groundTruth = np.array([[2, 8], [2, 8]], dtype=np.float32)
-
-        # tests if the two arrays are equivalent, within tolerance
-        cls.assertTrue(
-            np.allclose(distance, groundTruth),
-            "Pairwise Euclidean distance matrix should match known ground truth.",
-        )
+        cls.assertTrue(np.allclose(distance, groundTruth))
 
 
 class TestRBFKernel(unittest.TestCase):
     def test_rbf_kernel_same_size(cls):
-        """
-        Test that RBF kernel computes correctly with same size inputs.
-        """
+        """Test that RBF kernel computes correctly with same size inputs."""
 
-        X = np.array([[1, 1], [1, 1]])
-        Y = np.array([[2, 2], [3, 3]])
-
-        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, sigma=1)
+        Y = np.arange(4).reshape((2, 2))
 
         groundTruth = np.array(
-            [
-                [0.367879441171442, 0.018315638888734],
-                [0.367879441171442, 0.018315638888734],
-            ],
+            [[1.0, 0.77880078], [0.77880078, 1.0]],
             dtype=np.float32,
         )
 
-        # tests if the two arrays are equivalent, within tolerance
-        cls.assertTrue(
-            np.allclose(K, groundTruth),
-            "Kernel matrix should match known ground truth.",
-        )
+        K = gym_socks.kernel.metrics.rbf_kernel(Y)
+        cls.assertTrue(np.allclose(K, groundTruth))
 
-        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y, sigma=1)
-
-        groundTruth = np.array(
-            [
-                [
-                    [1.000000000000000, 0.367879441171442],
-                    [0.367879441171442, 1.000000000000000],
-                ],
-            ],
-            dtype=np.float32,
-        )
-
-        # tests if the two arrays are equivalent, within tolerance
-        cls.assertTrue(
-            np.allclose(K, groundTruth),
-            "Kernel matrix should match known ground truth.",
-        )
+        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y)
+        cls.assertTrue(np.allclose(K, groundTruth))
 
     def test_rbf_kernel_different_size(cls):
-        """
-        Test that RBF kernel computes correctly with different-sized inputs.
-        """
+        """Test that RBF kernel computes correctly with different-sized inputs."""
 
-        X = np.array([[1, 1], [1, 1]])
-        Y = np.array([[1, 1], [2, 2], [3, 3]])
-
-        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, sigma=1)
+        X = np.arange(4).reshape((2, 2))
+        Y = np.arange(6).reshape((3, 2))
 
         groundTruth = np.array(
             [
                 [
-                    [1.0, 0.367879441171442, 0.018315638888734],
-                    [1.0, 0.367879441171442, 0.018315638888734],
+                    [1.0, 0.93941306, 0.77880078],
+                    [0.93941306, 1.0, 0.93941306],
+                    [0.77880078, 0.93941306, 1.0],
                 ],
             ],
             dtype=np.float32,
         )
 
-        # tests if the two arrays are equivalent, within tolerance
-        cls.assertTrue(
-            np.allclose(K, groundTruth),
-            "Kernel matrix should match known ground truth.",
-        )
+        K = gym_socks.kernel.metrics.rbf_kernel(Y)
+        cls.assertTrue(np.allclose(K, groundTruth))
 
-        X = np.array([[1, 1], [1, 1]])
-        Y = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
-
-        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, sigma=1)
+        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y)
+        cls.assertTrue(np.allclose(K, groundTruth))
 
         groundTruth = np.array(
-            [
-                [
-                    [1.0, 0.367879441171442, 0.018315638888734],
-                    [1.0, 0.367879441171442, 0.018315638888734],
-                ],
-            ],
+            [[1.0, 0.93941306, 0.77880078], [0.93941306, 1.0, 0.93941306]],
             dtype=np.float32,
         )
 
-        # tests if the two arrays are equivalent, within tolerance
-        cls.assertTrue(
-            np.allclose(K, groundTruth),
-            "Kernel matrix should match known ground truth.",
-        )
+        K = gym_socks.kernel.metrics.rbf_kernel(X, Y)
+        cls.assertTrue(np.allclose(K, groundTruth))
 
     def test_close_to_sklearn(cls):
-        """
-        Assert that result is close to sklearn.
-        """
+        """Assert that result is close to sklearn."""
 
-        X = np.array([[1, 1], [1, 1]])
-        Y = np.array([[2, 2], [3, 3]])
+        Y = np.arange(4).reshape((2, 2))
 
-        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, sigma=1)
+        D = gym_socks.kernel.metrics.euclidean_distance(Y, squared=True)
 
-        groundTruth = rbf_kernel(X, Y, gamma=1 / 2)
+        groundTruth = rbf_kernel(Y, gamma=1 / (2 * np.median(D) ** 2))
 
-        # tests if the two arrays are equivalent, within tolerance
-        cls.assertTrue(
-            np.allclose(K, groundTruth),
-            "Kernel matrix should match known ground truth.",
-        )
+        K = gym_socks.kernel.metrics.rbf_kernel(Y)
+        cls.assertTrue(np.allclose(K, groundTruth))
+
+        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y)
+        cls.assertTrue(np.allclose(K, groundTruth))
 
 
 class TestRegularizedInverse(unittest.TestCase):
     def test_regularized_inverse(cls):
-        """
-        Test that regularized inverse computes correctly.
-        """
+        """Test that regularized inverse computes correctly."""
 
-        Y = np.array([[2, 2], [3, 3]])
-
-        kernel_fn = partial(gym_socks.kernel.metrics.rbf_kernel, sigma=1)
-
-        W = gym_socks.kernel.metrics.regularized_inverse(Y, Y, kernel_fn=kernel_fn)
+        Y = np.arange(4).reshape((2, 2))
 
         groundTruth = np.array(
-            [
-                [
-                    [0.709332306019573, -0.173965848228887],
-                    [-0.173965848228887, 0.709332306019573],
-                ],
-            ],
+            [[0.66676608, -0.0081415], [-0.0081415, 0.66676608]],
             dtype=np.float32,
         )
 
-        # tests if the two arrays are equivalent, within tolerance
-        cls.assertTrue(
-            np.allclose(W, groundTruth),
-            "Regularized inverse should match known ground truth.",
-        )
-
-    def test_should_complain(cls):
-        """
-        Assert that the function should complain if we pass improper values.
-        """
-
-        X = np.array([[1, 1], [1, 1]])
-        Y = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
-        kernel_fn = partial(gym_socks.kernel.metrics.rbf_kernel, sigma=1)
-
-        with cls.assertRaises(AssertionError) as exception_context:
-            W = gym_socks.kernel.metrics.regularized_inverse(X, Y, kernel_fn=kernel_fn)
+        W = gym_socks.kernel.metrics.regularized_inverse(Y)
+        cls.assertTrue(np.allclose(W, groundTruth))
 
     def test_sklearn_kernels(cls):
-        """
-        Assert that sklearn kernels should work with regularized_inverse.
-        """
+        """Assert that sklearn kernels should work with regularized_inverse."""
 
-        Y = np.array([[2, 2], [3, 3]])
+        Y = np.arange(4).reshape((2, 2))
 
         for kernel_fn in sklearn_kernel_list:
             with cls.subTest(msg=f"Testing with {type(kernel_fn)}."):

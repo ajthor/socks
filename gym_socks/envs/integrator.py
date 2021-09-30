@@ -1,6 +1,8 @@
 from gym_socks.envs.dynamical_system import DynamicalSystem
 from gym_socks.envs.dynamical_system import StochasticMixin
 
+import gym
+
 import numpy as np
 
 
@@ -11,10 +13,19 @@ class NDIntegratorEnv(DynamicalSystem):
 
     def __init__(self, dim, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(state_dim=dim, action_dim=1, *args, **kwargs)
+        super().__init__(
+            observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            ),
+            action_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
-        self.sampling_time = 0.25
         self.time_horizon = 4
+        self.sampling_time = 0.25
 
     def dynamics(self, t, x, u):
         """Dynamics for the system."""
@@ -35,7 +46,14 @@ class StochasticNDIntegratorEnv(StochasticMixin, NDIntegratorEnv):
 
     def __init__(self, dim, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(dim=dim, disturbance_dim=dim, *args, **kwargs)
+        super().__init__(
+            dim=dim,
+            disturbance_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
     def dynamics(self, t, x, u, w):
         """Dynamics for the system."""

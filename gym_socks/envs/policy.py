@@ -9,16 +9,14 @@ class BasePolicy(ABC):
 
     @abstractmethod
     def __call__(self, *args, **kwargs):
-        ...
+        raise NotImplementedError
 
 
 class RandomizedPolicy(BasePolicy):
     """Randomized policy."""
 
     def __init__(self, system, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
-
         self.system = system
 
     def __call__(self, *args, **kwargs):
@@ -29,9 +27,7 @@ class ConstantPolicy(BasePolicy):
     """Constant policy."""
 
     def __init__(self, system, constant=0, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
-
         self.system = system
         self.constant = constant
 
@@ -39,14 +35,8 @@ class ConstantPolicy(BasePolicy):
         return [self.constant] * self.system.action_space.shape[0]
 
 
-class ZeroPolicy(BasePolicy):
+class ZeroPolicy(ConstantPolicy):
     """Zero policy."""
 
     def __init__(self, system, *args, **kwargs):
-
-        super().__init__(*args, **kwargs)
-
-        self.system = system
-
-    def __call__(self, *args, **kwargs):
-        return [0] * self.system.action_space.shape[0]
+        super().__init__(system, *args, **kwargs)

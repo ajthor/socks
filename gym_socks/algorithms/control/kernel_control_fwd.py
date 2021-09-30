@@ -80,9 +80,13 @@ class KernelControlFwd(BasePolicy):
         kernel_fn = self.kernel_fn
         l = self.l
 
-        S = np.array(S)
-        X = S[:, 0, :]
-        Y = S[:, 1, :]
+        if isinstance(S, tuple):
+            X = S[0]
+            Y = S[1]
+        else:
+            S = np.array(S)
+            X = S[:, 0, :]
+            Y = S[:, 1, :]
 
         U = np.array(U)
         U = U[:, 0, :]
