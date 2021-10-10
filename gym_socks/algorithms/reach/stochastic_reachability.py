@@ -1,10 +1,12 @@
 from functools import partial
 
+import gym_socks
 from gym_socks.algorithms.algorithm import AlgorithmInterface
 
 import gym_socks.kernel.metrics as kernel
 
 from gym_socks.utils import normalize, indicator_fn, generate_batches
+from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
 
@@ -93,25 +95,27 @@ class KernelSR(AlgorithmInterface):
         T = np.array(T)
         num_time_steps = system.num_time_steps - 1
 
-        S = np.array(S)
-        X = S[:, 0, :]
-        Y = S[:, 1, :]
+        pbar = ms_tqdm(total=num_time_steps * 2 + 3, bar_format=_progress_fmt)
+
+        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X = np.array(X)
+        U = np.array(U)
+        Y = np.array(Y)
 
         W = kernel.regularized_inverse(X, kernel_fn=kernel_fn, l=l)
+        pbar.update()
 
         CXY = kernel_fn(X, Y)
-
         betaXY = normalize(np.einsum("ii,ij->ij", W, CXY))
+        pbar.update()
 
         # set up empty array to hold value functions
         Vt = np.zeros((num_time_steps + 1, len(X)))
 
-        Vt[num_time_steps, :] = indicator_fn(Y, constraint_tube[num_time_steps])
+        Vt[num_time_steps, :] = indicator_fn(Y, target_tube[num_time_steps])
 
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
-
-            # print(f"Computing for k={t}")
 
             VX = np.einsum("i,ij->j", Vt[t + 1, :], betaXY)
 
@@ -127,18 +131,20 @@ class KernelSR(AlgorithmInterface):
 
                 Vt[t, :] = Y_in_target_set + (Y_in_safe_set & ~Y_in_target_set) * VX
 
+            pbar.update()
+
         # set up empty array to hold safety probabilities
         Pr = np.zeros((num_time_steps + 1, len(T)))
 
         CXT = kernel_fn(X, T)
         betaXT = normalize(np.einsum("ii,ij->ij", W, CXT))
 
-        Pr[num_time_steps, :] = indicator_fn(T, constraint_tube[num_time_steps])
+        pbar.update()
+
+        Pr[num_time_steps, :] = indicator_fn(T, target_tube[num_time_steps])
 
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
-
-            # print(f"Computing for k={t}")
 
             VT = np.einsum("i,ij->j", Vt[t + 1, :], betaXT)
 
@@ -153,6 +159,10 @@ class KernelSR(AlgorithmInterface):
                 T_in_target_set = indicator_fn(T, target_tube[t])
 
                 Pr[t, :] = T_in_target_set + (T_in_safe_set & ~T_in_target_set) * VT
+
+            pbar.update()
+
+        pbar.close()
 
         return Pr, Vt
 
@@ -185,9 +195,10 @@ class KernelSR(AlgorithmInterface):
         T = np.array(T)
         num_time_steps = system.num_time_steps - 1
 
-        S = np.array(S)
-        X = S[:, 0, :]
-        Y = S[:, 1, :]
+        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X = np.array(X)
+        U = np.array(U)
+        Y = np.array(Y)
 
         W = kernel.regularized_inverse(X, kernel_fn=kernel_fn, l=l)
 
@@ -209,7 +220,7 @@ class KernelSR(AlgorithmInterface):
                 betaXY = normalize(np.einsum("ii,ij->ij", W, CXY))
 
                 Vt[num_time_steps, batch] = indicator_fn(
-                    Y[batch], constraint_tube[num_time_steps]
+                    Y[batch], target_tube[num_time_steps]
                 )
 
                 VX = np.einsum("i,ij->j", Vt[t + 1, :], betaXY)
@@ -242,7 +253,7 @@ class KernelSR(AlgorithmInterface):
                 betaXT = normalize(np.einsum("ii,ij->ij", W, CXT))
 
                 Pr[num_time_steps, batch] = indicator_fn(
-                    T[batch], constraint_tube[num_time_steps]
+                    T[batch], target_tube[num_time_steps]
                 )
 
                 VT = np.einsum("i,ij->j", Vt[t + 1, :], betaXT)
@@ -289,7 +300,6 @@ class KernelMaximalSR(AlgorithmInterface):
         self,
         system=None,
         S: "State sample." = None,
-        U: "Action sample." = None,
         A: "Admissible action sample." = None,
         T: "Test points." = None,
         constraint_tube=None,
@@ -301,9 +311,6 @@ class KernelMaximalSR(AlgorithmInterface):
             raise ValueError("Must supply a system.")
 
         if S is None:
-            raise ValueError("Must supply a sample.")
-
-        if U is None:
             raise ValueError("Must supply a sample.")
 
         if A is None:
@@ -339,7 +346,6 @@ class KernelMaximalSR(AlgorithmInterface):
         self._validate_inputs(
             system=system,
             S=S,
-            U=U,
             A=A,
             T=T,
             constraint_tube=constraint_tube,
@@ -353,17 +359,17 @@ class KernelMaximalSR(AlgorithmInterface):
         T = np.array(T)
         num_time_steps = system.num_time_steps - 1
 
-        S = np.array(S)
-        X = S[:, 0, :]
-        Y = S[:, 1, :]
+        pbar = ms_tqdm(total=num_time_steps * 2 + 3, bar_format=_progress_fmt)
 
+        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X = np.array(X)
         U = np.array(U)
-        U = U[:, 0, :]
+        Y = np.array(Y)
 
         A = np.array(A)
-        A = A[:, 0, :]
 
         W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        pbar.update()
 
         CXY = kernel_fn(X, Y)
 
@@ -374,10 +380,12 @@ class KernelMaximalSR(AlgorithmInterface):
         betaXY = normalize(
             np.einsum("ii,ij,ik->ijk", W, CXY, CUA, optimize=["einsum_path", (0, 1, 2)])
         )
+        pbar.update()
 
         betaXT = normalize(
             np.einsum("ii,ij,ik->ijk", W, CXT, CUA, optimize=["einsum_path", (0, 1, 2)])
         )
+        pbar.update()
 
         # set up empty array to hold value functions
         Vt = np.zeros((num_time_steps + 1, len(X)), dtype=np.float32)
@@ -408,6 +416,8 @@ class KernelMaximalSR(AlgorithmInterface):
 
                 Vt[t, :] = Y_in_target_set + (Y_in_safe_set & ~Y_in_target_set) * VX
 
+            pbar.update()
+
         # set up empty array to hold safety probabilities
         Pr = np.zeros((num_time_steps + 1, len(T)), dtype=np.float32)
 
@@ -415,8 +425,6 @@ class KernelMaximalSR(AlgorithmInterface):
 
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
-
-            # print(f"Computing for k={t}")
 
             # use optimized multiplications
             wT = np.einsum(
@@ -436,6 +444,10 @@ class KernelMaximalSR(AlgorithmInterface):
                 T_in_target_set = indicator_fn(T, target_tube[t])
 
                 Pr[t, :] = T_in_target_set + (T_in_safe_set & ~T_in_target_set) * VT
+
+            pbar.update()
+
+        pbar.close()
 
         return Pr, Vt
 
@@ -458,7 +470,6 @@ class KernelMaximalSR(AlgorithmInterface):
         self._validate_inputs(
             system=system,
             S=S,
-            U=U,
             A=A,
             T=T,
             constraint_tube=constraint_tube,
@@ -472,15 +483,12 @@ class KernelMaximalSR(AlgorithmInterface):
         T = np.array(T)
         num_time_steps = system.num_time_steps - 1
 
-        S = np.array(S)
-        X = S[:, 0, :]
-        Y = S[:, 1, :]
-
+        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X = np.array(X)
         U = np.array(U)
-        U = U[:, 0, :]
+        Y = np.array(Y)
 
         A = np.array(A)
-        A = A[:, 0, :]
 
         W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
 
@@ -493,8 +501,6 @@ class KernelMaximalSR(AlgorithmInterface):
 
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
-
-            print(f"Computing for k={t}")
 
             for batch in generate_batches(num_elements=len(X), batch_size=batch_size):
 
@@ -528,8 +534,6 @@ class KernelMaximalSR(AlgorithmInterface):
 
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
-
-            print(f"Computing for k={t}")
 
             for batch in generate_batches(num_elements=len(T), batch_size=batch_size):
 

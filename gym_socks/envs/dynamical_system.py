@@ -64,7 +64,13 @@ class DynamicalSystem(gym.Env, ABC):
     metadata = {"render.modes": ["human"]}
 
     def __init__(
-        self, observation_space=None, action_space=None, seed=None, *args, **kwargs
+        self,
+        observation_space=None,
+        action_space=None,
+        seed=None,
+        euler=False,
+        *args,
+        **kwargs,
     ):
         """
         Initialize the dynamical system.
@@ -78,12 +84,12 @@ class DynamicalSystem(gym.Env, ABC):
         if observation_space is not None:
             self.observation_space = observation_space
         else:
-            raise ValueError("observation space must be provided")
+            raise ValueError("Must supply an observation_space.")
 
         if action_space is not None:
             self.action_space = action_space
         else:
-            raise ValueError("action space must be provided")
+            raise ValueError("Must supply an action_space.")
 
         # time parameters
         self._time_horizon = 1
@@ -95,6 +101,8 @@ class DynamicalSystem(gym.Env, ABC):
         self._np_random = None
         if seed is not None:
             self._seed = self.seed(seed)
+
+        self._euler = euler
 
     @property
     def np_random(self):
@@ -171,11 +179,17 @@ class DynamicalSystem(gym.Env, ABC):
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
-        # solve the initial value problem
-        sol = solve_ivp(
-            self.dynamics, [0, self.sampling_time], self.state, args=(action,)
-        )
-        *_, self.state = sol.y.T
+        if self._euler is True:
+            next_state = self.state + self.sampling_time * self.dynamics(
+                0, self.state, action
+            )
+            self.state = next_state
+        else:
+            # solve the initial value problem
+            sol = solve_ivp(
+                self.dynamics, [0, self.sampling_time], self.state, args=(action,)
+            )
+            *_, self.state = sol.y.T
 
         cost = self.cost(action)
 
@@ -210,7 +224,7 @@ class DynamicalSystem(gym.Env, ABC):
 
         Required to be overloaded by subclasses.
         """
-        raise NotImplementedError
+        ...
 
     def cost(self, u: "Input vector.") -> "R":
         """
@@ -270,7 +284,7 @@ class StochasticMixin(DynamicalSystem):
             self.disturbance_space = disturbance_space
             self.disturbance_dim = self.disturbance_space.shape
         else:
-            raise ValueError("disturbance space must be provided")
+            raise ValueError("Must supply a disturbance_space.")
 
     def step(self, action):
         """
@@ -303,17 +317,23 @@ class StochasticMixin(DynamicalSystem):
         # generate a disturbance
         disturbance = self.sample_disturbance()
 
-        # solve the initial value problem
-        sol = solve_ivp(
-            self.dynamics,
-            [0, self.sampling_time],
-            self.state,
-            args=(
-                action,
-                disturbance,
-            ),
-        )
-        *_, self.state = sol.y.T
+        if self._euler is True:
+            next_state = self.state + self.sampling_time * self.dynamics(
+                0, self.state, action, disturbance
+            )
+            self.state = next_state
+        else:
+            # solve the initial value problem
+            sol = solve_ivp(
+                self.dynamics,
+                [0, self.sampling_time],
+                self.state,
+                args=(
+                    action,
+                    disturbance,
+                ),
+            )
+            *_, self.state = sol.y.T
 
         cost = self.cost(action)
 
@@ -335,7 +355,7 @@ class StochasticMixin(DynamicalSystem):
 
         Required to be overloaded by subclasses.
         """
-        raise NotImplementedError
+        ...
 
     def sample_disturbance(self):
         """

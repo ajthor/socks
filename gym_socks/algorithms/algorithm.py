@@ -22,4 +22,4 @@ class AlgorithmInterface(ABC):
     @classmethod
     @abstractmethod
     def run(cls, *args, **kwargs):
-        ...
+        raise NotImplementedError

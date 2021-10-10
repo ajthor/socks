@@ -2,11 +2,15 @@
 
 from functools import partial
 
-from gym_socks.envs.policy import BasePolicy
+import gym_socks
 
+from gym_socks.envs.policy import BasePolicy
 import gym_socks.kernel.metrics as kernel
+from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
+
+from tqdm.auto import tqdm
 
 
 class KernelControlFwd(BasePolicy):
@@ -42,7 +46,6 @@ class KernelControlFwd(BasePolicy):
         self,
         system=None,
         S: "State sample." = None,
-        U: "Action sample." = None,
         A: "Admissible action sample." = None,
         cost_fn: "Cost function." = None,
         constraint_fn: "Constraint function." = None,
@@ -52,9 +55,6 @@ class KernelControlFwd(BasePolicy):
             raise ValueError("Must supply a system.")
 
         if S is None:
-            raise ValueError("Must supply a sample.")
-
-        if U is None:
             raise ValueError("Must supply a sample.")
 
         if A is None:
@@ -67,36 +67,33 @@ class KernelControlFwd(BasePolicy):
         self,
         system=None,
         S: "State sample." = None,
-        U: "Action sample." = None,
         A: "Admissible action sample." = None,
         cost_fn: "Cost function." = None,
         constraint_fn: "Constraint function." = None,
     ):
 
         self._validate_inputs(
-            system=system, S=S, U=U, A=A, cost_fn=cost_fn, constraint_fn=constraint_fn
+            system=system, S=S, A=A, cost_fn=cost_fn, constraint_fn=constraint_fn
         )
 
         kernel_fn = self.kernel_fn
         l = self.l
 
-        if isinstance(S, tuple):
-            X = S[0]
-            Y = S[1]
-        else:
-            S = np.array(S)
-            X = S[:, 0, :]
-            Y = S[:, 1, :]
-
+        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X = np.array(X)
         U = np.array(U)
-        U = U[:, 0, :]
+        Y = np.array(Y)
 
         A = np.array(A)
-        A = A[:, 0, :]
+        # A = A[:, 0, :]
+
+        pbar = ms_tqdm(total=3, bar_format=_progress_fmt)
 
         W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        pbar.update()
 
         CUA = kernel_fn(U, A)
+        pbar.update()
 
         self.X = X
         self.A = A
@@ -110,6 +107,9 @@ class KernelControlFwd(BasePolicy):
         self.constraint = None
         if constraint_fn is not None:
             self.constraint = partial(constraint_fn, state=Y)
+
+        pbar.update()
+        pbar.close()
 
     def __call__(self, time=0, state=None, *args, **kwargs):
 

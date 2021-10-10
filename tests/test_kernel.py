@@ -111,7 +111,7 @@ class TestRegularizedInverse(unittest.TestCase):
         cls.assertTrue(np.allclose(W, groundTruth))
 
     def test_sklearn_kernels(cls):
-        """Assert that sklearn kernels should work with regularized_inverse."""
+        """Sklearn kernels should work with regularized_inverse."""
 
         Y = np.arange(4).reshape((2, 2))
 

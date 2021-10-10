@@ -8,8 +8,9 @@ from numpy.linalg import norm
 
 import gym_socks.kernel.metrics as kernel
 from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import random_initial_conditions
-from gym_socks.envs.sample import uniform_grid
+
+# from gym_socks.envs.sample import random_initial_conditions
+# from gym_socks.envs.sample import uniform_grid
 
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
@@ -47,30 +48,51 @@ def main():
     num_time_steps = system.num_time_steps
 
     # generate the sample
-    initial_conditions = random_initial_conditions(
-        system=system,
-        sample_space=gym.spaces.Box(
-            low=np.array([-1.1, -1.1, -2 * np.pi]),
-            high=np.array([1.1, 1.1, 2 * np.pi]),
-            dtype=np.float32,
-        ),
-        n=1500,
-    )
-    S, U = sample(
-        system=system,
-        initial_conditions=initial_conditions,
+    sample_space = gym.spaces.Box(
+        low=np.array([-1.1, -1.1, -2 * np.pi]),
+        high=np.array([1.1, 1.1, 2 * np.pi]),
+        dtype=np.float32,
     )
 
-    A, _ = uniform_grid(
-        sample_space=gym.spaces.Box(
-            low=np.array([0, -10]),
-            high=np.array([1, 10]),
-            dtype=np.float32,
+    S = sample(
+        sampler=gym_socks.envs.sample.step_sampler(
+            system=system,
+            policy=gym_socks.envs.policy.RandomizedPolicy(system),
+            sample_space=sample_space,
         ),
-        n=[10, 20],
+        sample_size=1500,
     )
 
-    A = np.expand_dims(A, axis=1)
+    # generate the test points
+    u1 = np.linspace(0, 1, 10)
+    u2 = np.linspace(-10, 10, 20)
+    A = gym_socks.envs.sample.uniform_grid([u1, u2])
+
+    # # generate the sample
+    # initial_conditions = random_initial_conditions(
+    #     system=system,
+    #     sample_space=gym.spaces.Box(
+    #         low=np.array([-1.1, -1.1, -2 * np.pi]),
+    #         high=np.array([1.1, 1.1, 2 * np.pi]),
+    #         dtype=np.float32,
+    #     ),
+    #     n=1500,
+    # )
+    # S, U = sample(
+    #     system=system,
+    #     initial_conditions=initial_conditions,
+    # )
+    #
+    # A, _ = uniform_grid(
+    #     sample_space=gym.spaces.Box(
+    #         low=np.array([0, -10]),
+    #         high=np.array([1, 10]),
+    #         dtype=np.float32,
+    #     ),
+    #     n=[10, 20],
+    # )
+    #
+    # A = np.expand_dims(A, axis=1)
 
     def tracking_cost(time=0, state=None):
 
@@ -107,7 +129,6 @@ def main():
     policy.train(
         system=system,
         S=S,
-        U=U,
         A=A,
         cost_fn=tracking_cost,
         # constraint_fn=tracking_constraint,

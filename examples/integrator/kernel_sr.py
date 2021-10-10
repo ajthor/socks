@@ -7,8 +7,9 @@ import numpy as np
 
 import gym_socks.kernel.metrics as kernel
 from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import uniform_initial_conditions
-from gym_socks.envs.sample import uniform_grid
+
+# from gym_socks.envs.sample import uniform_initial_conditions
+# from gym_socks.envs.sample import uniform_grid
 
 from gym_socks.envs.policy import ZeroPolicy
 
@@ -60,30 +61,27 @@ def main():
     ]
 
     # generate the sample
-    initial_conditions = uniform_initial_conditions(
-        system=system,
-        sample_space=gym.spaces.Box(
-            low=-1.1,
-            high=1.1,
-            shape=system.observation_space.shape,
-            dtype=np.float32,
-        ),
-        n=[50, 50],
+    sample_space = gym.spaces.Box(
+        low=-1.1,
+        high=1.1,
+        shape=system.observation_space.shape,
+        dtype=np.float32,
     )
-    S, U = sample(
-        system=system, initial_conditions=initial_conditions, policy=ZeroPolicy(system)
+
+    S = sample(
+        sampler=gym_socks.envs.sample.uniform_grid_step_sampler(
+            [np.linspace(-1, 1, 50), np.linspace(-1, 1, 50)],
+            system=system,
+            policy=gym_socks.envs.policy.ZeroPolicy(system),
+            sample_space=sample_space,
+        ),
+        sample_size=2500,
     )
 
     # generate the test points
-    T, x = uniform_grid(
-        sample_space=gym.spaces.Box(
-            low=-1, high=1, shape=system.observation_space.shape, dtype=np.float32
-        ),
-        n=[100, 100],
-    )
-
-    x1 = x[0]
-    x2 = x[1]
+    x1 = np.linspace(-1, 1, 100)
+    x2 = np.linspace(-1, 1, 100)
+    T = gym_socks.envs.sample.uniform_grid([x1, x2])
 
     alg = KernelSR(kernel_fn=partial(rbf_kernel, gamma=50))
 
@@ -96,7 +94,7 @@ def main():
         T=T,
         constraint_tube=constraint_tube,
         target_tube=target_tube,
-        problem="FHT",
+        problem="THT",
     )
 
     t1 = time()
@@ -139,7 +137,7 @@ def plot_results():
         Z = Pr[0].reshape(XX.shape)
 
         # flat color map
-        fig = plt.figure(figsize=(3.33, 1.5))
+        fig = plt.figure(figsize=(1.5, 1.5))
         ax = fig.add_subplot(111)
 
         plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")

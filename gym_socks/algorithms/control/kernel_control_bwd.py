@@ -2,13 +2,16 @@
 
 from functools import partial
 
+import gym_socks
+
 from gym_socks.envs.policy import BasePolicy
-
 import gym_socks.kernel.metrics as kernel
-
 from gym_socks.utils import generate_batches
+from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
+
+from tqdm.auto import tqdm
 
 
 class KernelControlBwd(BasePolicy):
@@ -44,7 +47,6 @@ class KernelControlBwd(BasePolicy):
         self,
         system=None,
         S: "State sample." = None,
-        U: "Action sample." = None,
         A: "Admissible action sample." = None,
         cost_fn: "Cost function." = None,
         constraint_fn: "Constraint function." = None,
@@ -54,9 +56,6 @@ class KernelControlBwd(BasePolicy):
             raise ValueError("Must supply a system.")
 
         if S is None:
-            raise ValueError("Must supply a sample.")
-
-        if U is None:
             raise ValueError("Must supply a sample.")
 
         if A is None:
@@ -69,14 +68,13 @@ class KernelControlBwd(BasePolicy):
         self,
         system=None,
         S: "State sample." = None,
-        U: "Action sample." = None,
         A: "Admissible action sample." = None,
         cost_fn: "Cost function." = None,
         constraint_fn: "Constraint function." = None,
     ):
 
         self._validate_inputs(
-            system=system, S=S, U=U, A=A, cost_fn=cost_fn, constraint_fn=constraint_fn
+            system=system, S=S, A=A, cost_fn=cost_fn, constraint_fn=constraint_fn
         )
 
         kernel_fn = self.kernel_fn
@@ -84,17 +82,18 @@ class KernelControlBwd(BasePolicy):
 
         num_time_steps = system.num_time_steps - 1
 
-        S = np.array(S)
-        X = S[:, 0, :]
-        Y = S[:, 1, :]
+        pbar = ms_tqdm(total=num_time_steps + 2, bar_format=_progress_fmt)
 
+        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X = np.array(X)
         U = np.array(U)
-        U = U[:, 0, :]
+        Y = np.array(Y)
 
         A = np.array(A)
-        A = A[:, 0, :]
+        # A = A[:, 0, :]
 
         W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        pbar.update()
 
         CUA = kernel_fn(U, A)
 
@@ -144,6 +143,8 @@ class KernelControlBwd(BasePolicy):
 
             Vt[t, :] = cost_fn(time=t, state=Y) + V
 
+            pbar.update()
+
         self.X = X
         self.A = A
 
@@ -156,11 +157,13 @@ class KernelControlBwd(BasePolicy):
         if constraint_fn is not None:
             self.constraint = partial(constraint_fn, state=Y)
 
+        pbar.update()
+        pbar.close()
+
     def train_batch(
         self,
         system=None,
         S: "State sample." = None,
-        U: "Action sample." = None,
         A: "Admissible action sample." = None,
         cost_fn: "Cost function." = None,
         constraint_fn: "Constraint function." = None,
@@ -168,7 +171,7 @@ class KernelControlBwd(BasePolicy):
     ):
 
         self._validate_inputs(
-            system=system, S=S, U=U, A=A, cost_fn=cost_fn, constraint_fn=constraint_fn
+            system=system, S=S, A=A, cost_fn=cost_fn, constraint_fn=constraint_fn
         )
 
         kernel_fn = self.kernel_fn
@@ -176,17 +179,18 @@ class KernelControlBwd(BasePolicy):
 
         num_time_steps = system.num_time_steps - 1
 
-        S = np.array(S)
-        X = S[:, 0, :]
-        Y = S[:, 1, :]
+        pbar = ms_tqdm(total=num_time_steps + 2, bar_format=_progress_fmt)
 
+        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X = np.array(X)
         U = np.array(U)
-        U = U[:, 0, :]
+        Y = np.array(Y)
 
         A = np.array(A)
-        A = A[:, 0, :]
+        # A = A[:, 0, :]
 
         W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        pbar.update()
 
         CUA = kernel_fn(U, A)
 
@@ -247,6 +251,8 @@ class KernelControlBwd(BasePolicy):
 
                 Vt[t, :] = cost_fn(time=t, state=Y) + V
 
+            pbar.update()
+
         self.X = X
         self.A = A
 
@@ -258,6 +264,9 @@ class KernelControlBwd(BasePolicy):
         self.constraint = None
         if constraint_fn is not None:
             self.constraint = partial(constraint_fn, state=Y)
+
+        pbar.update()
+        pbar.close()
 
     def __call__(self, time=0, state=None, *args, **kwargs):
 

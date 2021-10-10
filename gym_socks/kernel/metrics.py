@@ -18,7 +18,6 @@ from sklearn.metrics.pairwise import rbf_kernel
 from functools import partial, reduce
 
 import numpy as np
-import numpy.matlib
 from numpy.linalg import inv
 
 

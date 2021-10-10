@@ -1,12 +1,14 @@
 __all__ = [
+    # Systems
     "cwh",
     "integrator",
     "nonholonomic",
     "point_mass",
     "QUAD20",
     "tora",
-    "sample",
+    # Classes
     "policy",
+    "sample",
 ]
 
 from gym_socks.envs.cwh import CWH4DEnv
@@ -29,10 +31,6 @@ from gym_socks.envs.QUAD20 import StochasticQuadrotorEnv
 
 from gym_socks.envs.tora import TORAEnv
 from gym_socks.envs.tora import StochasticTORAEnv
-
-# ---- Hybrid system models ----
-
-from gym_socks.envs.temperature import TemperatureRegEnv
 
 # ---- Register gym envs ----
 
@@ -59,6 +57,6 @@ register(
 )
 
 register(
-    id="StochasticQuadrotorEnv-v0",
-    entry_point="gym_socks.envs:StochasticQuadrotorEnv",
+    id="TORAEnv-v0",
+    entry_point="gym_socks.envs:TORAEnv",
 )

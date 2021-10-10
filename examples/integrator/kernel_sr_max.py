@@ -6,9 +6,7 @@ import gym_socks
 import numpy as np
 
 import gym_socks.kernel.metrics as kernel
-from gym_socks.envs.sample import sample_action
-from gym_socks.envs.sample import uniform_initial_conditions
-from gym_socks.envs.sample import uniform_grid
+from gym_socks.envs.sample import sample
 
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
@@ -36,6 +34,8 @@ def main():
     # the system is a 2D integrator
     system = gym_socks.envs.StochasticNDIntegratorEnv(2)
 
+    # system.action_space = gym.spaces.Box(low=-1.1, high=1.1, shape=system.action_space.shape, dtype=np.float32)
+
     num_time_steps = system.num_time_steps
 
     # we define the constraints such that at the final time step, the system is in a
@@ -58,36 +58,45 @@ def main():
     ]
 
     # generate the sample
-    initial_conditions = uniform_initial_conditions(
-        system=system,
-        sample_space=gym.spaces.Box(
-            low=-1.1,
-            high=1.1,
-            shape=system.observation_space.shape,
-            dtype=np.float32,
-        ),
-        n=[25, 25],
+    sample_space = gym.spaces.Box(
+        low=-1.1,
+        high=1.1,
+        shape=system.observation_space.shape,
+        dtype=np.float32,
     )
-    S, U = sample_action(
-        system=system,
-        initial_conditions=initial_conditions,
-        action_set=np.linspace(-1.1, 1.1, 5),
+
+    @gym_socks.envs.sample.sample_generator
+    def multi_action_sampler():
+
+        ranges = [np.linspace(-1, 1, 25), np.linspace(-1, 1, 25)]
+        action_ranges = np.linspace(-1, 1, 5)
+
+        xc = gym_socks.envs.sample.uniform_grid(ranges)
+
+        for action_item in action_ranges:
+
+            for point in xc:
+                state = point
+                action = [action_item]
+
+                system.state = state
+                next_state, cost, done, _ = system.step(action)
+
+                yield (state, action, next_state)
+
+    S = sample(
+        sampler=multi_action_sampler,
+        sample_size=3125,
     )
 
     # generate the test points
-    T, x = uniform_grid(
-        sample_space=gym.spaces.Box(
-            low=-1, high=1, shape=system.observation_space.shape, dtype=np.float32
-        ),
-        n=[50, 50],
-    )
-
-    x1 = x[0]
-    x2 = x[1]
+    x1 = np.linspace(-1, 1, 50)
+    x2 = np.linspace(-1, 1, 50)
+    T = gym_socks.envs.sample.uniform_grid([x1, x2])
 
     # generate the admissible control actions
     A = np.linspace(-1, 1, 10)
-    A = A[:, np.newaxis, np.newaxis]
+    A = np.expand_dims(A, axis=1)
 
     alg = KernelMaximalSR(kernel_fn=partial(rbf_kernel, gamma=50))
 
@@ -97,7 +106,6 @@ def main():
     Pr, _ = alg.run(
         system=system,
         S=S,
-        U=U,
         A=A,
         T=T,
         constraint_tube=constraint_tube,
@@ -145,7 +153,7 @@ def plot_results():
         Z = Pr[0].reshape(XX.shape)
 
         # flat color map
-        fig = plt.figure(figsize=(5 * cm, 5 * cm))
+        fig = plt.figure(figsize=(1.5, 1.5))
         ax = fig.add_subplot(111)
 
         plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")
