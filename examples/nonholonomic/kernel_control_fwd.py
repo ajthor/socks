@@ -1,16 +1,13 @@
-from gym_socks.algorithms.control import KernelControlFwd
+from sacred import Experiment
 
 import gym
 import gym_socks
 
-import numpy as np
-from numpy.linalg import norm
-
-import gym_socks.kernel.metrics as kernel
+from gym_socks.algorithms.control import KernelControlFwd
 from gym_socks.envs.sample import sample
 
-# from gym_socks.envs.sample import random_initial_conditions
-# from gym_socks.envs.sample import uniform_grid
+import numpy as np
+from numpy.linalg import norm
 
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
@@ -32,8 +29,24 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
+ex = Experiment()
 
-def main():
+
+@ex.config
+def config():
+    """Experiment configuration variables."""
+    sigma = 3
+
+    sampling_time = 0.1
+    time_horizon = 2
+
+    initial_condition = [-0.8, 0.5, np.pi]
+
+    sample_size = 1500
+
+
+@ex.main
+def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_size):
 
     system = gym_socks.envs.StochasticNonholonomicVehicleEnv()
 
@@ -43,8 +56,14 @@ def main():
         dtype=np.float32,
     )
 
-    system.sampling_time = 0.1
-    system.time_horizon = 2
+    # Set the random seed.
+    system.seed(seed=seed)
+    system.observation_space.seed(seed=seed)
+    system.action_space.seed(seed=seed)
+    system.disturbance_space.seed(seed=seed)
+
+    system.sampling_time = sampling_time
+    system.time_horizon = time_horizon
     num_time_steps = system.num_time_steps
 
     # generate the sample
@@ -54,45 +73,21 @@ def main():
         dtype=np.float32,
     )
 
+    sample_space.seed(seed=seed)
+
     S = sample(
         sampler=gym_socks.envs.sample.step_sampler(
             system=system,
             policy=gym_socks.envs.policy.RandomizedPolicy(system),
             sample_space=sample_space,
         ),
-        sample_size=1500,
+        sample_size=sample_size,
     )
 
     # generate the test points
     u1 = np.linspace(0, 1, 10)
     u2 = np.linspace(-10, 10, 20)
     A = gym_socks.envs.sample.uniform_grid([u1, u2])
-
-    # # generate the sample
-    # initial_conditions = random_initial_conditions(
-    #     system=system,
-    #     sample_space=gym.spaces.Box(
-    #         low=np.array([-1.1, -1.1, -2 * np.pi]),
-    #         high=np.array([1.1, 1.1, 2 * np.pi]),
-    #         dtype=np.float32,
-    #     ),
-    #     n=1500,
-    # )
-    # S, U = sample(
-    #     system=system,
-    #     initial_conditions=initial_conditions,
-    # )
-    #
-    # A, _ = uniform_grid(
-    #     sample_space=gym.spaces.Box(
-    #         low=np.array([0, -10]),
-    #         high=np.array([1, 10]),
-    #         dtype=np.float32,
-    #     ),
-    #     n=[10, 20],
-    # )
-    #
-    # A = np.expand_dims(A, axis=1)
 
     def tracking_cost(time=0, state=None):
 
@@ -124,8 +119,10 @@ def main():
 
     # compute policy
     policy = KernelControlFwd(
-        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (3 ** 2))), l=1 / (len(S) ** 2)
+        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+        l=1 / (sample_size ** 2),
     )
+
     policy.train(
         system=system,
         S=S,
@@ -138,7 +135,7 @@ def main():
     print(f"Total time: {t1 - t0} s")
 
     # initial condition
-    system.state = [-0.8, 0.5, np.pi]
+    system.state = initial_condition
     trajectory = [system.state]
 
     for t in range(num_time_steps):
@@ -154,9 +151,6 @@ def main():
     # save the result to NPY file
     with open("results/data.npy", "wb") as f:
         np.save(f, trajectory)
-
-    # plot the result
-    plot_results()
 
 
 def plot_results():
@@ -201,4 +195,5 @@ def plot_results():
 
 
 if __name__ == "__main__":
-    main()
+    ex.run_commandline()
+    plot_results()

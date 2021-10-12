@@ -1,15 +1,13 @@
-from gym_socks.algorithms.control import KernelControlBwd
+from sacred import Experiment
 
 import gym
 import gym_socks
 
+from gym_socks.algorithms.control import KernelControlBwd
+from gym_socks.envs.sample import sample, uniform_grid
+
 import numpy as np
 from numpy.linalg import norm
-
-import gym_socks.kernel.metrics as kernel
-from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import random_initial_conditions
-from gym_socks.envs.sample import uniform_grid
 
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
@@ -31,8 +29,29 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
+ex = Experiment()
 
-def main():
+
+@ex.config
+def config():
+    """Experiment configuration variables."""
+    sigma = 0.35
+
+    sampling_time = 20
+    time_horizon = 100
+
+    initial_condition = [-0.5, -0.75, 0, 0]
+
+    # Sample size.
+    sample_size = 2000
+
+    target_state = [0, 0, 0, 0]
+
+
+@ex.main
+def main(
+    sigma, sampling_time, time_horizon, initial_condition, sample_size, target_state
+):
 
     # Define a 4D CWH system.
     system = gym_socks.envs.StochasticCWH4DEnv()
@@ -43,39 +62,36 @@ def main():
     )
 
     # We define a short time horizon for the problem. The sampling time is Ts = 20s.
-    system.time_horizon = 100
+    system.sampling_time = sampling_time
+    system.time_horizon = time_horizon
     num_time_steps = system.num_time_steps
 
     """
     Generate the sample.
 
     For this example, we choose points randomly from the region of interest. We choose
-    points which have velocity and position just outside of the safe set region, to
+    points which have position and velocity just outside of the safe set region, to
     ensure we have examples of infeasible states.
     """
-    initial_conditions = random_initial_conditions(
-        system=system,
-        sample_space=gym.spaces.Box(
-            low=np.array([-1.1, -1.1, -0.06, -0.06]),
-            high=np.array([1.1, 0.1, 0.06, 0.06]),
-            dtype=np.float32,
-        ),
-        n=2000,
+    sample_space = gym.spaces.Box(
+        low=np.array([-1.1, -1.1, -0.06, -0.06]),
+        high=np.array([1.1, 0.1, 0.06, 0.06]),
+        dtype=np.float32,
     )
-    S, U = sample(system=system, initial_conditions=initial_conditions)
+
+    S = sample(
+        gym_socks.envs.sample.step_sampler(
+            system=system,
+            policy=gym_socks.envs.policy.RandomizedPolicy(system),
+            sample_space=sample_space,
+        ),
+        sample_size=sample_size,
+    )
 
     # Generate a sample of admissible control actions.
-    A, _ = uniform_grid(
-        sample_space=gym.spaces.Box(
-            low=-0.1,
-            high=0.1,
-            shape=system.action_space.shape,
-            dtype=np.float32,
-        ),
-        n=[25, 25],
-    )
-
-    A = np.expand_dims(A, axis=1)
+    u1 = np.linspace(-0.1, 0.1, 25)
+    u2 = np.linspace(-0.1, 0.1, 25)
+    A = gym_socks.envs.sample.uniform_grid([u1, u2])
 
     # Define the cost and constraint functions.
 
@@ -87,17 +103,7 @@ def main():
         """
         return np.power(
             norm(
-                state
-                - np.array(
-                    [
-                        [
-                            0,
-                            0,
-                            0,
-                            0,
-                        ]
-                    ]
-                ),
+                state - np.array([target_state]),
                 ord=2,
                 axis=1,
             ),
@@ -123,15 +129,16 @@ def main():
 
     # Compute policy.
     policy = KernelControlBwd(
-        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (0.35 ** 2))), l=1 / (len(S) ** 2)
+        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+        l=1 / (sample_size ** 2),
     )
+
     policy.train_batch(
         system=system,
         S=S,
-        U=U,
         A=A,
         cost_fn=cost_fn,
-        # constraint_fn=constraint_fn,
+        constraint_fn=constraint_fn,
     )
 
     t1 = time()
@@ -143,7 +150,7 @@ def main():
     """
 
     # Define an initial condition.
-    system.state = [-0.7, -0.75, 0, 0]
+    system.state = initial_condition
     trajectory = [system.state]
 
     for t in range(num_time_steps):
@@ -205,5 +212,5 @@ def plot_results():
 
 
 if __name__ == "__main__":
-    main()
+    ex.run_commandline()
     plot_results()

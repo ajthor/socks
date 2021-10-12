@@ -1,10 +1,12 @@
 from functools import partial
 
+import gym_socks
 from gym_socks.envs.policy import BasePolicy
 
 import gym_socks.kernel.metrics as kernel
 
 from gym_socks.utils import normalize, indicator_fn, generate_batches
+from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
 
@@ -31,7 +33,6 @@ class MaximallySafePolicy(BasePolicy):
         self,
         system=None,
         S: "State sample." = None,
-        U: "Action sample." = None,
         A: "Admissible action sample." = None,
         constraint_tube=None,
         target_tube=None,
@@ -41,9 +42,6 @@ class MaximallySafePolicy(BasePolicy):
             raise ValueError("Must supply a system.")
 
         if S is None:
-            raise ValueError("Must supply a sample.")
-
-        if U is None:
             raise ValueError("Must supply a sample.")
 
         if A is None:
@@ -62,7 +60,6 @@ class MaximallySafePolicy(BasePolicy):
         self,
         system=None,
         S: "State sample." = None,
-        U: "Action sample." = None,
         A: "Admissible action sample." = None,
         constraint_tube=None,
         target_tube=None,
@@ -72,7 +69,6 @@ class MaximallySafePolicy(BasePolicy):
         self._validate_inputs(
             system=system,
             S=S,
-            U=U,
             A=A,
             constraint_tube=constraint_tube,
             target_tube=target_tube,
@@ -84,24 +80,26 @@ class MaximallySafePolicy(BasePolicy):
 
         num_time_steps = system.num_time_steps - 1
 
-        S = np.array(S)
-        X = S[:, 0, :]
-        Y = S[:, 1, :]
+        pbar = ms_tqdm(total=num_time_steps + 3, bar_format=_progress_fmt)
 
+        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X = np.array(X)
         U = np.array(U)
-        U = U[:, 0, :]
+        Y = np.array(Y)
 
         A = np.array(A)
-        A = A[:, 0, :]
 
         W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        pbar.update()
 
         CXY = kernel_fn(X, Y)
         CUA = kernel_fn(U, A)
+        pbar.update()
 
         betaXY = normalize(
             np.einsum("ii,ij,ik->ikj", W, CXY, CUA, optimize=["einsum_path", (0, 1, 2)])
         )
+        pbar.update()
 
         # set up empty array to hold value functions
         Vt = np.zeros((num_time_steps + 1, len(X)), dtype=np.float32)
@@ -110,8 +108,6 @@ class MaximallySafePolicy(BasePolicy):
 
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
-
-            # print(f"Computing for k={t}")
 
             w = np.einsum(
                 "i,ijk->kj", Vt[t + 1, :], betaXY, optimize=["einsum_path", (0, 1)]
@@ -131,6 +127,10 @@ class MaximallySafePolicy(BasePolicy):
 
                 Vt[t, :] = Y_in_target_set + (Y_in_safe_set & ~Y_in_target_set) * V
 
+            pbar.update()
+
+        pbar.close()
+
         self.kernel_fn = kernel_fn
 
         self.X = X
@@ -146,7 +146,6 @@ class MaximallySafePolicy(BasePolicy):
         self,
         system=None,
         S: "State sample." = None,
-        U: "Action sample." = None,
         A: "Admissible action sample." = None,
         constraint_tube=None,
         target_tube=None,
@@ -157,7 +156,6 @@ class MaximallySafePolicy(BasePolicy):
         self._validate_inputs(
             system=system,
             S=S,
-            U=U,
             A=A,
             constraint_tube=constraint_tube,
             target_tube=target_tube,
@@ -169,27 +167,26 @@ class MaximallySafePolicy(BasePolicy):
 
         num_time_steps = system.num_time_steps - 1
 
-        S = np.array(S)
-        X = S[:, 0, :]
-        Y = S[:, 1, :]
+        pbar = ms_tqdm(total=num_time_steps + 2, bar_format=_progress_fmt)
 
+        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X = np.array(X)
         U = np.array(U)
-        U = U[:, 0, :]
+        Y = np.array(Y)
 
         A = np.array(A)
-        A = A[:, 0, :]
 
         W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        pbar.update()
 
         CUA = kernel_fn(U, A)
+        pbar.update()
 
         # set up empty array to hold value functions
         Vt = np.empty((num_time_steps + 1, len(X)))
 
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
-
-            print(f"Computing for k={t}")
 
             for batch in generate_batches(num_elements=len(X), batch_size=batch_size):
 
@@ -219,6 +216,10 @@ class MaximallySafePolicy(BasePolicy):
                     Vt[t, batch] = (
                         Y_in_target_set + (Y_in_safe_set & ~Y_in_target_set) * V
                     )
+
+            pbar.update()
+
+        pbar.close()
 
         self.kernel_fn = kernel_fn
 

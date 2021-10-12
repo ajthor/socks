@@ -1,16 +1,12 @@
-from gym_socks.algorithms.reach.stochastic_reachability import KernelMaximalSR
+from sacred import Experiment
 
 import gym
 import gym_socks
 
+from gym_socks.algorithms.reach.stochastic_reachability import KernelMaximalSR
+from gym_socks.envs.sample import sample, uniform_grid
+
 import numpy as np
-
-import gym_socks.kernel.metrics as kernel
-from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import random_initial_conditions
-from gym_socks.envs.sample import uniform_grid
-
-from gym_socks.envs.policy import ZeroPolicy
 
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
@@ -33,6 +29,9 @@ matplotlib.rcParams.update(
 import matplotlib.pyplot as plt
 
 
+ex = Experiment()
+
+
 def CWHSafeSet(points):
 
     return np.array(
@@ -43,7 +42,26 @@ def CWHSafeSet(points):
     )
 
 
-def main():
+@ex.config
+def config():
+    """Experiment configuration variables."""
+    sigma = 0.1
+
+    sampling_time = 20
+    time_horizon = 100
+
+    initial_condition = [-0.5, -0.75, 0, 0]
+
+    # Sample size.
+    sample_size = 2000
+
+    target_state = [0, 0, 0, 0]
+
+
+@ex.main
+def main(
+    sigma, sampling_time, time_horizon, initial_condition, sample_size, target_state
+):
 
     # the system is a 4D CWH system
     system = gym_socks.envs.StochasticCWH4DEnv()
@@ -65,49 +83,49 @@ def main():
         for i in range(num_time_steps)
     ]
 
-    # generate the sample
-    initial_conditions = random_initial_conditions(
-        system=system,
-        sample_space=gym.spaces.Box(
-            low=np.array([-1, -1, -0.05, -0.05]),
-            high=np.array([1, 0, 0.05, 0.05]),
-            dtype=np.float32,
-        ),
-        n=1500,
-    )
-    S, U = sample(system=system, initial_conditions=initial_conditions)
+    """
+    Generate the sample.
 
-    # colormap = "viridis"
-    # cm = 1 / 2.54
-    # fig = plt.figure(figsize=(5 * cm, 5 * cm))
-    # ax = fig.add_subplot(111)
-    # plt.scatter(S[:, 1, 0], S[:, 1, 1], s=1)
-    # plt.savefig("results/plot_sample.png", dpi=300, bbox_inches="tight")
-
-    A, _ = uniform_grid(
-        sample_space=gym.spaces.Box(
-            low=-0.1,
-            high=0.1,
-            shape=system.action_space.shape,
-            dtype=np.float32,
-        ),
-        n=[3, 3],
+    For this example, we choose points randomly from the region of interest. We choose
+    points which have position and velocity just outside of the safe set region, to
+    ensure we have examples of infeasible states.
+    """
+    sample_space = gym.spaces.Box(
+        low=np.array([-1.1, -1.1, -0.06, -0.06]),
+        high=np.array([1.1, 0.1, 0.06, 0.06]),
+        dtype=np.float32,
     )
 
-    A = np.expand_dims(A, axis=1)
+    S = sample(
+        gym_socks.envs.sample.step_sampler(
+            system=system,
+            policy=gym_socks.envs.policy.RandomizedPolicy(system),
+            sample_space=sample_space,
+        ),
+        sample_size=sample_size,
+    )
+
+    # Generate a sample of admissible control actions.
+    u1 = np.linspace(-0.1, 0.1, 5)
+    u2 = np.linspace(-0.1, 0.1, 5)
+    A = gym_socks.envs.sample.uniform_grid([u1, u2])
 
     # generate the test points
-    T, x = uniform_grid(
-        sample_space=gym.spaces.Box(
-            low=np.array([-1, -1, 0, 0]), high=np.array([1, 0, 0, 0]), dtype=np.float32
-        ),
-        n=[25, 25, 1, 1],
-    )
+    x1 = np.linspace(-0.1, 0.1, 25)
+    x2 = np.linspace(-0.1, 0.1, 25)
+    T = gym_socks.envs.sample.uniform_grid([x1, x2, [0], [0]])
 
-    x1 = x[0]
-    x2 = x[1]
+    # T, x = uniform_grid(
+    #     sample_space=gym.spaces.Box(
+    #         low=np.array([-1, -1, 0, 0]), high=np.array([1, 0, 0, 0]), dtype=np.float32
+    #     ),
+    #     n=[25, 25, 1, 1],
+    # )
 
-    alg = KernelMaximalSR(kernel_fn=partial(rbf_kernel, gamma=50))
+    # x1 = x[0]
+    # x2 = x[1]
+
+    alg = KernelMaximalSR(kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))))
 
     t0 = time()
 
@@ -115,7 +133,6 @@ def main():
     Pr, _ = alg.run(
         system=system,
         S=S,
-        U=U,
         A=A,
         T=T,
         constraint_tube=constraint_tube,
@@ -183,5 +200,5 @@ def plot_results():
 
 
 if __name__ == "__main__":
-    main()
+    ex.run_commandline()
     plot_results()

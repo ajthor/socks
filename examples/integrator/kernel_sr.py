@@ -1,17 +1,12 @@
-from gym_socks.algorithms.reach.stochastic_reachability import KernelSR
+from sacred import Experiment
 
 import gym
 import gym_socks
 
-import numpy as np
-
-import gym_socks.kernel.metrics as kernel
+from gym_socks.algorithms.reach.stochastic_reachability import KernelSR
 from gym_socks.envs.sample import sample
 
-# from gym_socks.envs.sample import uniform_initial_conditions
-# from gym_socks.envs.sample import uniform_grid
-
-from gym_socks.envs.policy import ZeroPolicy
+import numpy as np
 
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
@@ -33,8 +28,18 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
+ex = Experiment()
 
-def main():
+
+@ex.config
+def config():
+    """Experiment configuration variables."""
+    sigma = 0.1
+    sample_size = 2500
+
+
+@ex.main
+def main(sigma, sample_size):
 
     # the system is a 2D integrator with no action space
     system = gym_socks.envs.StochasticNDIntegratorEnv(2)
@@ -75,7 +80,7 @@ def main():
             policy=gym_socks.envs.policy.ZeroPolicy(system),
             sample_space=sample_space,
         ),
-        sample_size=2500,
+        sample_size=sample_size,
     )
 
     # generate the test points
@@ -83,7 +88,7 @@ def main():
     x2 = np.linspace(-1, 1, 100)
     T = gym_socks.envs.sample.uniform_grid([x1, x2])
 
-    alg = KernelSR(kernel_fn=partial(rbf_kernel, gamma=50))
+    alg = KernelSR(kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))))
 
     t0 = time()
 
@@ -117,9 +122,6 @@ def main():
         newline="\n",
     )
 
-    # plot the result
-    plot_results()
-
 
 def plot_results():
 
@@ -128,8 +130,6 @@ def plot_results():
 
         colormap = "viridis"
 
-        cm = 1 / 2.54
-
         # data
         x1 = np.round(np.linspace(-1, 1, 100), 3)
         x2 = np.round(np.linspace(-1, 1, 100), 3)
@@ -137,7 +137,7 @@ def plot_results():
         Z = Pr[0].reshape(XX.shape)
 
         # flat color map
-        fig = plt.figure(figsize=(1.5, 1.5))
+        fig = plt.figure(figsize=(3.33, 3.33))
         ax = fig.add_subplot(111)
 
         plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")
@@ -148,7 +148,7 @@ def plot_results():
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
 
         # 3D projection
-        fig = plt.figure(figsize=(5 * cm, 5 * cm))
+        fig = plt.figure(figsize=(3.33, 3.33))
         ax = fig.add_subplot(111, projection="3d")
 
         ax.tick_params(direction="out", pad=-1)
@@ -164,4 +164,5 @@ def plot_results():
 
 
 if __name__ == "__main__":
-    main()
+    ex.run_commandline()
+    plot_results()

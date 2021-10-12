@@ -1,12 +1,12 @@
-from gym_socks.algorithms.reach.stochastic_reachability import KernelMaximalSR
+from sacred import Experiment
 
 import gym
 import gym_socks
 
-import numpy as np
-
-import gym_socks.kernel.metrics as kernel
+from gym_socks.algorithms.reach.stochastic_reachability import KernelMaximalSR
 from gym_socks.envs.sample import sample
+
+import numpy as np
 
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
@@ -28,13 +28,21 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
+ex = Experiment()
 
-def main():
+
+@ex.config
+def config():
+    """Experiment configuration variables."""
+    sigma = 0.1
+    sample_size = 3125
+
+
+@ex.main
+def main(sigma, sample_size):
 
     # the system is a 2D integrator
     system = gym_socks.envs.StochasticNDIntegratorEnv(2)
-
-    # system.action_space = gym.spaces.Box(low=-1.1, high=1.1, shape=system.action_space.shape, dtype=np.float32)
 
     num_time_steps = system.num_time_steps
 
@@ -86,7 +94,7 @@ def main():
 
     S = sample(
         sampler=multi_action_sampler,
-        sample_size=3125,
+        sample_size=sample_size,
     )
 
     # generate the test points
@@ -98,7 +106,7 @@ def main():
     A = np.linspace(-1, 1, 10)
     A = np.expand_dims(A, axis=1)
 
-    alg = KernelMaximalSR(kernel_fn=partial(rbf_kernel, gamma=50))
+    alg = KernelMaximalSR(kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))))
 
     t0 = time()
 
@@ -132,9 +140,6 @@ def main():
         delimiter=",",
         newline="\n",
     )
-
-    # plot the result
-    plot_results()
 
 
 def plot_results():
@@ -177,4 +182,5 @@ def plot_results():
 
 
 if __name__ == "__main__":
-    main()
+    ex.run_commandline()
+    plot_results()

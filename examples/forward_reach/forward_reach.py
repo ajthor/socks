@@ -1,12 +1,12 @@
-from gym_socks.algorithms.reach.forward_reach import KernelForwardReachClassifier
+from sacred import Experiment
 
 import gym
 import gym_socks
 
-import numpy as np
-
-import gym_socks.kernel.metrics as kernel
+from gym_socks.algorithms.reach.forward_reach import KernelForwardReachClassifier
 from gym_socks.envs.sample import sample
+
+import numpy as np
 
 from functools import partial
 from sklearn.metrics.pairwise import euclidean_distances
@@ -28,9 +28,18 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
+ex = Experiment()
 
-def main():
 
+@ex.config
+def config():
+    """Experiment configuration variables."""
+    sigma = 0.1
+    sample_size = 500
+
+
+@ex.main
+def main(sigma, sample_size):
     @gym_socks.envs.sample.sample_generator
     def donut_sampler():
         """
@@ -45,7 +54,7 @@ def main():
         yield tuple(np.ravel(point))
 
     # Sample the distribution.
-    S = sample(sampler=donut_sampler, sample_size=750)
+    S = sample(sampler=donut_sampler, sample_size=sample_size)
 
     # Generate the test points.
     x1 = np.linspace(-1, 1, 100)
@@ -54,7 +63,11 @@ def main():
 
     # Construct the algorithm.
     alg = KernelForwardReachClassifier(
-        kernel_fn=partial(kernel.abel_kernel, sigma=0.1, distance_fn=euclidean_distances)
+        kernel_fn=partial(
+            gym_socks.kernel.metrics.abel_kernel,
+            sigma=sigma,
+            distance_fn=euclidean_distances,
+        )
     )
 
     t0 = time()
@@ -71,6 +84,7 @@ def main():
         np.save(f, T)
         np.save(f, classifications)
 
+
 def plot_results():
 
     with open("results/forward_reach.npy", "rb") as f:
@@ -78,10 +92,7 @@ def plot_results():
         T = np.array(np.load(f))
         classifications = np.load(f)
 
-    colormap = "viridis"
-
-    # flat color map
-    fig = plt.figure(figsize=(1.5, 1.5))
+    fig = plt.figure(figsize=(3.33, 3.33))
     ax = fig.add_subplot(111)
 
     points_in = T[classifications == True]
@@ -105,5 +116,5 @@ def plot_results():
 
 
 if __name__ == "__main__":
-    main()
+    ex.run_commandline()
     plot_results()
