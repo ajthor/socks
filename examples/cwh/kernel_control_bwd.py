@@ -160,9 +160,6 @@ def main():
     with open("results/data.npy", "wb") as f:
         np.save(f, trajectory)
 
-    # plot the result
-    plot_results()
-
 
 def plot_results():
 
@@ -209,3 +206,4 @@ def plot_results():
 
 if __name__ == "__main__":
     main()
+    plot_results()

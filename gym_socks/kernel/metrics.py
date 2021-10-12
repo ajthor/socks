@@ -1,18 +1,22 @@
 """
 Kernel functions and helper utilities for kernel-based calculations.
 
-Most of the functions are implemented already in sklearn.metrics.pairwise. They are
+Most of the commonly-used kernel functions are already implemented in
+sklearn.metrics.pairwise. The RBF kernel and pairwise Euclidean distance function is
 re-implemented here as an alternative, in case sklearn is unavailable. Most, if not all
 of the kernel functions defined in sklearn.metrics.pairwise should be compatible with
 the functions defined here.
 
-The only kernel implemented here is the RBF (Gaussian) kernel. If other kernels or
-distance metrics are desired, then import the kernel from sklearn.
+To use the sklearn functions, use them like so:
 
-E.g.
 from sklearn.metrics import pairwise_distances
 from sklearn.metrics.pairwise import pairwise_kernels
 from sklearn.metrics.pairwise import rbf_kernel
+from sklearn.metrics.pairwise import euclidean_distances
+
+X = np.arange(4).reshape((2, 2))
+Y = np.arange(6).reshape((3, 2))
+K = gym_socks.kernel.metrics.rbf_kernel(X, Y, distance_fn=euclidean_distances)
 
 """
 from functools import partial, reduce
@@ -68,7 +72,7 @@ def rbf_kernel(
     X,
     Y=None,
     sigma: "Bandwidth parameter." = None,
-    distance: "Distance function." = None,
+    distance_fn: "Distance function." = None,
 ) -> "K":
     """
     RBF kernel function.
@@ -109,14 +113,14 @@ def rbf_kernel(
     sigma : float
         Strictly positive real-valued kernel parameter.
 
-    distance : function
+    distance_fn : function
         Distance function to use in the kernel evaluation.
     """
 
-    if distance is None:
-        distance = euclidean_distance
+    if distance_fn is None:
+        distance_fn = euclidean_distance
 
-    K = distance(X, Y, squared=True)
+    K = distance_fn(X, Y, squared=True)
 
     if sigma is None:
         sigma = np.median(K)
@@ -133,13 +137,13 @@ def rbf_kernel_derivative(
     X,
     Y=None,
     sigma: "Bandwidth parameter." = None,
-    distance: "Distance function." = None,
+    distance_fn: "Distance function." = None,
 ) -> "D":
 
-    if distance is None:
-        distance = euclidean_distance
+    if distance_fn is None:
+        distance_fn = euclidean_distance
 
-    D = distance(X, Y, squared=False)
+    D = distance_fn(X, Y, squared=False)
 
     if sigma is None:
         sigma = np.median(D)
@@ -153,7 +157,7 @@ def abel_kernel(
     X,
     Y=None,
     sigma: "Bandwidth parameter." = None,
-    distance: "Distance function." = None,
+    distance_fn: "Distance function." = None,
 ) -> "K":
     """
     Abel kernel function.
@@ -174,10 +178,10 @@ def abel_kernel(
         Distance function to use in the kernel evaluation.
     """
 
-    if distance is None:
-        distance = euclidean_distance
+    if distance_fn is None:
+        distance_fn = euclidean_distance
 
-    K = distance(X, Y, squared=False)
+    K = distance_fn(X, Y, squared=False)
 
     if sigma is None:
         sigma = np.median(K)

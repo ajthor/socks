@@ -13,6 +13,8 @@ from sklearn.metrics.pairwise import polynomial_kernel
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.metrics.pairwise import laplacian_kernel
 
+from sklearn.metrics.pairwise import euclidean_distances
+
 sklearn_kernel_list = [linear_kernel, polynomial_kernel, rbf_kernel, laplacian_kernel]
 
 
@@ -24,6 +26,14 @@ class TestEuclideanDistance(unittest.TestCase):
         Y = np.arange(4).reshape((2, 2))
 
         groundTruth = np.array([[0.0, 8.0], [8.0, 0.0]], dtype=np.float32)
+
+        distance = gym_socks.kernel.metrics.euclidean_distance(Y, squared=True)
+        cls.assertTrue(np.allclose(distance, groundTruth))
+
+        distance = gym_socks.kernel.metrics.euclidean_distance(X, Y, squared=True)
+        cls.assertTrue(np.allclose(distance, groundTruth))
+
+        groundTruth = euclidean_distances(X, Y, squared=True)
 
         distance = gym_socks.kernel.metrics.euclidean_distance(Y, squared=True)
         cls.assertTrue(np.allclose(distance, groundTruth))
@@ -47,6 +57,12 @@ class TestRBFKernel(unittest.TestCase):
         cls.assertTrue(np.allclose(K, groundTruth))
 
         K = gym_socks.kernel.metrics.rbf_kernel(Y, Y)
+        cls.assertTrue(np.allclose(K, groundTruth))
+
+        K = gym_socks.kernel.metrics.rbf_kernel(Y, distance_fn=euclidean_distances)
+        cls.assertTrue(np.allclose(K, groundTruth))
+
+        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y, distance_fn=euclidean_distances)
         cls.assertTrue(np.allclose(K, groundTruth))
 
     def test_rbf_kernel_different_size(cls):
@@ -78,6 +94,9 @@ class TestRBFKernel(unittest.TestCase):
         )
 
         K = gym_socks.kernel.metrics.rbf_kernel(X, Y)
+        cls.assertTrue(np.allclose(K, groundTruth))
+
+        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, distance_fn=euclidean_distances)
         cls.assertTrue(np.allclose(K, groundTruth))
 
     def test_close_to_sklearn(cls):
@@ -118,6 +137,11 @@ class TestRegularizedInverse(unittest.TestCase):
         for kernel_fn in sklearn_kernel_list:
             with cls.subTest(msg=f"Testing with {type(kernel_fn)}."):
 
-                W = gym_socks.kernel.metrics.regularized_inverse(
-                    Y, Y, kernel_fn=kernel_fn
-                )
+                try:
+
+                    W = gym_socks.kernel.metrics.regularized_inverse(
+                        Y, Y, kernel_fn=kernel_fn
+                    )
+
+                except Exception as e:
+                    cls.fail(f"Kernel {type(kernel_fn)} raised an exception.")

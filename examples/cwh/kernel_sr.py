@@ -120,9 +120,6 @@ def main():
         newline="\n",
     )
 
-    # plot the result
-    plot_results()
-
 
 def plot_results():
 
@@ -163,3 +160,4 @@ def plot_results():
 
 if __name__ == "__main__":
     main()
+    plot_results()
