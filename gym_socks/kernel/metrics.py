@@ -149,6 +149,47 @@ def rbf_kernel_derivative(
     D *= 2 / (2 * (sigma ** 2))
 
 
+def abel_kernel(
+    X,
+    Y=None,
+    sigma: "Bandwidth parameter." = None,
+    distance: "Distance function." = None,
+) -> "K":
+    """
+    Abel kernel function.
+
+    Parameters
+    ----------
+
+    X : ndarray
+        The observations are oganized in ROWS.
+
+    Y : ndarray
+        The observations are oganized in ROWS.
+
+    sigma : float
+        Strictly positive real-valued kernel parameter.
+
+    distance : function
+        Distance function to use in the kernel evaluation.
+    """
+
+    if distance is None:
+        distance = euclidean_distance
+
+    K = distance(X, Y, squared=False)
+
+    if sigma is None:
+        sigma = np.median(K)
+    else:
+        assert sigma > 0, "sigma must be a strictly positive real value."
+
+    K /= -sigma
+    np.exp(K, K)
+
+    return K
+
+
 def regularized_inverse(
     X,
     Y=None,
