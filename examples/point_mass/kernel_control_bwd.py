@@ -40,7 +40,7 @@ def config():
     sampling_time = 0.1
     time_horizon = 2
 
-    initial_condition = [-0.5, 0.5]
+    initial_condition = [-0.5, 0]
 
     sample_size = 1500
 
@@ -111,6 +111,13 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
             2,
         )
 
+    def tracking_constraint(time=0, state=None):
+
+        return np.array(
+            np.all(state >= -0.2, axis=1) & np.all(state <= 0.2, axis=1),
+            dtype=np.float32,
+        )
+
     t0 = time()
 
     # compute policy
@@ -119,7 +126,13 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
         l=1 / (sample_size ** 2),
     )
 
-    policy.train_batch(system=system, S=S, A=A, cost_fn=tracking_cost)
+    policy.train_batch(
+        system=system,
+        S=S,
+        A=A,
+        cost_fn=tracking_cost,
+        constraint_fn=tracking_constraint,
+    )
 
     t1 = time()
     print(f"Total time: {t1 - t0} s")
@@ -159,11 +172,11 @@ def plot_results():
         ax = fig.add_subplot(111)
 
         # plot target trajectory
-        target_trajectory = np.array([[-1 + i * 0.1, -1 + i * 0.1] for i in range(25)])
+        target_trajectory = np.array([[-1 + i * 0.1, -1 + i * 0.1] for i in range(21)])
         plt.plot(
             target_trajectory[:, 0],
             target_trajectory[:, 1],
-            marker="X",
+            marker="x",
             markersize=2.5,
             linewidth=0.5,
             linestyle="--",
@@ -178,6 +191,9 @@ def plot_results():
             linewidth=0.5,
             linestyle="--",
         )
+
+        # plot constraint box
+        plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.4, fc="none", ec="red"))
 
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
 

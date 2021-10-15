@@ -42,15 +42,25 @@ def config():
 
     initial_condition = [-0.5, -0.75, 0, 0]
 
-    # Sample size.
-    sample_size = 2000
+    sample_size = 1500
 
     target_state = [0, 0, 0, 0]
+
+    action_space_lb = -0.05
+    action_space_ub = 0.05
 
 
 @ex.main
 def main(
-    sigma, sampling_time, time_horizon, initial_condition, sample_size, target_state
+    seed,
+    sigma,
+    sampling_time,
+    time_horizon,
+    initial_condition,
+    sample_size,
+    target_state,
+    action_space_lb,
+    action_space_ub,
 ):
 
     # Define a 4D CWH system.
@@ -58,8 +68,17 @@ def main(
 
     # Set the action space such that the control actions are bounded by -0.1 and 0.1.
     system.action_space = gym.spaces.Box(
-        low=-0.1, high=0.1, shape=system.action_space.shape, dtype=np.float32
+        low=action_space_lb,
+        high=action_space_ub,
+        shape=system.action_space.shape,
+        dtype=np.float32,
     )
+
+    # Set the random seed.
+    system.seed(seed=seed)
+    system.observation_space.seed(seed=seed)
+    system.action_space.seed(seed=seed)
+    system.disturbance_space.seed(seed=seed)
 
     # We define a short time horizon for the problem. The sampling time is Ts = 20s.
     system.sampling_time = sampling_time
@@ -79,6 +98,8 @@ def main(
         dtype=np.float32,
     )
 
+    sample_space.seed(seed=seed)
+
     S = sample(
         gym_socks.envs.sample.step_sampler(
             system=system,
@@ -89,8 +110,8 @@ def main(
     )
 
     # Generate a sample of admissible control actions.
-    u1 = np.linspace(-0.1, 0.1, 25)
-    u2 = np.linspace(-0.1, 0.1, 25)
+    u1 = np.linspace(action_space_lb, action_space_ub, 25)
+    u2 = np.linspace(action_space_lb, action_space_ub, 25)
     A = gym_socks.envs.sample.uniform_grid([u1, u2])
 
     # Define the cost and constraint functions.

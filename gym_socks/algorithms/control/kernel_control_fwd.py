@@ -111,6 +111,17 @@ class KernelControlFwd(BasePolicy):
         pbar.update()
         pbar.close()
 
+    def train_batch(
+        self,
+        system=None,
+        S: "State sample." = None,
+        A: "Admissible action sample." = None,
+        cost_fn: "Cost function." = None,
+        constraint_fn: "Constraint function." = None,
+        batch_size: "Batch size." = 5,
+    ):
+        raise NotImplementedError
+
     def __call__(self, time=0, state=None, *args, **kwargs):
 
         if state is None:

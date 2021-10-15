@@ -137,7 +137,7 @@ def plot_results():
         Z = Pr[0].reshape(XX.shape)
 
         # flat color map
-        fig = plt.figure(figsize=(3.33, 3.33))
+        fig = plt.figure(figsize=(1.5, 1.5))
         ax = fig.add_subplot(111)
 
         plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")

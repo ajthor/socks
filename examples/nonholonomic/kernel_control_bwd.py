@@ -40,9 +40,30 @@ def config():
     sampling_time = 0.1
     time_horizon = 2
 
-    initial_condition = [-0.8, 0.5, np.pi]
+    # initial_condition = [-0.8, 0.5, np.pi]
+    initial_condition = [-0.8, 0, 0]
 
     sample_size = 1500
+
+    amplitude = 0.5
+    period = 2.0
+
+
+@ex.capture
+def compute_target_trajectory(amplitude, period, sampling_time, time_horizon):
+
+    a = amplitude
+    p = period
+
+    target_trajectory = [
+        [
+            (x * 0.1) - 1.0,
+            4 * a / p * np.abs((((((x * 0.1) - 1.0) - p / 2) % p) + p) % p - p / 2) - a,
+        ]
+        for x in range(int(time_horizon / sampling_time) + 1)
+    ]
+
+    return target_trajectory
 
 
 @ex.main
@@ -51,7 +72,7 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
     system = gym_socks.envs.StochasticNonholonomicVehicleEnv()
 
     system.action_space = gym.spaces.Box(
-        low=np.array([-0.1, -10.1]),
+        low=np.array([0.1, -10.1]),
         high=np.array([1.1, 10.1]),
         dtype=np.float32,
     )
@@ -68,8 +89,8 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
 
     # generate the sample
     sample_space = gym.spaces.Box(
-        low=np.array([-1.1, -1.1, -2 * np.pi]),
-        high=np.array([1.1, 1.1, 2 * np.pi]),
+        low=np.array([-1.2, -1.2, -2 * np.pi]),
+        high=np.array([1.2, 1.2, 2 * np.pi]),
         dtype=np.float32,
     )
 
@@ -85,23 +106,21 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
     )
 
     # generate the test points
-    u1 = np.linspace(0, 1, 10)
+    u1 = np.linspace(0.1, 1, 10)
     u2 = np.linspace(-10, 10, 20)
     A = gym_socks.envs.sample.uniform_grid([u1, u2])
+
+    target_trajectory = compute_target_trajectory()
+    # [
+    #     -1 + time * system.sampling_time,
+    #     -1 + time * system.sampling_time,
+    # ]
 
     def tracking_cost(time=0, state=None):
 
         return np.power(
             norm(
-                state[:, :2]
-                - np.array(
-                    [
-                        [
-                            -1 + time * system.sampling_time,
-                            -1 + time * system.sampling_time,
-                        ]
-                    ]
-                ),
+                state[:, :2] - np.array([target_trajectory[time]]),
                 ord=2,
                 axis=1,
             ),
@@ -160,14 +179,13 @@ def plot_results():
 
         colormap = "viridis"
 
-        cm = 1 / 2.54
-
         # flat color map
-        fig = plt.figure(figsize=(5 * cm, 5 * cm))
+        fig = plt.figure(figsize=(3, 3))
         ax = fig.add_subplot(111)
 
         # plot target trajectory
-        target_trajectory = np.array([[-1 + i * 0.1, -1 + i * 0.1] for i in range(21)])
+        # target_trajectory = np.array([[-1 + i * 0.1, -1 + i * 0.1] for i in range(21)])
+        target_trajectory = np.array(compute_target_trajectory())
         plt.plot(
             target_trajectory[:, 0],
             target_trajectory[:, 1],
@@ -181,14 +199,27 @@ def plot_results():
         plt.plot(
             trajectory[:, 0],
             trajectory[:, 1],
-            marker="^",
+            marker="None",
             markersize=2.5,
             linewidth=0.5,
             linestyle="--",
         )
 
-        # plot constraint box
-        plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.4, fc="none", ec="red"))
+        paper_airplane = [(0, -0.25), (0.5, -0.5), (0, 1), (-0.5, -0.5), (0, -0.25)]
+
+        for x in trajectory:
+            angle = -np.rad2deg(x[2])
+
+            t = matplotlib.markers.MarkerStyle(marker=paper_airplane)
+            t._transform = t.get_transform().rotate_deg(angle)
+
+            plt.plot(x[0], x[1], marker=t, markersize=4, linestyle='None', color="C1")
+
+        ax.set_xlabel(r"$x_{1}$")
+        ax.set_ylabel(r"$x_{2}$")
+
+        ax.set_xlim(-1.1, 1.1)
+        ax.set_ylim(-1.1, 1.1)
 
         plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
 
