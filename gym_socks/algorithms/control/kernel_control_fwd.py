@@ -27,7 +27,7 @@ class KernelControlFwd(BasePolicy):
 
     """
 
-    def __init__(self, kernel_fn=None, l=None, *args, **kwargs):
+    def __init__(self, kernel_fn=None, regularization_param=None, *args, **kwargs):
         """
         Initialize the algorithm.
         """
@@ -36,11 +36,11 @@ class KernelControlFwd(BasePolicy):
         if kernel_fn is None:
             kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
 
-        if l is None:
-            l = 1
+        if regularization_param is None:
+            regularization_param = 1
 
         self.kernel_fn = kernel_fn
-        self.l = l
+        self.regularization_param = regularization_param
 
     def _validate_inputs(
         self, system=None, S=None, A=None, cost_fn=None, constraint_fn=None
@@ -58,14 +58,22 @@ class KernelControlFwd(BasePolicy):
         if cost_fn is None:
             raise ValueError("Must supply a cost function.")
 
-    def train(self, system=None, S=None, A=None, cost_fn=None, constraint_fn=None):
+    def train(
+        self,
+        system=None,
+        S=None,
+        A=None,
+        cost_fn=None,
+        constraint_fn=None,
+        verbose: bool = True,
+    ):
 
         self._validate_inputs(
             system=system, S=S, A=A, cost_fn=cost_fn, constraint_fn=constraint_fn
         )
 
         kernel_fn = self.kernel_fn
-        l = self.l
+        regularization_param = self.regularization_param
 
         X, U, Y = gym_socks.envs.sample.transpose_sample(S)
         X = np.array(X)
@@ -75,9 +83,15 @@ class KernelControlFwd(BasePolicy):
         A = np.array(A)
         # A = A[:, 0, :]
 
-        pbar = ms_tqdm(total=3, bar_format=_progress_fmt)
+        pbar = ms_tqdm(
+            total=3,
+            bar_format=_progress_fmt,
+            disable=False if verbose is True else True,
+        )
 
-        W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        W = kernel.regularized_inverse(
+            X, U=U, kernel_fn=kernel_fn, regularization_param=regularization_param
+        )
         pbar.update()
 
         CUA = kernel_fn(U, A)
@@ -106,6 +120,7 @@ class KernelControlFwd(BasePolicy):
         A=None,
         cost_fn=None,
         constraint_fn=None,
+        verbose: bool = True,
         batch_size=5,
     ):
         raise NotImplementedError

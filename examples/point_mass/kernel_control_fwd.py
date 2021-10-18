@@ -123,7 +123,7 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
     # compute policy
     policy = KernelControlFwd(
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
-        l=1 / (sample_size ** 2),
+        regularization_param=1 / (sample_size ** 2),
     )
 
     policy.train(
@@ -157,6 +157,7 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
         np.save(f, trajectory)
 
 
+@ex.command(unobserved=True)
 def plot_results():
 
     with open("results/data.npy", "rb") as f:

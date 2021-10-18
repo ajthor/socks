@@ -85,6 +85,7 @@ def main(sigma, sample_size):
         np.save(f, classifications)
 
 
+@ex.command(unobserved=True)
 def plot_results():
 
     with open("results/forward_reach.npy", "rb") as f:

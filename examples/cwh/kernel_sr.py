@@ -1,15 +1,12 @@
-from gym_socks.algorithms.reach.stochastic_reachability import KernelSR
+from sacred import Experiment
 
 import gym
 import gym_socks
 
 import numpy as np
 
-import gym_socks.kernel.metrics as kernel
-from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import random_initial_conditions
-from gym_socks.envs.sample import uniform_grid
-
+from gym_socks.algorithms.reach.stochastic_reachability import KernelSR
+from gym_socks.envs.sample import sample, uniform_grid
 from gym_socks.envs.policy import ZeroPolicy
 
 from functools import partial
@@ -33,6 +30,9 @@ matplotlib.rcParams.update(
 import matplotlib.pyplot as plt
 
 
+ex = Experiment()
+
+
 def CWHSafeSet(points):
 
     return np.array(
@@ -43,6 +43,23 @@ def CWHSafeSet(points):
     )
 
 
+@ex.config
+def config():
+    """Experiment configuration variables."""
+    sigma = 0.1
+
+    sampling_time = 20
+    time_horizon = 100
+
+    initial_condition = [-0.5, -0.75, 0, 0]
+
+    # Sample size.
+    sample_size = 2000
+
+    target_state = [0, 0, 0, 0]
+
+
+@ex.main
 def main():
 
     # the system is a 4D CWH system
@@ -86,7 +103,7 @@ def main():
     x1 = x[0]
     x2 = x[1]
 
-    alg = KernelSR(kernel_fn=partial(rbf_kernel, gamma=50))
+    alg = KernelSR(kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))))
 
     t0 = time()
 
@@ -121,6 +138,7 @@ def main():
     )
 
 
+@ex.command(unobserved=True)
 def plot_results():
 
     with open("results/data.npy", "rb") as f:
@@ -159,5 +177,5 @@ def plot_results():
 
 
 if __name__ == "__main__":
-    main()
+    ex.run_commandline()
     plot_results()

@@ -142,6 +142,7 @@ def main(sigma, sample_size):
     )
 
 
+@ex.command(unobserved=True)
 def plot_results():
 
     with open("results/data.npy", "rb") as f:

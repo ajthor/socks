@@ -16,7 +16,7 @@ from tqdm.auto import tqdm
 
 class KernelControlBwd(BasePolicy):
     """
-    Stochastic optimal control policy forward in time.
+    Stochastic optimal control policy backward in time.
 
     References
     ----------
@@ -28,20 +28,18 @@ class KernelControlBwd(BasePolicy):
 
     """
 
-    def __init__(self, kernel_fn=None, l=None, *args, **kwargs):
-        """
-        Initialize the algorithm.
-        """
+    def __init__(self, kernel_fn=None, regularization_param=None, *args, **kwargs):
+        """Initialize the algorithm."""
         super().__init__(*args, **kwargs)
 
         if kernel_fn is None:
             kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
 
-        if l is None:
-            l = 1
+        if regularization_param is None:
+            regularization_param = 1
 
         self.kernel_fn = kernel_fn
-        self.l = l
+        self.regularization_param = regularization_param
 
     def _validate_inputs(
         self,
@@ -71,6 +69,7 @@ class KernelControlBwd(BasePolicy):
         A=None,
         cost_fn=None,
         constraint_fn=None,
+        verbose: bool = True,
     ):
 
         self._validate_inputs(
@@ -78,11 +77,15 @@ class KernelControlBwd(BasePolicy):
         )
 
         kernel_fn = self.kernel_fn
-        l = self.l
+        regularization_param = self.regularization_param
 
         num_time_steps = system.num_time_steps - 1
 
-        pbar = ms_tqdm(total=num_time_steps + 2, bar_format=_progress_fmt)
+        pbar = ms_tqdm(
+            total=num_time_steps + 2,
+            bar_format=_progress_fmt,
+            disable=False if verbose is True else True,
+        )
 
         X, U, Y = gym_socks.envs.sample.transpose_sample(S)
         X = np.array(X)
@@ -92,7 +95,9 @@ class KernelControlBwd(BasePolicy):
         A = np.array(A)
         # A = A[:, 0, :]
 
-        W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        W = kernel.regularized_inverse(
+            X, U=U, kernel_fn=kernel_fn, regularization_param=regularization_param
+        )
         pbar.update()
 
         CUA = kernel_fn(U, A)
@@ -167,6 +172,7 @@ class KernelControlBwd(BasePolicy):
         A=None,
         cost_fn=None,
         constraint_fn=None,
+        verbose: bool = True,
         batch_size=5,
     ):
 
@@ -175,11 +181,15 @@ class KernelControlBwd(BasePolicy):
         )
 
         kernel_fn = self.kernel_fn
-        l = self.l
+        regularization_param = self.regularization_param
 
         num_time_steps = system.num_time_steps - 1
 
-        pbar = ms_tqdm(total=num_time_steps + 2, bar_format=_progress_fmt)
+        pbar = ms_tqdm(
+            total=num_time_steps + 2,
+            bar_format=_progress_fmt,
+            disable=False if verbose is True else True,
+        )
 
         X, U, Y = gym_socks.envs.sample.transpose_sample(S)
         X = np.array(X)
@@ -187,9 +197,10 @@ class KernelControlBwd(BasePolicy):
         Y = np.array(Y)
 
         A = np.array(A)
-        # A = A[:, 0, :]
 
-        W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        W = kernel.regularized_inverse(
+            X, U=U, kernel_fn=kernel_fn, regularization_param=regularization_param
+        )
         pbar.update()
 
         CUA = kernel_fn(U, A)
@@ -205,8 +216,6 @@ class KernelControlBwd(BasePolicy):
 
         # run backwards in time and compute the safety probabilities
         for t in range(num_time_steps - 1, -1, -1):
-
-            # print(f"Computing for k={t}")
 
             if constraint_fn is not None:
 

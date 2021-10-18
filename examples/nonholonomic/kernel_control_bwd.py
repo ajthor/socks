@@ -48,6 +48,8 @@ def config():
     amplitude = 0.5
     period = 2.0
 
+    verbose = True
+
 
 @ex.capture
 def compute_target_trajectory(amplitude, period, sampling_time, time_horizon):
@@ -67,7 +69,9 @@ def compute_target_trajectory(amplitude, period, sampling_time, time_horizon):
 
 
 @ex.main
-def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_size):
+def main(
+    seed, sigma, sampling_time, time_horizon, initial_condition, sample_size, verbose
+):
 
     system = gym_socks.envs.StochasticNonholonomicVehicleEnv()
 
@@ -139,14 +143,14 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
     # compute policy
     policy = KernelControlBwd(
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
-        l=1 / (sample_size ** 2),
+        regularization_param=1 / (sample_size ** 2),
     )
     policy.train_batch(
         system=system,
         S=S,
         A=A,
         cost_fn=tracking_cost,
-        # constraint_fn=tracking_constraint,
+        verbose=verbose,
     )
 
     t1 = time()
@@ -159,7 +163,7 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
     for t in range(num_time_steps):
 
         action = np.array(policy(time=t, state=[system.state]))
-        obs, reward, done, _ = system.step(action)
+        obs, cost, done, _ = system.step(action)
 
         trajectory.append(list(obs))
 
@@ -171,6 +175,7 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
         np.save(f, trajectory)
 
 
+@ex.command(unobserved=True)
 def plot_results():
 
     with open("results/data.npy", "rb") as f:

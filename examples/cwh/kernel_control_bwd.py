@@ -151,7 +151,7 @@ def main(
     # Compute policy.
     policy = KernelControlBwd(
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
-        l=1 / (sample_size ** 2),
+        regularization_param=1 / (sample_size ** 2),
     )
 
     policy.train_batch(
@@ -189,6 +189,7 @@ def main(
         np.save(f, trajectory)
 
 
+@ex.command(unobserved=True)
 def plot_results():
 
     with open("results/data.npy", "rb") as f:
