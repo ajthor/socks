@@ -43,12 +43,7 @@ class KernelControlFwd(BasePolicy):
         self.l = l
 
     def _validate_inputs(
-        self,
-        system=None,
-        S: "State sample." = None,
-        A: "Admissible action sample." = None,
-        cost_fn: "Cost function." = None,
-        constraint_fn: "Constraint function." = None,
+        self, system=None, S=None, A=None, cost_fn=None, constraint_fn=None
     ):
 
         if system is None:
@@ -63,14 +58,7 @@ class KernelControlFwd(BasePolicy):
         if cost_fn is None:
             raise ValueError("Must supply a cost function.")
 
-    def train(
-        self,
-        system=None,
-        S: "State sample." = None,
-        A: "Admissible action sample." = None,
-        cost_fn: "Cost function." = None,
-        constraint_fn: "Constraint function." = None,
-    ):
+    def train(self, system=None, S=None, A=None, cost_fn=None, constraint_fn=None):
 
         self._validate_inputs(
             system=system, S=S, A=A, cost_fn=cost_fn, constraint_fn=constraint_fn
@@ -114,11 +102,11 @@ class KernelControlFwd(BasePolicy):
     def train_batch(
         self,
         system=None,
-        S: "State sample." = None,
-        A: "Admissible action sample." = None,
-        cost_fn: "Cost function." = None,
-        constraint_fn: "Constraint function." = None,
-        batch_size: "Batch size." = 5,
+        S=None,
+        A=None,
+        cost_fn=None,
+        constraint_fn=None,
+        batch_size=5,
     ):
         raise NotImplementedError
 

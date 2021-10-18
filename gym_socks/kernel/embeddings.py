@@ -60,8 +60,9 @@ def conditional_kernel_embedding(
     if kernel_fn is None:
         kernel_fn = partial(rbf_kernel, sigma=1)
 
+    W = regularized_inverse(X, Y, kernel_fn=kernel_fn)
+
     def conditional_embedding(fn, eval_points):
-        W = regularized_inverse(X, Y, kernel_fn=kernel_fn)
         CXT = kernel_fn(X, eval_points)
         return np.matmul(fn(Y), np.matmul(W, CXT))
 

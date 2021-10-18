@@ -203,7 +203,7 @@ def plot_results():
             t = matplotlib.markers.MarkerStyle(marker=paper_airplane)
             t._transform = t.get_transform().rotate_deg(angle)
 
-            plt.plot(x[0], x[1], marker=t, markersize=4, linestyle='None', color="C1")
+            plt.plot(x[0], x[1], marker=t, markersize=4, linestyle="None", color="C1")
 
         ax.set_xlabel(r"$x_{1}$")
         ax.set_ylabel(r"$x_{2}$")

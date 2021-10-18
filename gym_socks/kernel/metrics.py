@@ -25,7 +25,7 @@ import numpy as np
 from numpy.linalg import inv
 
 
-def euclidean_distance(X, Y=None, squared: bool = False) -> "D":
+def euclidean_distance(X, Y=None, squared: bool = False):
     """
     Euclidean distance function.
 
@@ -68,12 +68,7 @@ def euclidean_distance(X, Y=None, squared: bool = False) -> "D":
     return distances if squared else np.sqrt(distances)
 
 
-def rbf_kernel(
-    X,
-    Y=None,
-    sigma: "Bandwidth parameter." = None,
-    distance_fn: "Distance function." = None,
-) -> "K":
+def rbf_kernel(X, Y=None, sigma=None, distance_fn=None):
     """
     RBF kernel function.
 
@@ -133,12 +128,7 @@ def rbf_kernel(
     return K
 
 
-def rbf_kernel_derivative(
-    X,
-    Y=None,
-    sigma: "Bandwidth parameter." = None,
-    distance_fn: "Distance function." = None,
-) -> "D":
+def rbf_kernel_derivative(X, Y=None, sigma=None, distance_fn=None):
 
     if distance_fn is None:
         distance_fn = euclidean_distance
@@ -153,12 +143,7 @@ def rbf_kernel_derivative(
     D *= 2 / (2 * (sigma ** 2))
 
 
-def abel_kernel(
-    X,
-    Y=None,
-    sigma: "Bandwidth parameter." = None,
-    distance_fn: "Distance function." = None,
-) -> "K":
+def abel_kernel(X, Y=None, sigma=None, distance_fn=None):
     """
     Abel kernel function.
 
@@ -199,9 +184,9 @@ def regularized_inverse(
     Y=None,
     U=None,
     V=None,
-    l: "Regularization parameter." = None,
-    kernel_fn: "Kernel function." = None,
-) -> "W":
+    regularization_param=None,
+    kernel_fn=None,
+):
     """
     Regularized inverse.
 
@@ -217,7 +202,7 @@ def regularized_inverse(
     Y : ndarray
         The observations are oganized in ROWS.
 
-    l : float
+    regularization_param : float
         Regularization parameter, which is a strictly positive real value.
 
     kernel_fn : function
@@ -227,10 +212,12 @@ def regularized_inverse(
     if Y is None:
         Y = X
 
-    if l is None:
-        l = 1 / (X.shape[0] ** 2)
+    if regularization_param is None:
+        regularization_param = 1 / (X.shape[0] ** 2)
     else:
-        assert l > 0, "l must be a strictly positive real value."
+        assert (
+            regularization_param > 0
+        ), "regularization_param must be a strictly positive real value."
 
     if kernel_fn is None:
         kernel_fn = partial(rbf_kernel, sigma=1)
@@ -254,4 +241,4 @@ def regularized_inverse(
 
     I = np.identity(num_rows)
 
-    return inv(K + l * num_rows * I)
+    return inv(K + regularization_param * num_rows * I)

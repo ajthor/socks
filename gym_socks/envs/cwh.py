@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from gym_socks.envs.dynamical_system import DynamicalSystem
 from gym_socks.envs.dynamical_system import StochasticMixin
 
@@ -68,11 +69,13 @@ class CWHBase(object):
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
         self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
 
+    @abstractmethod
     def compute_state_matrix(self, sampling_time):
-        ...
+        raise NotImplementedError
 
+    @abstractmethod
     def compute_input_matrix(self, sampling_time):
-        ...
+        raise NotImplementedError
 
 
 class CWH4DEnv(CWHBase, DynamicalSystem):
@@ -94,7 +97,6 @@ class CWH4DEnv(CWHBase, DynamicalSystem):
         )
 
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
-
         self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
 
     def compute_state_matrix(self, sampling_time):
@@ -224,7 +226,6 @@ class CWH6DEnv(CWHBase, DynamicalSystem):
         )
 
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
-
         self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
 
     def compute_state_matrix(self, sampling_time):

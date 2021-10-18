@@ -12,13 +12,14 @@ class DynamicalSystem(gym.Env, ABC):
     """
     Base class for dynamical system models.
 
-    This class is ABSTRACT, meaning it is not meant to be instantiated directly. Instead, define a new class that inherits from DynamicalSystem, and define a custom 'dynamics' function.
+    This class is ABSTRACT, meaning it is not meant to be instantiated directly.
+    Instead, define a new class that inherits from DynamicalSystem, and define a custom
+    'dynamics' function.
 
     Example:
 
-    class CustomDynamicalSystem(DynamicalSystem):
-        def __init__(self):
-            super().__init__(state_dim=2, action_dim=1)
+    class CustomDynamicalSystem(DynamicalSystem): def __init__(self):
+        super().__init__(state_dim=2, action_dim=1)
 
         def dynamics(self, t, x, u, w):
             return u
@@ -30,23 +31,21 @@ class DynamicalSystem(gym.Env, ABC):
             return np.array(self.state)
 
 
-    * The state space and input space are assumed to be R^n and R^m, where n and
-      m are set by state_dim and action_dim above (though these can be altered,
-      see gym.spaces for more info).
-    * The dynamics function (defined by you) returns dx/dt, and the system is
-      integrated using scipy.integrate.solve_ivp to determine the state at the
-      next time instant and discretize the system.
+    * The state space and input space are assumed to be R^n and R^m, where n and m are
+      set by state_dim and action_dim above (though these can be altered, see gym.spaces
+      for more info).
+    * The dynamics function (defined by you) returns dx/dt, and the system is integrated
+      using scipy.integrate.solve_ivp to determine the state at the next time instant
+      and discretize the system.
     * The reset function sets a new initial condition for the system.
 
     The system can then be simulated using the standard gym environment.
 
     Example:
 
-    import gym
-    import numpy as np
+    import gym import numpy as np
 
-    env = CustomDynamicalSystem()
-    obs = env.reset()
+    env = CustomDynamicalSystem() obs = env.reset()
 
     num_steps = env.num_time_steps
 
@@ -81,15 +80,15 @@ class DynamicalSystem(gym.Env, ABC):
         env.sampling_time = 0.25
         """
 
-        if observation_space is not None:
-            self.observation_space = observation_space
-        else:
+        if observation_space is None:
             raise ValueError("Must supply an observation_space.")
 
-        if action_space is not None:
-            self.action_space = action_space
-        else:
+        self.observation_space = observation_space
+
+        if action_space is None:
             raise ValueError("Must supply an action_space.")
+
+        self.action_space = action_space
 
         # time parameters
         self._time_horizon = 1
@@ -199,7 +198,7 @@ class DynamicalSystem(gym.Env, ABC):
         return np.array(self.state), cost, done, info
 
     def reset(self):
-        """Resets the system to a random initial condition."""
+        """Reset the system to a random initial condition."""
 
         self.state = self.np_random.uniform(
             low=0, high=1, size=self.observation_space.shape
@@ -208,28 +207,26 @@ class DynamicalSystem(gym.Env, ABC):
         return np.array(self.state)
 
     def render(self, mode="human"):
-        """Render function for displaying the system graphically."""
         raise NotImplementedError
 
     def close(self):
-        """Deconstructor method."""
         raise NotImplementedError
 
     @abstractmethod
-    def dynamics(
-        self, t: "Time variable.", x: "State vector.", u: "Input vector."
-    ) -> "dx/dt":
+    def dynamics(self, t, x, u):
         """
         Dynamics for the system.
 
-        Required to be overloaded by subclasses.
+        y = f(t, x, u)
+              ┬  ┬  ┬
+              │  │  └┤ Control action u
+              │  └───┤ System state x
+              └──────┤ Time variable t
         """
-        ...
+        raise NotImplementedError
 
-    def cost(self, u: "Input vector.") -> "R":
-        """
-        Cost function for the system.
-        """
+    def cost(self, u):
+        """Cost function for the system."""
         return 0.0
 
 
@@ -237,13 +234,14 @@ class StochasticMixin(DynamicalSystem):
     """
     Base class for stochastic dynamical system models.
 
-    This class is ABSTRACT, meaning it is not meant to be instantiated directly. Instead, define a new class that inherits from DynamicalSystem, and define a custom 'dynamics' function.
+    This class is ABSTRACT, meaning it is not meant to be instantiated directly.
+    Instead, define a new class that inherits from DynamicalSystem, and define a custom
+    'dynamics' function.
 
     Example:
 
-    class CustomDynamicalSystem(StochasticMixin, DynamicalSystem):
-        def __init__(self):
-            super().__init__(state_dim=2, action_dim=1, disturbance_dim=2)
+    class CustomDynamicalSystem(StochasticMixin, DynamicalSystem): def __init__(self):
+        super().__init__(state_dim=2, action_dim=1, disturbance_dim=2)
 
         def dynamics(self, t, x, u, w):
             return u + w
@@ -259,12 +257,12 @@ class StochasticMixin(DynamicalSystem):
             return 1e-2 * np.array(w)
 
 
-    * The state space and input space are assumed to be R^n and R^m, where n and
-      m are set by state_dim and action_dim above. The disturbance dimension is assumed
-      to be R^p, and is generally p = n.
-    * The sample_disturbance function is a custom function which you define, and
-      returns a disturbance vector, which is added to the state at each each time step.
-      Thus, the output of this function should be of the same dimension as the state.
+    * The state space and input space are assumed to be R^n and R^m, where n and m are
+      set by state_dim and action_dim above. The disturbance dimension is assumed to be
+      R^p, and is generally p = n.
+    * The sample_disturbance function is a custom function which you define, and returns
+      a disturbance vector, which is added to the state at each each time step. Thus,
+      the output of this function should be of the same dimension as the state.
 
     """
 
@@ -343,19 +341,18 @@ class StochasticMixin(DynamicalSystem):
         return np.array(self.state), cost, done, info
 
     @abstractmethod
-    def dynamics(
-        self,
-        t: "Time variable.",
-        x: "State vector.",
-        u: "Input vector.",
-        w: "Disturbance vector." = None,
-    ) -> "dx/dt":
+    def dynamics(self, t, x, u, w=None):
         """
         Dynamics for the system.
 
-        Required to be overloaded by subclasses.
+        y = f(t, x, u, w=None)
+              ┬  ┬  ┬  ─────┬
+              │  │  │       └───┤ Disturbance w
+              │  │  └───────────┤ Control action u
+              │  └──────────────┤ System state x
+              └─────────────────┤ Time variable t
         """
-        ...
+        raise NotImplementedError
 
     def sample_disturbance(self):
         """

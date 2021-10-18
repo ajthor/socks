@@ -13,9 +13,7 @@ class AlgorithmInterface(ABC):
     """
 
     def __init__(self, *args, **kwargs):
-        """
-        Initialize the algorithm.
-        """
+        """Initialize the algorithm."""
 
         # Algorithm parameters go here.
 

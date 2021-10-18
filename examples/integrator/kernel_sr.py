@@ -3,7 +3,12 @@ from sacred import Experiment
 import gym
 import gym_socks
 
-from gym_socks.algorithms.reach.stochastic_reachability import KernelSR
+# from gym_socks.algorithms.reach.stochastic_reachability import KernelSR
+
+from gym_socks.algorithms.reach.stochastic_reachability import (
+    KernelSR,
+    kernel_stochastic_reachability,
+)
 from gym_socks.envs.sample import sample
 
 import numpy as np
@@ -88,18 +93,29 @@ def main(sigma, sample_size):
     x2 = np.linspace(-1, 1, 100)
     T = gym_socks.envs.sample.uniform_grid([x1, x2])
 
-    alg = KernelSR(kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))))
+    # alg = KernelSR(kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))))
 
     t0 = time()
 
     # run the algorithm
-    Pr, _ = alg.run(
+    # Pr, _ = alg.run(
+    #     system=system,
+    #     S=S,
+    #     T=T,
+    #     constraint_tube=constraint_tube,
+    #     target_tube=target_tube,
+    #     problem="THT",
+    # )
+
+    Pr, _ = kernel_stochastic_reachability(
+        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
         system=system,
         S=S,
         T=T,
         constraint_tube=constraint_tube,
         target_tube=target_tube,
         problem="THT",
+        batch_size=100,
     )
 
     t1 = time()

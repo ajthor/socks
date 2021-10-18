@@ -227,7 +227,9 @@ def plot_results():
             matplotlib.patches.PathPatch(path, fc="none", ec="blue", lw=0.1)
         )
 
-        plt.gca().add_patch(plt.Rectangle((-0.1, -0.1), 0.2, 0.1, fc="none", ec="green"))
+        plt.gca().add_patch(
+            plt.Rectangle((-0.1, -0.1), 0.2, 0.1, fc="none", ec="green")
+        )
 
         ax.set_xlabel(r"$x_{1}$")
         ax.set_ylabel(r"$x_{2}$")

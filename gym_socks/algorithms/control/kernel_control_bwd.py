@@ -46,10 +46,10 @@ class KernelControlBwd(BasePolicy):
     def _validate_inputs(
         self,
         system=None,
-        S: "State sample." = None,
-        A: "Admissible action sample." = None,
-        cost_fn: "Cost function." = None,
-        constraint_fn: "Constraint function." = None,
+        S=None,
+        A=None,
+        cost_fn=None,
+        constraint_fn=None,
     ):
 
         if system is None:
@@ -67,10 +67,10 @@ class KernelControlBwd(BasePolicy):
     def train(
         self,
         system=None,
-        S: "State sample." = None,
-        A: "Admissible action sample." = None,
-        cost_fn: "Cost function." = None,
-        constraint_fn: "Constraint function." = None,
+        S=None,
+        A=None,
+        cost_fn=None,
+        constraint_fn=None,
     ):
 
         self._validate_inputs(
@@ -163,11 +163,11 @@ class KernelControlBwd(BasePolicy):
     def train_batch(
         self,
         system=None,
-        S: "State sample." = None,
-        A: "Admissible action sample." = None,
-        cost_fn: "Cost function." = None,
-        constraint_fn: "Constraint function." = None,
-        batch_size: "Batch size." = 5,
+        S=None,
+        A=None,
+        cost_fn=None,
+        constraint_fn=None,
+        batch_size=5,
     ):
 
         self._validate_inputs(
