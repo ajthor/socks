@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 from unittest.mock import patch
 
 import gym
@@ -6,22 +7,6 @@ import gym
 import gym_socks.envs
 
 import numpy as np
-
-
-# class TestCWHBase(unittest.TestCase):
-#     @patch("gym_socks.envs.cwh.CWHBase.__abstractmethods__", set())
-#     def setUp(cls):
-#         cls.system = gym_socks.envs.cwh.CWHBase()
-
-#     def test_compute_state_matrix_not_implemented(cls):
-
-#         with cls.assertRaises(NotImplementedError):
-#             cls.system.render()
-
-#     def test_compute_state_matrix_not_implemented(cls):
-
-#         with cls.assertRaises(NotImplementedError):
-#             cls.system.render()
 
 
 class Test4DCWHSystem(unittest.TestCase):
@@ -43,8 +28,10 @@ class Test4DCWHSystem(unittest.TestCase):
         cls.assertTrue(np.allclose(state_matrix, cls.env.state_matrix))
         cls.assertTrue(np.allclose(input_matrix, cls.env.input_matrix))
 
-    def test_known_trajectory(cls):
+    @patch.object(gym_socks.envs.cwh.CWH4DEnv, "generate_disturbance")
+    def test_known_trajectory(cls, mock_generate_disturbance):
         """Test against specific known trajectory. Sanity check."""
+        mock_generate_disturbance.return_value = np.zeros((4,))
 
         env = cls.env
 
@@ -112,8 +99,10 @@ class Test6DCWHSystem(unittest.TestCase):
     def setUpClass(cls):
         cls.env = gym_socks.envs.cwh.CWH6DEnv()
 
-    def test_known_trajectory(cls):
+    @patch.object(gym_socks.envs.cwh.CWH6DEnv, "generate_disturbance")
+    def test_known_trajectory(cls, mock_generate_disturbance):
         """Test against specific known trajectory. Sanity check."""
+        mock_generate_disturbance.return_value = np.zeros((6,))
 
         env = cls.env
 

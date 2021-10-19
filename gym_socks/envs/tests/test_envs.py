@@ -12,28 +12,15 @@ system_list = [
     gym_socks.envs.NDIntegratorEnv(2),
     gym_socks.envs.NDIntegratorEnv(3),
     gym_socks.envs.NDIntegratorEnv(4),
-    gym_socks.envs.StochasticNDIntegratorEnv(1),
-    gym_socks.envs.StochasticNDIntegratorEnv(2),
-    gym_socks.envs.StochasticNDIntegratorEnv(3),
-    gym_socks.envs.StochasticNDIntegratorEnv(4),
     gym_socks.envs.NDPointMassEnv(1),
     gym_socks.envs.NDPointMassEnv(2),
     gym_socks.envs.NDPointMassEnv(3),
     gym_socks.envs.NDPointMassEnv(4),
-    gym_socks.envs.StochasticNDPointMassEnv(1),
-    gym_socks.envs.StochasticNDPointMassEnv(2),
-    gym_socks.envs.StochasticNDPointMassEnv(3),
-    gym_socks.envs.StochasticNDPointMassEnv(4),
     gym_socks.envs.NonholonomicVehicleEnv(),
-    gym_socks.envs.StochasticNonholonomicVehicleEnv(),
     gym_socks.envs.CWH4DEnv(),
     gym_socks.envs.CWH6DEnv(),
-    gym_socks.envs.StochasticCWH4DEnv(),
-    gym_socks.envs.StochasticCWH6DEnv(),
     gym_socks.envs.QuadrotorEnv(),
-    gym_socks.envs.StochasticQuadrotorEnv(),
     gym_socks.envs.TORAEnv(),
-    gym_socks.envs.StochasticTORAEnv(),
 ]
 
 
@@ -64,8 +51,11 @@ class TestDynamicalSystem(unittest.TestCase):
 
     @patch("gym_socks.envs.dynamical_system.DynamicalSystem.__abstractmethods__", set())
     def setUp(cls):
-        cls.system = gym_socks.envs.dynamical_system.DynamicalSystem(
+        cls.env = gym_socks.envs.dynamical_system.DynamicalSystem(
             observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            ),
+            state_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
             ),
             action_space=gym.spaces.Box(
@@ -104,125 +94,80 @@ class TestDynamicalSystem(unittest.TestCase):
         """
 
         with cls.assertWarns(Warning):
-            cls.system.time_horizon = 1
-            cls.system.sampling_time = 2
+            cls.env.time_horizon = 1
+            cls.env.sampling_time = 2
 
         with cls.assertWarns(Warning):
-            cls.system.sampling_time = 1
-            cls.system.time_horizon = 0.1
+            cls.env.sampling_time = 1
+            cls.env.time_horizon = 0.1
 
     def test_system_num_time_steps(cls):
         """System returns correct number of time steps."""
 
-        cls.system.time_horizon = 1
-        cls.system.sampling_time = 0.1
+        cls.env.time_horizon = 1
+        cls.env.sampling_time = 0.1
 
         # Note that this is not an error, and has to do with floating point precision.
         # See: https://docs.python.org/3/tutorial/floatingpoint.html
-        cls.assertEqual(cls.system.num_time_steps, 9)
-        cls.assertEqual(cls.system.time_horizon, 1)
-        cls.assertEqual(cls.system.sampling_time, 0.1)
+        cls.assertEqual(cls.env.num_time_steps, 9)
+        cls.assertEqual(cls.env.time_horizon, 1)
+        cls.assertEqual(cls.env.sampling_time, 0.1)
 
-        cls.system.time_horizon = 10.0
-        cls.system.sampling_time = 1.0
+        cls.env.time_horizon = 10.0
+        cls.env.sampling_time = 1.0
 
         # Note that this is not an error, and has to do with floating point precision.
         # See: https://docs.python.org/3/tutorial/floatingpoint.html
-        cls.assertEqual(cls.system.num_time_steps, 10)
-        cls.assertEqual(cls.system.time_horizon, 10)
-        cls.assertEqual(cls.system.sampling_time, 1.0)
+        cls.assertEqual(cls.env.num_time_steps, 10)
+        cls.assertEqual(cls.env.time_horizon, 10)
+        cls.assertEqual(cls.env.sampling_time, 1.0)
 
-        cls.system.time_horizon = 5
-        cls.system.sampling_time = 1
+        cls.env.time_horizon = 5
+        cls.env.sampling_time = 1
 
-        cls.assertEqual(cls.system.num_time_steps, 5)
-        cls.assertEqual(cls.system.time_horizon, 5)
-        cls.assertEqual(cls.system.sampling_time, 1)
+        cls.assertEqual(cls.env.num_time_steps, 5)
+        cls.assertEqual(cls.env.time_horizon, 5)
+        cls.assertEqual(cls.env.sampling_time, 1)
 
     def test_dims(cls):
         """State and action dims should match spaces."""
-        cls.assertEqual(cls.system.state_dim, (1,))
-        cls.assertEqual(cls.system.action_dim, (1,))
+        cls.assertEqual(cls.env.state_dim, (1,))
+        cls.assertEqual(cls.env.action_dim, (1,))
 
-        cls.system.observation_space = gym.spaces.Box(
-            low=-1, high=1, shape=(2,), dtype=np.float32
+        cls.env.observation_space = gym.spaces.Box(
+            low=-1, high=1, shape=(1,), dtype=np.float32
         )
 
-        cls.assertEqual(cls.system.state_dim, (2,))
+        cls.assertEqual(cls.env.state_dim, (1,))
 
     def test_cannot_change_dims(cls):
         """Cannot change the state and action dims."""
 
         with cls.assertRaises(AttributeError):
-            cls.system.state_dim = 1
+            cls.env.state_dim = 1
 
         with cls.assertRaises(AttributeError):
-            cls.system.action_dim = 1
+            cls.env.action_dim = 1
 
     def test_reset_returns_valid_state(cls):
         """Reset should return a valid state."""
-        cls.system.reset()
-        cls.assertTrue(cls.system.observation_space.contains(cls.system.state))
+        cls.env.reset()
+        cls.assertTrue(cls.env.observation_space.contains(cls.env.state))
 
     def test_default_dynamics_not_implemented(cls):
 
         with cls.assertRaises(NotImplementedError):
-            state = cls.system.reset()
-            action = cls.system.action_space.sample()
-            cls.system.dynamics(0, state, action)
+            state = cls.env.reset()
+            action = cls.env.action_space.sample()
+            disturbance = cls.env.generate_disturbance(0, state, action)
+            cls.env.dynamics(0, state, action, disturbance)
 
     def test_default_close_not_implemented(cls):
 
         with cls.assertRaises(NotImplementedError):
-            cls.system.close()
+            cls.env.close()
 
     def test_default_render_not_implemented(cls):
 
         with cls.assertRaises(NotImplementedError):
-            cls.system.render()
-
-
-class TestStochasticDynamicalSystem(unittest.TestCase):
-    """Stochastic dynamical system tests."""
-
-    @patch(
-        "gym_socks.envs.dynamical_system.StochasticMixin.__abstractmethods__",
-        set(),
-    )
-    def setUp(cls):
-        cls.system = gym_socks.envs.dynamical_system.StochasticMixin(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-            ),
-            disturbance_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-            ),
-            seed=1,
-        )
-
-    @patch(
-        "gym_socks.envs.dynamical_system.StochasticMixin.__abstractmethods__",
-        set(),
-    )
-    def test_should_fail_without_spaces(cls):
-        """Test that system throws an error without disturbance space."""
-        with cls.assertRaises(ValueError):
-            system = gym_socks.envs.dynamical_system.StochasticMixin(
-                observation_space=gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-                ),
-                action_space=gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-                ),
-                disturbance_space=None,
-            )
-
-    def test_default_dynamics_not_implemented(cls):
-
-        with cls.assertRaises(NotImplementedError):
-            state = cls.system.reset()
-            action = cls.system.action_space.sample()
-            cls.system.dynamics(0, state, action)
+            cls.env.render()

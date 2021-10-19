@@ -12,25 +12,12 @@ __all__ = [
 ]
 
 from gym_socks.envs.cwh import CWH4DEnv
-from gym_socks.envs.cwh import StochasticCWH4DEnv
-
 from gym_socks.envs.cwh import CWH6DEnv
-from gym_socks.envs.cwh import StochasticCWH6DEnv
-
 from gym_socks.envs.integrator import NDIntegratorEnv
-from gym_socks.envs.integrator import StochasticNDIntegratorEnv
-
 from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
-from gym_socks.envs.nonholonomic import StochasticNonholonomicVehicleEnv
-
 from gym_socks.envs.point_mass import NDPointMassEnv
-from gym_socks.envs.point_mass import StochasticNDPointMassEnv
-
 from gym_socks.envs.QUAD20 import QuadrotorEnv
-from gym_socks.envs.QUAD20 import StochasticQuadrotorEnv
-
 from gym_socks.envs.tora import TORAEnv
-from gym_socks.envs.tora import StochasticTORAEnv
 
 # ---- Register gym envs ----
 

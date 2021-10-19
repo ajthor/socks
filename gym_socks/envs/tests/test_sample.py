@@ -22,7 +22,7 @@ import numpy as np
 class TestSample(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.system = gym_socks.envs.StochasticNDIntegratorEnv(2)
+        cls.system = gym_socks.envs.NDIntegratorEnv(2)
         cls.policy = gym_socks.envs.policy.RandomizedPolicy(cls.system)
 
         cls.sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)

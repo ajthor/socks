@@ -1,7 +1,5 @@
-from gym_socks.envs.dynamical_system import DynamicalSystem
-from gym_socks.envs.dynamical_system import StochasticMixin
-
 import gym
+from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
 
@@ -17,6 +15,9 @@ class NDPointMassEnv(DynamicalSystem):
             observation_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
             ),
+            state_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            ),
             action_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
             ),
@@ -24,37 +25,13 @@ class NDPointMassEnv(DynamicalSystem):
             **kwargs
         )
 
-    def dynamics(self, t, x, u):
+    def generate_disturbance(self, time, state, action):
+        w = self.np_random.standard_normal(size=self.state_space.shape)
+        return 1e-2 * np.array(w)
+
+    def dynamics(self, time, state, action, disturbance):
         """Dynamics for the system."""
-        return u
+        return action + disturbance
 
     def reset(self):
-        self.state = self.np_random.uniform(
-            low=-1, high=1, size=self.observation_space.shape
-        )
-        return np.array(self.state)
-
-
-class StochasticNDPointMassEnv(StochasticMixin, NDPointMassEnv):
-    """
-    Stochastic ND point mass system.
-    """
-
-    def __init__(self, dim, *args, **kwargs):
-        """Initialize the system."""
-        super().__init__(
-            dim=dim,
-            disturbance_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
-        )
-
-    def dynamics(self, t, x, u, w):
-        """Dynamics for the system."""
-        return u + w
-
-    def sample_disturbance(self):
-        w = self.np_random.standard_normal(size=self.disturbance_space.shape)
-        return 1e-2 * np.array(w)
+        self.state = self.state_space.sample()

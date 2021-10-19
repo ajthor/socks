@@ -1,8 +1,7 @@
 from abc import abstractmethod
-from gym_socks.envs.dynamical_system import DynamicalSystem
-from gym_socks.envs.dynamical_system import StochasticMixin
 
 import gym
+from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
 
@@ -79,14 +78,16 @@ class CWHBase(object):
 
 
 class CWH4DEnv(CWHBase, DynamicalSystem):
-    """
-    4D Clohessy-Wiltshire-Hill system.
-    """
+    """4D Clohessy-Wiltshire-Hill (CWH) system."""
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
+
         super().__init__(
             observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+            ),
+            state_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
             ),
             action_space=gym.spaces.Box(
@@ -159,23 +160,34 @@ class CWH4DEnv(CWHBase, DynamicalSystem):
 
         return np.matmul(eAt, B)
 
-    def step(self, action):
+    def step(self, action, time=0):
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
+        disturbance = self.generate_disturbance(time, self.state, action)
+
         # use closed-form solution
-        self.state = np.matmul(self.state_matrix, self.state) + np.matmul(
-            self.input_matrix, action
+        self.state = (
+            np.matmul(self.state_matrix, self.state)
+            + np.matmul(self.input_matrix, action)
+            + disturbance
         )
 
-        reward = self.cost(action)
+        observation = self.generate_observation(time, self.state, action)
+
+        cost = self.cost(time, self.state, action)
 
         done = False
         info = {}
 
-        return np.array(self.state), reward, done, info
+        return observation, cost, done, info
 
-    def dynamics(self, t, x, u):
+    def generate_disturbance(self, time, state, action):
+        w = self.np_random.standard_normal(size=self.state_space.shape)
+        w = np.multiply([1e-4, 1e-4, 5e-8, 5e-8], w)
+        return np.array(w)
+
+    def dynamics(self, time, state, action, disturbance):
         """
         Dynamics for the system.
 
@@ -186,36 +198,36 @@ class CWH4DEnv(CWHBase, DynamicalSystem):
         issues where the states explode. See the 'step' function for details
         regarding how the next state is calculated.
         """
-        x1, x2, x3, x4 = x
-        u1, u2 = u
+        x1, x2, x3, x4 = state
+        u1, u2 = action
+        w1, w2, w3, w4 = disturbance
 
-        dx1 = x1
-        dx2 = x2
+        dx1 = x1 + w1
+        dx2 = x2 + w2
         dx3 = (
             3 * (self.angular_velocity ** 2) * x1
             + 2 * self.angular_velocity * x4
             + (u1 / self.chief_mass)
+            + w3
         )
-        dx4 = -2 * self.angular_velocity * x3 + (u2 / self.chief_mass)
+        dx4 = -2 * self.angular_velocity * x3 + (u2 / self.chief_mass) + w4
 
         return np.array([dx1, dx2, dx3, dx4], dtype=np.float32)
 
     def reset(self):
-        self.state = self.np_random.uniform(
-            low=[-1, -1, 0, 0], high=[1, 0, 0, 0], size=self.observation_space.shape
-        )
-        return np.array(self.state)
+        self.state = self.state_space.sample()
 
 
 class CWH6DEnv(CWHBase, DynamicalSystem):
-    """
-    6D Clohessy-Wiltshire-Hill system.
-    """
+    """6D Clohessy-Wiltshire-Hill (CWH) system."""
 
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
         super().__init__(
             observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+            ),
+            state_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
             ),
             action_space=gym.spaces.Box(
@@ -309,78 +321,11 @@ class CWH6DEnv(CWHBase, DynamicalSystem):
 
         return np.matmul(eAt, B)
 
-    def step(self, action):
+    def step(self, action, time=0):
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
-        # use closed-form solution
-        self.state = np.matmul(self.state_matrix, self.state) + np.matmul(
-            self.input_matrix, action
-        )
-
-        reward = self.cost(action)
-
-        done = False
-        info = {}
-
-        return np.array(self.state), reward, done, info
-
-    def dynamics(self, t, x, u):
-        """
-        Dynamics for the system.
-
-        NOTE: The CWH system has a closed-form solution for the equations of
-        motion, meaning the dynamics function presented here is primarily for
-        reference. The scipy.solve_ivp function does not return the correct
-        result for the dynamical equations, and will quickly run into numerical
-        issues where the states explode. See the 'step' function for details
-        regarding how the next state is calculated.
-        """
-        x1, x2, x3, x4, x5, x6 = x
-        u1, u2, u3 = u
-
-        dx1 = x1
-        dx2 = x2
-        dx3 = x3
-        dx4 = (
-            3 * (self.angular_velocity ** 2) * x1
-            + 2 * self.angular_velocity * x5
-            + (u1 / self.chief_mass)
-        )
-        dx5 = -2 * self.angular_velocity * x4 + (u2 / self.chief_mass)
-        dx6 = -(self.angular_velocity ** 2) * x3 + (u3 / self.chief_mass)
-
-        return np.array([dx1, dx2, dx3, dx4, dx5, dx6], dtype=np.float32)
-
-    def reset(self):
-        self.state = self.np_random.uniform(
-            low=[-1, -1, 0, 0, 0, 0],
-            high=[1, 0, 0, 0, 0, 0],
-            size=self.observation_space.shape,
-        )
-        return np.array(self.state)
-
-
-class StochasticCWH4DEnv(StochasticMixin, CWH4DEnv):
-    """
-    Stochastic 4D Clohessy-Wiltshire-Hill system.
-    """
-
-    def __init__(self, *args, **kwargs):
-        """Initialize the system."""
-        super().__init__(
-            disturbance_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
-        )
-
-    def step(self, action):
-        err_msg = "%r (%s) invalid" % (action, type(action))
-        assert self.action_space.contains(action), err_msg
-
-        disturbance = self.sample_disturbance()
+        disturbance = self.generate_disturbance(time, self.state, action)
 
         # use closed-form solution
         self.state = (
@@ -389,82 +334,21 @@ class StochasticCWH4DEnv(StochasticMixin, CWH4DEnv):
             + disturbance
         )
 
-        reward = self.cost(action)
+        observation = self.generate_observation(time, self.state, action)
+
+        cost = self.cost(time, self.state, action)
 
         done = False
         info = {}
 
-        return np.array(self.state), reward, done, info
+        return observation, cost, done, info
 
-    def dynamics(self, t, x, u, w):
-        """
-        Dynamics for the system.
-
-        NOTE: The CWH system has a closed-form solution for the equations of
-        motion, meaning the dynamics function presented here is primarily for
-        reference. The scipy.solve_ivp function does not return the correct
-        result for the dynamical equations, and will quickly run into numerical
-        issues where the states explode. See the 'step' function for details
-        regarding how the next state is calculated.
-        """
-        x1, x2, x3, x4 = x
-        u1, u2 = u
-        w1, w2, w3, w4 = w
-
-        dx1 = x1 + w1
-        dx2 = x2 + w2
-        dx3 = (
-            3 * (self.angular_velocity ** 2) * x1
-            + 2 * self.angular_velocity * x4
-            + (u1 / self.chief_mass)
-            + w3
-        )
-        dx4 = -2 * self.angular_velocity * x3 + (u2 / self.chief_mass) + w4
-
-        return np.array([dx1, dx2, dx3, dx4], dtype=np.float32)
-
-    def sample_disturbance(self):
-        w = self.np_random.standard_normal(size=self.disturbance_space.shape)
-        w = np.multiply([1e-4, 1e-4, 5e-8, 5e-8], w)
+    def generate_disturbance(self, time, state, action):
+        w = self.np_random.standard_normal(size=self.state_space.shape)
+        w = np.multiply([1e-4, 1e-4, 1e-4, 5e-8, 5e-8, 5e-8], w)
         return np.array(w)
 
-
-class StochasticCWH6DEnv(StochasticMixin, CWH6DEnv):
-    """
-    Stochastic 6D Clohessy-Wiltshire-Hill system.
-    """
-
-    def __init__(self, *args, **kwargs):
-        """Initialize the system."""
-        super().__init__(
-            disturbance_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
-        )
-
-    def step(self, action):
-        err_msg = "%r (%s) invalid" % (action, type(action))
-        assert self.action_space.contains(action), err_msg
-
-        disturbance = self.sample_disturbance()
-
-        # use closed-form solution
-        self.state = (
-            np.matmul(self.state_matrix, self.state)
-            + np.matmul(self.input_matrix, action)
-            + disturbance
-        )
-
-        reward = self.cost(action)
-
-        done = False
-        info = {}
-
-        return np.array(self.state), reward, done, info
-
-    def dynamics(self, t, x, u, w):
+    def dynamics(self, time, state, action, disturbance):
         """
         Dynamics for the system.
 
@@ -475,9 +359,9 @@ class StochasticCWH6DEnv(StochasticMixin, CWH6DEnv):
         issues where the states explode. See the 'step' function for details
         regarding how the next state is calculated.
         """
-        x1, x2, x3, x4, x5, x6 = x
-        u1, u2, u3 = u
-        w1, w2, w3, w4, w5, w6 = w
+        x1, x2, x3, x4, x5, x6 = state
+        u1, u2, u3 = action
+        w1, w2, w3, w4, w5, w6 = disturbance
 
         dx1 = x1 + w1
         dx2 = x2 + w2
@@ -493,7 +377,5 @@ class StochasticCWH6DEnv(StochasticMixin, CWH6DEnv):
 
         return np.array([dx1, dx2, dx3, dx4, dx5, dx6], dtype=np.float32)
 
-    def sample_disturbance(self):
-        w = self.np_random.standard_normal(size=self.disturbance_space.shape)
-        w = np.multiply([1e-4, 1e-4, 1e-4, 5e-8, 5e-8, 5e-8], w)
-        return np.array(w)
+    def reset(self):
+        self.state = self.state_space.sample()

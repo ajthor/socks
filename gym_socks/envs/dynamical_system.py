@@ -45,7 +45,8 @@ class DynamicalSystem(gym.Env, ABC):
 
     import gym import numpy as np
 
-    env = CustomDynamicalSystem() obs = env.reset()
+    env = CustomDynamicalSystem()
+    env.reset()
 
     num_steps = env.num_time_steps
 
@@ -65,32 +66,31 @@ class DynamicalSystem(gym.Env, ABC):
     def __init__(
         self,
         observation_space=None,
+        state_space=None,
         action_space=None,
         seed=None,
         euler=False,
         *args,
         **kwargs,
     ):
-        """
-        Initialize the dynamical system.
-
-        Example usage:
-        env = systems.envs.integrator.DoubleIntegratorEnv
-        env.time_horizon = 5
-        env.sampling_time = 0.25
-        """
+        """Initialize the dynamical system."""
 
         if observation_space is None:
             raise ValueError("Must supply an observation_space.")
 
         self.observation_space = observation_space
 
+        if state_space is None:
+            state_space = observation_space
+
+        self.state_space = state_space
+
         if action_space is None:
             raise ValueError("Must supply an action_space.")
 
         self.action_space = action_space
 
-        # time parameters
+        # Time parameters.
         self._time_horizon = 1
         self._sampling_time = 0.1
 
@@ -120,10 +120,9 @@ class DynamicalSystem(gym.Env, ABC):
 
     @sampling_time.setter
     def sampling_time(self, value):
+        msg = f"Sampling time {value} is less than time horizon {self._time_horizon}."
         if value > self._time_horizon:
-            warnings.warn(
-                f"Sampling time {value} is less than time horizon {self._time_horizon}."
-            )
+            warnings.warn(msg)
         self._sampling_time = value
 
     @property
@@ -132,10 +131,9 @@ class DynamicalSystem(gym.Env, ABC):
 
     @time_horizon.setter
     def time_horizon(self, value):
+        msg = f"Sampling time {value} is less than time horizon {self._time_horizon}."
         if value < self._sampling_time:
-            warnings.warn(
-                f"Sampling time {value} is less than time horizon {self._time_horizon}."
-            )
+            warnings.warn(msg)
         self._time_horizon = value
 
     @property
@@ -143,14 +141,21 @@ class DynamicalSystem(gym.Env, ABC):
         return int(self._time_horizon // self._sampling_time)
 
     @property
-    def state_dim(self):
+    def observation_dim(self):
+        """Dimensionality of the observation space."""
         return self.observation_space.shape
 
     @property
+    def state_dim(self):
+        """Dimensionality of the state space."""
+        return self.state_space.shape
+
+    @property
     def action_dim(self):
+        """Dimensionality of the action space."""
         return self.action_space.shape
 
-    def step(self, action):
+    def step(self, action, time=0):
         """
         Step function defined by OpenAI Gym.
 
@@ -178,153 +183,19 @@ class DynamicalSystem(gym.Env, ABC):
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
-        if self._euler is True:
-            next_state = self.state + self.sampling_time * self.dynamics(
-                0, self.state, action
-            )
-            self.state = next_state
-        else:
-            # solve the initial value problem
-            sol = solve_ivp(
-                self.dynamics, [0, self.sampling_time], self.state, args=(action,)
-            )
-            *_, self.state = sol.y.T
-
-        cost = self.cost(action)
-
-        done = False
-        info = {}
-
-        return np.array(self.state), cost, done, info
-
-    def reset(self):
-        """Reset the system to a random initial condition."""
-
-        self.state = self.np_random.uniform(
-            low=0, high=1, size=self.observation_space.shape
-        )
-
-        return np.array(self.state)
-
-    def render(self, mode="human"):
-        raise NotImplementedError
-
-    def close(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def dynamics(self, t, x, u):
-        """
-        Dynamics for the system.
-
-        y = f(t, x, u)
-              ┬  ┬  ┬
-              │  │  └┤ Control action u
-              │  └───┤ System state x
-              └──────┤ Time variable t
-        """
-        raise NotImplementedError
-
-    def cost(self, u):
-        """Cost function for the system."""
-        return 0.0
-
-
-class StochasticMixin(DynamicalSystem):
-    """
-    Base class for stochastic dynamical system models.
-
-    This class is ABSTRACT, meaning it is not meant to be instantiated directly.
-    Instead, define a new class that inherits from DynamicalSystem, and define a custom
-    'dynamics' function.
-
-    Example:
-
-    class CustomDynamicalSystem(StochasticMixin, DynamicalSystem): def __init__(self):
-        super().__init__(state_dim=2, action_dim=1, disturbance_dim=2)
-
-        def dynamics(self, t, x, u, w):
-            return u + w
-
-        def reset(self):
-            self.state = self.np_random.uniform(
-                low=-1, high=1, size=self.observation_space.shape
-            )
-            return np.array(self.state)
-
-        def sample_disturbance(self):
-            w = self.np_random.standard_normal(size=self.disturbance_space.shape)
-            return 1e-2 * np.array(w)
-
-
-    * The state space and input space are assumed to be R^n and R^m, where n and m are
-      set by state_dim and action_dim above. The disturbance dimension is assumed to be
-      R^p, and is generally p = n.
-    * The sample_disturbance function is a custom function which you define, and returns
-      a disturbance vector, which is added to the state at each each time step. Thus,
-      the output of this function should be of the same dimension as the state.
-
-    """
-
-    def __init__(self, disturbance_space=None, *args, **kwargs):
-        """
-        Initialize the dynamical system.
-
-        Example usage:
-        env = systems.envs.integrator.DoubleIntegratorEnv
-        env.time_horizon = 5
-        env.sampling_time = 0.25
-        """
-
-        super().__init__(*args, **kwargs)
-
-        if disturbance_space is not None:
-            self.disturbance_space = disturbance_space
-            self.disturbance_dim = self.disturbance_space.shape
-        else:
-            raise ValueError("Must supply a disturbance_space.")
-
-    def step(self, action):
-        """
-        Step function defined by OpenAI Gym.
-
-        Advances the system forward one time step.
-
-        Returns
-        -------
-
-        obs : ndarray
-            The observation vector. If the system is fully observable, this is the state
-            of the system at the next time step.
-
-        cost : float32
-            The cost (reward) obtained by the system for taking action u in state x and
-            transitioning to state y.
-
-        done : bool
-            Flag to indicate the simulation has terminated. Usually toggled by guard
-            conditions, which terminates the simulation if the system violates certain
-            operating constraints.
-
-        info : {}
-            Extra information.
-        """
-        err_msg = "%r (%s) invalid" % (action, type(action))
-        assert self.action_space.contains(action), err_msg
-
-        # generate a disturbance
-        disturbance = self.sample_disturbance()
+        # Generate disturbance.
+        disturbance = self.generate_disturbance(time, self.state, action)
 
         if self._euler is True:
             next_state = self.state + self.sampling_time * self.dynamics(
-                0, self.state, action, disturbance
+                time, self.state, action, disturbance
             )
             self.state = next_state
         else:
             # solve the initial value problem
             sol = solve_ivp(
                 self.dynamics,
-                [0, self.sampling_time],
+                [time, time + self.sampling_time],
                 self.state,
                 args=(
                     action,
@@ -333,32 +204,48 @@ class StochasticMixin(DynamicalSystem):
             )
             *_, self.state = sol.y.T
 
-        cost = self.cost(action)
+        # Generate observation.
+        observation = self.generate_observation(time, self.state, action)
+
+        cost = self.cost(time, self.state, action)
 
         done = False
         info = {}
 
-        return np.array(self.state), cost, done, info
+        return observation, cost, done, info
+
+    def reset(self):
+        """Reset the system to a random initial condition."""
+        self.state = self.state_space.sample()
+
+    def render(self, mode="human"):
+        raise NotImplementedError
+
+    def close(self):
+        raise NotImplementedError
+
+    def generate_disturbance(self, time, state, action):
+        """Generate disturbance."""
+        return self._np_random.standard_normal(size=self.state_space.shape)
 
     @abstractmethod
-    def dynamics(self, t, x, u, w=None):
+    def dynamics(self, time, state, action, disturbance):
         """
         Dynamics for the system.
 
-        y = f(t, x, u, w=None)
-              ┬  ┬  ┬  ─────┬
-              │  │  │       └───┤ Disturbance w
-              │  │  └───────────┤ Control action u
-              │  └──────────────┤ System state x
-              └─────────────────┤ Time variable t
+        y = f(t, x, u, w)
+              ┬  ┬  ┬  ┬
+              │  │  │  └┤ w : Disturbance
+              │  │  └───┤ u : Control action
+              │  └──────┤ x : System state
+              └─────────┤ t : Time variable
         """
         raise NotImplementedError
 
-    def sample_disturbance(self):
-        """
-        Sample the disturbance.
+    def generate_observation(self, time, state, action):
+        """Generate observation."""
+        return state
 
-        By default, returns a Gaussian sample from the disturbance space.
-        """
-        w = self.np_random.standard_normal(size=self.disturbance_space.shape)
-        return np.array(w)
+    def cost(self, time, state, action):
+        """Cost function for the system."""
+        return 0.0

@@ -3,10 +3,8 @@ ARCH-COMP20 Category Report: Continuous and Hybrid Systems with Nonlinear Dynami
 https://easychair.org/publications/open/nrdD
 """
 
-from gym_socks.envs.dynamical_system import DynamicalSystem
-from gym_socks.envs.dynamical_system import StochasticMixin
-
 import gym
+from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
 
@@ -96,6 +94,9 @@ class QuadrotorEnv(QuadrotorBase, DynamicalSystem):
             observation_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
             ),
+            state_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+            ),
             action_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
             ),
@@ -103,80 +104,15 @@ class QuadrotorEnv(QuadrotorBase, DynamicalSystem):
             **kwargs
         )
 
-    def dynamics(self, t, x, u):
+    def generate_disturbance(self, time, state, action):
+        w = self.np_random.standard_normal(size=self.state_space.shape)
+        return 1e-2 * np.array(w)
+
+    def dynamics(self, time, state, action, disturbance):
         """Dynamics for the system."""
-        x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12 = x
-        u1, u2, u3 = u
-
-        F = self.total_mass * self.gravitational_constant - 10 * (x3 - u1) + 3 * x6
-        tau_phi = -(x7 - u2) - x10
-        tau_psi = -(x8 - u3) - x11
-        tau_theta = 0
-
-        dx1 = (
-            np.cos(x8) * np.cos(x9) * x4
-            + (np.sin(x7) * np.sin(x8) * np.cos(x9) - np.cos(x7) * np.sin(x9)) * x5
-            + (np.cos(x7) * np.sin(x8) * np.cos(x9) + np.sin(x7) * np.sin(x9)) * x6
-        )
-        dx2 = (
-            np.cos(x8) * np.sin(x9) * x4
-            + (np.sin(x7) * np.sin(x8) * np.sin(x9) + np.cos(x7) * np.cos(x9)) * x5
-            + (np.cos(x7) * np.sin(x8) * np.sin(x9) - np.sin(x7) * np.cos(x9)) * x6
-        )
-        dx3 = (
-            np.sin(x8) * x4
-            - np.sin(x7) * np.cos(x8) * x5
-            - np.cos(x7) * np.cos(x8) * x6
-        )
-        dx4 = x12 * x5 - x11 * x6 - self.gravitational_constant * np.sin(x8)
-        dx5 = (
-            x10 * x6 - x12 * x4 + self.gravitational_constant * np.cos(x8) * np.sin(x7)
-        )
-        dx6 = (
-            x11 * x4
-            - x10 * x5
-            + self.gravitational_constant * np.cos(x8) * np.cos(x7)
-            - (F / self.total_mass)
-        )
-        dx7 = x10 + np.sin(x7) * np.tan(x8) * x11 + np.cos(x7) * np.tan(x8) * x12
-        dx8 = np.cos(x7) * x11 - np.sin(x7) * x12
-        dx9 = (np.sin(x7) / np.cos(x8)) * x11 + (np.cos(x7) / np.cos(x8)) * x12
-        dx10 = ((self.Jy - self.Jz) / self.Jx) * x11 * x12 + (1 / self.Jx) * tau_phi
-        dx11 = ((self.Jz - self.Jx) / self.Jy) * x10 * x12 + (1 / self.Jy) * tau_psi
-        dx12 = ((self.Jx - self.Jy) / self.Jz) * x10 * x11 + (1 / self.Jz) * tau_theta
-
-        return np.array(
-            [dx1, dx2, dx3, dx4, dx5, dx6, dx7, dx8, dx9, dx10, dx11, dx12],
-            dtype=np.float32,
-        )
-
-    def reset(self):
-        self.state = self.np_random.uniform(
-            low=-0.1, high=0.1, size=self.observation_space.shape
-        )
-        return np.array(self.state)
-
-
-class StochasticQuadrotorEnv(StochasticMixin, QuadrotorEnv):
-    """
-    Stochastic quadrotor system.
-    """
-
-    def __init__(self, *args, **kwargs):
-        """Initialize the system."""
-        super().__init__(
-            disturbance_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
-        )
-
-    def dynamics(self, t, x, u, w):
-        """Dynamics for the system."""
-        x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12 = x
-        u1, u2, u3 = u
-        w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12 = w
+        x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12 = state
+        u1, u2, u3 = action
+        w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12 = disturbance
 
         F = self.total_mass * self.gravitational_constant - 10 * (x3 - u1) + 3 * x6
         tau_phi = -(x7 - u2) - x10
@@ -231,3 +167,6 @@ class StochasticQuadrotorEnv(StochasticMixin, QuadrotorEnv):
             [dx1, dx2, dx3, dx4, dx5, dx6, dx7, dx8, dx9, dx10, dx11, dx12],
             dtype=np.float32,
         )
+
+    def reset(self):
+        self.state = self.state_space.sample()
