@@ -1,7 +1,7 @@
 """Stochastic Optimal Control for a point mass system.
 
-This file demonstrates the constrained optimal controller synthesis algorithm on a point
-mass dynamical system.
+This example demonstrates the constrained optimal controller synthesis algorithm on a
+point mass dynamical system.
 
 Example:
     To run the example, use the following command:

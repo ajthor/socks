@@ -1,7 +1,7 @@
 """Stochastic Optimal Control for a point mass system.
 
-This file demonstrates the constrained optimal controller synthesis algorithm (dynamic
-programming) on a point mass dynamical system.
+This example demonstrates the constrained optimal controller synthesis algorithm
+(dynamic programming) on a point mass dynamical system.
 
 Example:
     To run the example, use the following command:
@@ -224,6 +224,7 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
 
 @ex.command(unobserved=True)
 def plot_results():
+    """Plot the results of the experiement."""
 
     with open("results/data.npy", "rb") as f:
         trajectory = np.load(f)

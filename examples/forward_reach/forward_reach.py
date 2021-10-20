@@ -89,6 +89,7 @@ def main(sigma, sample_size):
 
         Yields:
             sample : A sample taken iid from the region.
+
         """
 
         r = np.random.uniform(low=0.5, high=0.75, size=(1,))

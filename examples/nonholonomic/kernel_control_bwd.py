@@ -1,7 +1,7 @@
 """Stochastic Optimal Control for a nonholonomic vehicle system.
 
-This file demonstrates the optimal controller synthesis algorithm (dynamic programming)
-on a nonlinear dynamical system with nonholonomic vehicle dynamics.
+This example demonstrates the optimal controller synthesis algorithm (dynamic
+programming) on a nonlinear dynamical system with nonholonomic vehicle dynamics.
 
 Example:
     To run the example, use the following command:
