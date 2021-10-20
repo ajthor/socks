@@ -1,3 +1,22 @@
+"""Forward reachability example.
+
+This file demonstrates the forward reachability classifier on a set of dummy data. Note
+that the data is not taken from a dynamical system, but can easily be adapted to data
+taken from system observations via a simple substitution. The reason for the dummy data
+is to showcase the technique on a non-convex forward reachable set.
+
+Example:
+    To run the example, use the following command:
+
+        $ python -m examples.forward_reach.forward_reach
+
+.. [1] `Learning Approximate Forward Reachable Sets Using Separating Kernels, 2021
+        Adam J. Thorpe, Kendric R. Ortiz, Meeko M. K. Oishi
+        Learning for Dynamics and Control,
+        <https://arxiv.org/abs/2011.09678>`_
+
+"""
+
 from sacred import Experiment
 
 import gym
@@ -33,18 +52,43 @@ ex = Experiment()
 
 @ex.config
 def config():
-    """Experiment configuration variables."""
+    """Experiment configuration variables.
+
+    SOCKS uses sacred to run experiments in order to ensure repeatability. Configuration
+    variables are parameters that are passed to the experiment, such as the random seed,
+    and can be specified at the command-line.
+
+    Example:
+        To run the experiment normally, just run:
+
+            $ python -m experiment.<experiment>
+
+        To specify configuration variables, use `with variable=value`, e.g.
+
+            $ python -m experiment.<experiment> with seed=123
+
+    .. _sacred:
+        https://sacred.readthedocs.io/en/stable/index.html
+
+    """
+
     sigma = 0.1
     sample_size = 500
 
 
 @ex.main
 def main(sigma, sample_size):
+    """Main experiment."""
+
     @gym_socks.envs.sample.sample_generator
-    def donut_sampler():
-        """
+    def donut_sampler() -> tuple:
+        """Sample generator.
+
         Sample generator that generates points in a donut-shaped ring around the origin.
         An example of a non-convex region.
+
+        Yields:
+            sample : A sample taken iid from the region.
         """
 
         r = np.random.uniform(low=0.5, high=0.75, size=(1,))
@@ -87,13 +131,14 @@ def main(sigma, sample_size):
 
 @ex.command(unobserved=True)
 def plot_results():
+    """Plot the results of the experiement."""
 
     with open("results/forward_reach.npy", "rb") as f:
         S = np.array(np.load(f))
         T = np.array(np.load(f))
         classifications = np.load(f)
 
-    fig = plt.figure(figsize=(3.33, 3.33))
+    fig = plt.figure(figsize=(3, 3))
     ax = fig.add_subplot(111)
 
     points_in = T[classifications == True]
@@ -109,7 +154,7 @@ def plot_results():
 
     plt.scatter(S[:, 0], S[:, 1], color="r", marker=".", s=1)
 
-    # plot support region
+    # Plot support region.
     plt.gca().add_patch(plt.Circle((0, 0), 0.5, fc="none", ec="blue", lw=0.5))
     plt.gca().add_patch(plt.Circle((0, 0), 0.75, fc="none", ec="blue", lw=0.5))
 
