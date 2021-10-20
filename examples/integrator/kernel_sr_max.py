@@ -1,3 +1,15 @@
+"""Maximal stochastic reachability of a double integrator.
+
+This example shows the maximal stochastic reachability algorithm on a double integrator
+(2D stochastic chain of integrators) system.
+
+Example:
+    To run the example, use the following command:
+
+        $ python -m examples.integrator.kernel_sr_max
+
+"""
+
 from sacred import Experiment
 
 import gym
@@ -33,48 +45,82 @@ ex = Experiment()
 
 @ex.config
 def config():
-    """Experiment configuration variables."""
+    """Experiment configuration variables.
+
+    SOCKS uses sacred to run experiments in order to ensure repeatability. Configuration
+    variables are parameters that are passed to the experiment, such as the random seed,
+    and can be specified at the command-line.
+
+    Example:
+        To run the experiment normally, just run:
+
+            $ python -m experiment.<experiment>
+
+        To specify configuration variables, use `with variable=value`, e.g.
+
+            $ python -m experiment.<experiment> with seed=123
+
+    .. _sacred:
+        https://sacred.readthedocs.io/en/stable/index.html
+
+    """
+
     sigma = 0.1
     sample_size = 3125
 
+    test_points_x1 = np.linspace(-1, 1, 50)
+    test_points_x2 = np.linspace(-1, 1, 50)
+
+    test_points = [test_points_x1, test_points_x2]
+
+    verbose = True
+
 
 @ex.main
-def main(sigma, sample_size):
+def main(seed, sigma, sample_size, test_points, verbose):
+    """Main experiment."""
 
-    # the system is a 2D integrator
-    system = gym_socks.envs.StochasticNDIntegratorEnv(2)
+    system = gym_socks.envs.NDIntegratorEnv(2)
+
+    # Set the random seed.
+    system.seed(seed=seed)
+    system.observation_space.seed(seed=seed)
+    system.state_space.seed(seed=seed)
+    system.action_space.seed(seed=seed)
 
     num_time_steps = system.num_time_steps
 
-    # we define the constraints such that at the final time step, the system is in a
+    # We define the constraints such that at the final time step, the system is in a
     # box [-0.5, 0.5]^d, but that all prior time steps the system is in a box [-1, 1]^d.
     constraint_tube = [
         gym.spaces.Box(
             low=-1,
             high=1,
-            shape=system.observation_space.shape,
+            shape=system.state_space.shape,
             dtype=np.float32,
         )
         for i in range(num_time_steps)
     ]
 
     target_tube = [
-        gym.spaces.Box(
-            low=-1, high=1, shape=system.observation_space.shape, dtype=np.float32
-        )
+        gym.spaces.Box(low=-1, high=1, shape=system.state_space.shape, dtype=np.float32)
         for i in range(num_time_steps)
     ]
 
-    # generate the sample
-    sample_space = gym.spaces.Box(
-        low=-1.1,
-        high=1.1,
-        shape=system.observation_space.shape,
-        dtype=np.float32,
-    )
-
     @gym_socks.envs.sample.sample_generator
-    def multi_action_sampler():
+    def multi_action_sampler() -> tuple:
+        """Multi-action sampler.
+
+        Generates a sample using multiple actions at a uniform grid of points taken from
+        within the range specified by 'ranges'. Note that this is a simplification to
+        make the result appear more uniform, but is not necessary for the correct
+        operation of the algorithm. A random iid sample taken from the state space is
+        sufficient.
+
+        Yields:
+            observation : Observation of input/output from the stochastic kernel.
+
+        """
 
         ranges = [np.linspace(-1, 1, 25), np.linspace(-1, 1, 25)]
         action_ranges = np.linspace(-1, 1, 5)
@@ -92,25 +138,26 @@ def main(sigma, sample_size):
 
                 yield (state, action, next_state)
 
+    # Generate the sample.
     S = sample(
         sampler=multi_action_sampler,
         sample_size=sample_size,
     )
 
-    # generate the test points
-    x1 = np.linspace(-1, 1, 50)
-    x2 = np.linspace(-1, 1, 50)
+    # Generate the test points.
+    x1 = test_points[0]
+    x2 = test_points[1]
     T = gym_socks.envs.sample.uniform_grid([x1, x2])
 
-    # generate the admissible control actions
+    # Generate the admissible control actions.
     A = np.linspace(-1, 1, 10)
     A = np.expand_dims(A, axis=1)
 
-    alg = KernelMaximalSR(kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))))
-
     t0 = time()
 
-    # run the algorithm
+    alg = KernelMaximalSR(kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))))
+
+    # Run the algorithm.
     Pr, _ = alg.run(
         system=system,
         S=S,
@@ -124,62 +171,47 @@ def main(sigma, sample_size):
     t1 = time()
     print(f"Total time: {t1 - t0} s")
 
-    # save the result to NPY file
+    # Save the result to NPY file.
     with open("results/data.npy", "wb") as f:
         np.save(f, Pr)
 
-    # save the result to CSV file
-    XX, YY = np.meshgrid(x1, x2, indexing="ij")
-    Z = Pr[0].reshape(XX.shape)
-
-    np.savetxt(
-        "results/data.csv",
-        np.column_stack((np.ravel(XX), np.ravel(YY), np.ravel(Z))),
-        header="x, y, pr",
-        comments="# ",
-        delimiter=",",
-        newline="\n",
-    )
-
 
 @ex.command(unobserved=True)
-def plot_results():
+def plot_results(test_points):
+    """Plot the results of the experiement."""
 
     with open("results/data.npy", "rb") as f:
         Pr = np.load(f)
 
-        colormap = "viridis"
+    colormap = "viridis"
 
-        cm = 1 / 2.54
+    x1 = np.round(test_points[0], 3)
+    x2 = np.round(test_points[1], 3)
+    XX, YY = np.meshgrid(x1, x2, indexing="ij")
+    Z = Pr[0].reshape(XX.shape)
 
-        # data
-        x1 = np.round(np.linspace(-1, 1, 50), 3)
-        x2 = np.round(np.linspace(-1, 1, 50), 3)
-        XX, YY = np.meshgrid(x1, x2, indexing="ij")
-        Z = Pr[0].reshape(XX.shape)
+    # Plot flat color map.
+    fig = plt.figure(figsize=(3, 3))
+    ax = fig.add_subplot(111)
 
-        # flat color map
-        fig = plt.figure(figsize=(1.5, 1.5))
-        ax = fig.add_subplot(111)
+    plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")
+    plt.colorbar()
 
-        plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")
-        plt.colorbar()
+    plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
+    plt.savefig("results/plot.pgf")
 
-        plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
-        plt.savefig("results/plot.pgf")
+    # Plot 3D projection.
+    fig = plt.figure(figsize=(3, 3))
+    ax = fig.add_subplot(111, projection="3d")
 
-        # 3D projection
-        fig = plt.figure(figsize=(5 * cm, 5 * cm))
-        ax = fig.add_subplot(111, projection="3d")
+    ax.plot_surface(XX, YY, Z, cmap=colormap, linewidth=0, antialiased=False)
+    ax.set_zlim(0, 1)
+    ax.set_xlabel(r"$x_1$")
+    ax.set_ylabel(r"$x_2$")
+    ax.set_zlabel(r"$\Pr$")
 
-        ax.plot_surface(XX, YY, Z, cmap=colormap, linewidth=0, antialiased=False)
-        ax.set_zlim(0, 1)
-        ax.set_xlabel(r"$x_1$")
-        ax.set_ylabel(r"$x_2$")
-        ax.set_zlabel(r"$\Pr$")
-
-        plt.savefig("results/plot_3d.png", dpi=300, bbox_inches="tight")
-        plt.savefig("results/plot_3d.pgf")
+    plt.savefig("results/plot_3d.png", dpi=300, bbox_inches="tight")
+    plt.savefig("results/plot_3d.pgf")
 
 
 if __name__ == "__main__":

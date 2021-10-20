@@ -159,7 +159,7 @@ class KernelSR(AlgorithmInterface):
            <https://arxiv.org/abs/1908.00697>`_
     """
 
-    def __init__(self, kernel_fn=None, l=None, *args, **kwargs):
+    def __init__(self, kernel_fn=None, regularization_param=None, *args, **kwargs):
         """
         Initialize the algorithm.
         """
@@ -168,11 +168,11 @@ class KernelSR(AlgorithmInterface):
         if kernel_fn is None:
             kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
 
-        if l is None:
-            l = 1
+        if regularization_param is None:
+            regularization_param = 1
 
         self.kernel_fn = kernel_fn
-        self.l = l
+        self.regularization_param = regularization_param
 
     def _validate_inputs(
         self,
@@ -225,7 +225,7 @@ class KernelSR(AlgorithmInterface):
         )
 
         kernel_fn = self.kernel_fn
-        l = self.l
+        regularization_param = self.regularization_param
 
         T = np.array(T)
         num_time_steps = system.num_time_steps - 1
@@ -237,7 +237,9 @@ class KernelSR(AlgorithmInterface):
         U = np.array(U)
         Y = np.array(Y)
 
-        W = kernel.regularized_inverse(X, kernel_fn=kernel_fn, l=l)
+        W = kernel.regularized_inverse(
+            X, kernel_fn=kernel_fn, regularization_param=regularization_param
+        )
         pbar.update()
 
         CXY = kernel_fn(X, Y)
@@ -325,7 +327,7 @@ class KernelSR(AlgorithmInterface):
         )
 
         kernel_fn = self.kernel_fn
-        l = self.l
+        regularization_param = self.regularization_param
 
         T = np.array(T)
         num_time_steps = system.num_time_steps - 1
@@ -335,7 +337,9 @@ class KernelSR(AlgorithmInterface):
         U = np.array(U)
         Y = np.array(Y)
 
-        W = kernel.regularized_inverse(X, kernel_fn=kernel_fn, l=l)
+        W = kernel.regularized_inverse(
+            X, kernel_fn=kernel_fn, regularization_param=regularization_param
+        )
 
         CXY = kernel_fn(X, Y)
 
@@ -416,7 +420,7 @@ class KernelMaximalSR(AlgorithmInterface):
 
     """
 
-    def __init__(self, kernel_fn=None, l=None, *args, **kwargs):
+    def __init__(self, kernel_fn=None, regularization_param=None, *args, **kwargs):
         """
         Initialize the algorithm.
         """
@@ -425,11 +429,11 @@ class KernelMaximalSR(AlgorithmInterface):
         if kernel_fn is None:
             kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
 
-        if l is None:
-            l = 1
+        if regularization_param is None:
+            regularization_param = 1
 
         self.kernel_fn = kernel_fn
-        self.l = l
+        self.regularization_param = regularization_param
 
     def _validate_inputs(
         self,
@@ -489,7 +493,7 @@ class KernelMaximalSR(AlgorithmInterface):
         )
 
         kernel_fn = self.kernel_fn
-        l = self.l
+        regularization_param = self.regularization_param
 
         T = np.array(T)
         num_time_steps = system.num_time_steps - 1
@@ -503,7 +507,9 @@ class KernelMaximalSR(AlgorithmInterface):
 
         A = np.array(A)
 
-        W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        W = kernel.regularized_inverse(
+            X, U=U, kernel_fn=kernel_fn, regularization_param=regularization_param
+        )
         pbar.update()
 
         CXY = kernel_fn(X, Y)
@@ -613,7 +619,7 @@ class KernelMaximalSR(AlgorithmInterface):
         )
 
         kernel_fn = self.kernel_fn
-        l = self.l
+        regularization_param = self.regularization_param
 
         T = np.array(T)
         num_time_steps = system.num_time_steps - 1
@@ -625,7 +631,9 @@ class KernelMaximalSR(AlgorithmInterface):
 
         A = np.array(A)
 
-        W = kernel.regularized_inverse(X, U=U, kernel_fn=kernel_fn, l=l)
+        W = kernel.regularized_inverse(
+            X, U=U, kernel_fn=kernel_fn, regularization_param=regularization_param
+        )
 
         CUA = kernel_fn(U, A)
 
