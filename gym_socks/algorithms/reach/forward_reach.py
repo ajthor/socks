@@ -22,7 +22,7 @@ class KernelForwardReachClassifier(object):
            <https://arxiv.org/abs/2011.09678>`_
     """
 
-    def __init__(self, kernel_fn=None, l=None, *args, **kwargs):
+    def __init__(self, kernel_fn=None, regularization_param=None, *args, **kwargs):
         """
         Initialize the algorithm.
         """
@@ -31,24 +31,18 @@ class KernelForwardReachClassifier(object):
         if kernel_fn is None:
             kernel_fn = partial(kernel.abel_kernel, sigma=0.1)
 
-        if l is None:
-            l = 1
+        if regularization_param is None:
+            regularization_param = 1
 
         self.kernel_fn = kernel_fn
-        self.l = l
+        self.regularization_param = regularization_param
 
-    def _validate_inputs(
-        self,
-        S: "State sample." = None,
-    ):
+    def _validate_inputs(self, S=None):
 
         if S is None:
             raise ValueError("Must supply a sample.")
 
-    def train(
-        self,
-        S: "State sample." = None,
-    ):
+    def train(self, S=None):
         """
         Run the algorithm.
         """
@@ -58,13 +52,15 @@ class KernelForwardReachClassifier(object):
         )
 
         kernel_fn = self.kernel_fn
-        l = self.l
+        regularization_param = self.regularization_param
 
         X = np.array(S)
 
         K = kernel_fn(X)
 
-        W = kernel.regularized_inverse(X, kernel_fn=kernel_fn, l=l)
+        W = kernel.regularized_inverse(
+            X, kernel_fn=kernel_fn, regularization_param=regularization_param
+        )
 
         tau = 1 - np.min(np.diagonal((1 / len(X)) * K.T @ W @ K))
 
@@ -76,8 +72,7 @@ class KernelForwardReachClassifier(object):
     def classify(self, state=None):
 
         if state is None:
-            print("Must supply a state to the classifier.")
-            return None
+            ValueError("Must supply a state to the classifier.")
 
         T = np.array(state)
 

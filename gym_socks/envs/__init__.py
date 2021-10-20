@@ -15,6 +15,7 @@ from gym_socks.envs.cwh import CWH4DEnv
 from gym_socks.envs.cwh import CWH6DEnv
 from gym_socks.envs.integrator import NDIntegratorEnv
 from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
+from gym_socks.envs.planar_quad import PlanarQuadrotorEnv
 from gym_socks.envs.point_mass import NDPointMassEnv
 from gym_socks.envs.QUAD20 import QuadrotorEnv
 from gym_socks.envs.tora import TORAEnv
@@ -36,6 +37,11 @@ register(
 register(
     id="NonholonomicVehicleEnv-v0",
     entry_point="gym_socks.envs:NonholonomicVehicleEnv",
+)
+
+register(
+    id="PlanarQuadrotorEnv-v0",
+    entry_point="gym_socks.envs:PlanarQuadrotorEnv",
 )
 
 register(

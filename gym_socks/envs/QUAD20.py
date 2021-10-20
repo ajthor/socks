@@ -8,14 +8,32 @@ from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
 
+from scipy.constants import g
 
-class QuadrotorBase(object):
+
+class QuadrotorEnv(DynamicalSystem):
+    """
+    Quadrotor system.
+    """
+
     def __init__(self, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            observation_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+            ),
+            state_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+            ),
+            action_space=gym.spaces.Box(
+                low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+            ),
+            *args,
+            **kwargs
+        )
 
         # system parameters
-        self._gravitational_constant = 9.81  # [m/s^2]
+        self._gravitational_acceleration = g  # [m/s^2]
         self._radius_center_mass = 0.1  # [m]
         self._rotor_distance = 0.5  # [m]
         self._rotor_mass = 0.1  # [kg]
@@ -25,12 +43,12 @@ class QuadrotorBase(object):
         self.compute_inertia()
 
     @property
-    def gravitational_constant(self):
-        return self._gravitational_constant
+    def gravitational_acceleration(self):
+        return self._gravitational_acceleration
 
-    @gravitational_constant.setter
-    def gravitational_constant(self, value):
-        self._gravitational_constant = value
+    @gravitational_acceleration.setter
+    def gravitational_acceleration(self, value):
+        self._gravitational_acceleration = value
 
     @property
     def radius_center_mass(self):
@@ -82,28 +100,6 @@ class QuadrotorBase(object):
             self.rotor_distance ** 2
         ) * self.rotor_mass
 
-
-class QuadrotorEnv(QuadrotorBase, DynamicalSystem):
-    """
-    Quadrotor system.
-    """
-
-    def __init__(self, *args, **kwargs):
-        """Initialize the system."""
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
-        )
-
     def generate_disturbance(self, time, state, action):
         w = self.np_random.standard_normal(size=self.state_space.shape)
         return 1e-2 * np.array(w)
@@ -114,7 +110,7 @@ class QuadrotorEnv(QuadrotorBase, DynamicalSystem):
         u1, u2, u3 = action
         w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12 = disturbance
 
-        F = self.total_mass * self.gravitational_constant - 10 * (x3 - u1) + 3 * x6
+        F = self.total_mass * self.gravitational_acceleration - 10 * (x3 - u1) + 3 * x6
         tau_phi = -(x7 - u2) - x10
         tau_psi = -(x8 - u3) - x11
         tau_theta = 0
@@ -135,17 +131,17 @@ class QuadrotorEnv(QuadrotorBase, DynamicalSystem):
             - np.cos(x7) * np.cos(x8) * x6
             + w3
         )
-        dx4 = x12 * x5 - x11 * x6 - self.gravitational_constant * np.sin(x8) + w4
+        dx4 = x12 * x5 - x11 * x6 - self.gravitational_acceleration * np.sin(x8) + w4
         dx5 = (
             x10 * x6
             - x12 * x4
-            + self.gravitational_constant * np.cos(x8) * np.sin(x7)
+            + self.gravitational_acceleration * np.cos(x8) * np.sin(x7)
             + w5
         )
         dx6 = (
             x11 * x4
             - x10 * x5
-            + self.gravitational_constant * np.cos(x8) * np.cos(x7)
+            + self.gravitational_acceleration * np.cos(x8) * np.cos(x7)
             - (F / self.total_mass)
         ) + w6
         dx7 = x10 + np.sin(x7) * np.tan(x8) * x11 + np.cos(x7) * np.tan(x8) * x12 + w7
@@ -167,6 +163,3 @@ class QuadrotorEnv(QuadrotorBase, DynamicalSystem):
             [dx1, dx2, dx3, dx4, dx5, dx6, dx7, dx8, dx9, dx10, dx11, dx12],
             dtype=np.float32,
         )
-
-    def reset(self):
-        self.state = self.state_space.sample()

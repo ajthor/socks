@@ -26,6 +26,7 @@ For example, `python -m examples.nonholonomic.kernel_control_bwd` will run the n
 ## Citation
 
 In order to cite the toolbox, use the following bibtex entry:
+
 ```
 @inproceedings{thorpe2022hscc,
   title={{SOCKS}: A Kernel-Based Stochastic Optimal Control and Reachability Toolbox},

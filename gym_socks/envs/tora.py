@@ -49,6 +49,3 @@ class TORAEnv(DynamicalSystem):
         dx4 = action + w4
 
         return np.array([dx1, dx2, dx3, *dx4], dtype=np.float32)
-
-    def reset(self):
-        self.state = self.state_space.sample()

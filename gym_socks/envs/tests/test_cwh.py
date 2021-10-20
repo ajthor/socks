@@ -8,6 +8,8 @@ import gym_socks.envs
 
 import numpy as np
 
+from scipy.constants import gravitational_constant
+
 
 class Test4DCWHSystem(unittest.TestCase):
     @classmethod
@@ -21,7 +23,7 @@ class Test4DCWHSystem(unittest.TestCase):
 
         # system parameters
         cls.env.orbital_radius = 850 + 6378.1
-        cls.env.gravitational_constant = 6.673e-11
+        cls.env.gravitational_constant = gravitational_constant
         cls.env.celestial_body_mass = 5.9472e24
         cls.env.chief_mass = 300
 

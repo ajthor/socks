@@ -5,6 +5,8 @@ from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
 
+from scipy.constants import gravitational_constant
+
 
 class CWHBase(object):
     def __init__(self, *args, **kwargs):
@@ -16,7 +18,8 @@ class CWHBase(object):
 
         # system parameters
         self._orbital_radius = 850 + 6378.1  # [m]
-        self._gravitational_constant = 6.673e-11
+        # self._gravitational_constant = 6.673e-11
+        self._gravitational_constant = gravitational_constant
         self._celestial_body_mass = 5.9472e24  # [kg]
         self._chief_mass = 300  # [kg]
 
@@ -214,9 +217,6 @@ class CWH4DEnv(CWHBase, DynamicalSystem):
 
         return np.array([dx1, dx2, dx3, dx4], dtype=np.float32)
 
-    def reset(self):
-        self.state = self.state_space.sample()
-
 
 class CWH6DEnv(CWHBase, DynamicalSystem):
     """6D Clohessy-Wiltshire-Hill (CWH) system."""
@@ -376,6 +376,3 @@ class CWH6DEnv(CWHBase, DynamicalSystem):
         dx6 = -(self.angular_velocity ** 2) * x3 + (u3 / self.chief_mass) + w6
 
         return np.array([dx1, dx2, dx3, dx4, dx5, dx6], dtype=np.float32)
-
-    def reset(self):
-        self.state = self.state_space.sample()

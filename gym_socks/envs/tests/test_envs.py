@@ -17,6 +17,7 @@ system_list = [
     gym_socks.envs.NDPointMassEnv(3),
     gym_socks.envs.NDPointMassEnv(4),
     gym_socks.envs.NonholonomicVehicleEnv(),
+    gym_socks.envs.PlanarQuadrotorEnv(),
     gym_socks.envs.CWH4DEnv(),
     gym_socks.envs.CWH6DEnv(),
     gym_socks.envs.QuadrotorEnv(),

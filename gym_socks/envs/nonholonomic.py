@@ -34,16 +34,23 @@ class NonholonomicVehicleEnv(DynamicalSystem):
         disturbance = self.generate_disturbance(time, self.state, action)
 
         # solve the initial value problem
-        sol = solve_ivp(
-            self.dynamics,
-            [0, self.sampling_time],
-            self.state,
-            args=(
-                action,
-                disturbance,
-            ),
-        )
-        *_, self.state = sol.y.T
+        if self._euler is True:
+            next_state = self.state + self.sampling_time * self.dynamics(
+                time, self.state, action, disturbance
+            )
+            self.state = next_state
+        else:
+            # solve the initial value problem
+            sol = solve_ivp(
+                self.dynamics,
+                [time, time + self.sampling_time],
+                self.state,
+                args=(
+                    action,
+                    disturbance,
+                ),
+            )
+            *_, self.state = sol.y.T
 
         # correct the angle
         if np.abs(self.state[2]) >= 2 * np.pi:
@@ -58,7 +65,7 @@ class NonholonomicVehicleEnv(DynamicalSystem):
 
         return observation, cost, done, info
 
-    def generate_disturbance(self, time=None, state=None, action=None):
+    def generate_disturbance(self, time, state, action):
         w = self.np_random.standard_normal(size=self.state_space.shape)
         return 1e-2 * np.array(w)
 
@@ -74,6 +81,3 @@ class NonholonomicVehicleEnv(DynamicalSystem):
         dx3 = u2 + w3
 
         return np.array([dx1, dx2, dx3], dtype=np.float32)
-
-    def reset(self):
-        self.state = self.state_space.sample()

@@ -32,6 +32,3 @@ class NDPointMassEnv(DynamicalSystem):
     def dynamics(self, time, state, action, disturbance):
         """Dynamics for the system."""
         return action + disturbance
-
-    def reset(self):
-        self.state = self.state_space.sample()

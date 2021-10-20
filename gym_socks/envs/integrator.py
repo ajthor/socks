@@ -36,6 +36,3 @@ class NDIntegratorEnv(DynamicalSystem):
         """Dynamics for the system."""
         _, *x = state
         return np.array([*x, *action], dtype=np.float32) + disturbance
-
-    def reset(self):
-        self.state = self.state_space.sample()

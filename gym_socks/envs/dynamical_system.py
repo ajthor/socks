@@ -230,8 +230,7 @@ class DynamicalSystem(gym.Env, ABC):
 
     @abstractmethod
     def dynamics(self, time, state, action, disturbance):
-        """
-        Dynamics for the system.
+        """Dynamics for the system.
 
         y = f(t, x, u, w)
               ┬  ┬  ┬  ┬
