@@ -126,7 +126,14 @@ def compute_target_trajectory(
 
 @ex.main
 def main(
-    seed, sigma, sampling_time, time_horizon, initial_condition, sample_size, verbose
+    seed,
+    _log,
+    sigma,
+    sampling_time,
+    time_horizon,
+    initial_condition,
+    sample_size,
+    verbose,
 ):
     """Main experiment."""
 
@@ -214,7 +221,7 @@ def main(
     )
 
     t1 = time()
-    print(f"Total time: {t1 - t0} s")
+    _log.info(f"computation time: {t1 - t0} s")
 
     # Set the initial condition.
     system.state = initial_condition

@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-import warnings
 
 import gym
 from gym.utils import seeding
+
+import gym_socks
 
 import numpy as np
 from scipy.integrate import solve_ivp
@@ -122,7 +123,7 @@ class DynamicalSystem(gym.Env, ABC):
     def sampling_time(self, value):
         msg = f"Sampling time {value} is less than time horizon {self._time_horizon}."
         if value > self._time_horizon:
-            warnings.warn(msg)
+            gym_socks.logging.warn(msg)
         self._sampling_time = value
 
     @property
@@ -133,7 +134,7 @@ class DynamicalSystem(gym.Env, ABC):
     def time_horizon(self, value):
         msg = f"Sampling time {value} is less than time horizon {self._time_horizon}."
         if value < self._sampling_time:
-            warnings.warn(msg)
+            gym_socks.logging.warn(msg)
         self._time_horizon = value
 
     @property

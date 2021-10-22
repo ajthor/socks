@@ -1,10 +1,30 @@
-"""
-Sampling Methods
-"""
-from abc import ABC, abstractmethod
-import warnings
+"""Sampling methods.
 
-from inspect import isgenerator, isgeneratorfunction
+This file contains a collection of sampling methods. The core principle is to define a
+function that returns a single observation (either via return or yield) from a
+probability measure. Then, the 'sample_generator' is a decorator, which converts a
+function that returns a single observation into a generator, that can be sampled using
+`islice`.
+
+Example:
+    Sample the stochastic kernel of a dynamical system (i.e. the state transition probability kernel).
+
+        env = NdIntegrator(2)
+        sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        sampler = step_sampler(
+            system=env, policy=RandomizedPolicy(env), sample_space=sample_space
+        )
+        S = sample(sampler=sampler, sample_size=100)
+
+The main reason for this setup is to allow for 'observation functions' which have
+different structures, e.g.
+* a function which `return`s an observation,
+* an infinite generator which `yield`s observations, and
+* a finite generator that `yield`s observations.
+
+"""
+
+from inspect import isgeneratorfunction
 from functools import partial, wraps
 from itertools import islice, product
 
@@ -19,6 +39,21 @@ from scipy.integrate import solve_ivp
 
 
 def sample_generator(fun):
+    """Sample generator decorator.
+
+    Converts a sample function into a generator function. Any function that returns a
+    single observation (as a tuple) can be converted into a sample generator.
+
+    Args:
+        fun : Sample function that returns or yields an observation from a probability
+            measure.
+
+    Returns:
+        sample_generator : A function that can be used to islice a sample from the
+            sample generator.
+
+    """
+
     @wraps(fun)
     def _wrapper(*args, **kwargs):
         while True:

@@ -81,7 +81,6 @@ class KernelControlFwd(BasePolicy):
         Y = np.array(Y)
 
         A = np.array(A)
-        # A = A[:, 0, :]
 
         pbar = ms_tqdm(
             total=3,

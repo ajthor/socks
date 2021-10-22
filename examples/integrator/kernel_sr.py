@@ -79,16 +79,34 @@ def config():
     sigma = 0.1
     sample_size = 2500
 
-    test_points_x1 = np.linspace(-1, 1, 50)
-    test_points_x2 = np.linspace(-1, 1, 50)
+    time_horizon = 4
+    sampling_time = 0.25
 
-    test_points = [test_points_x1, test_points_x2]
+    grid_resolution = 50
+
+    test_points = [
+        np.linspace(-1, 1, grid_resolution),
+        np.linspace(-1, 1, grid_resolution),
+    ]
+
+    sr_problem = "THT"
 
     verbose = True
 
 
 @ex.main
-def main(seed, sigma, sample_size, test_points, verbose):
+def main(
+    seed,
+    _log,
+    sigma,
+    sample_size,
+    time_horizon,
+    sampling_time,
+    test_points,
+    sr_problem,
+    verbose,
+):
+    """Main experiment."""
 
     system = gym_socks.envs.NDIntegratorEnv(2)
 
@@ -97,6 +115,9 @@ def main(seed, sigma, sample_size, test_points, verbose):
     system.observation_space.seed(seed=seed)
     system.state_space.seed(seed=seed)
     system.action_space.seed(seed=seed)
+
+    system.time_horizon = time_horizon
+    system.sampling_time = sampling_time
 
     num_time_steps = system.num_time_steps
 
@@ -153,42 +174,85 @@ def main(seed, sigma, sample_size, test_points, verbose):
         T=T,
         constraint_tube=constraint_tube,
         target_tube=target_tube,
-        problem="THT",
+        problem=sr_problem,
+        verbose=verbose,
     )
 
     t1 = time()
-    print(f"Total time: {t1 - t0} s")
+    _log.info(f"computation time: {t1 - t0} s")
 
     # Save the result to NPY file.
     with open("results/data.npy", "wb") as f:
         np.save(f, Pr)
 
 
+@ex.config
+def plot_config():
+
+    fig_width = 3
+    fig_height = 3
+
+    colormap = "viridis"
+
+    show_x_axis = True
+    show_y_axis = True
+
+    show_x_label = True
+    show_y_label = True
+
+    x_ticks = [-1, -0.5, 0, 0.5, 1]
+    y_ticks = [-1, -0.5, 0, 0.5, 1]
+
+    show_colorbar = True
+
+    plot_time = 0
+
+
 @ex.command(unobserved=True)
-def plot_results(test_points):
+def plot_results(
+    test_points,
+    fig_width,
+    fig_height,
+    colormap,
+    show_x_axis,
+    show_y_axis,
+    show_x_label,
+    show_y_label,
+    show_colorbar,
+    plot_time,
+):
     """Plot the results of the experiement."""
 
     with open("results/data.npy", "rb") as f:
         Pr = np.load(f)
 
-    colormap = "viridis"
-
     x1 = np.round(test_points[0], 3)
     x2 = np.round(test_points[1], 3)
     XX, YY = np.meshgrid(x1, x2, indexing="ij")
-    Z = Pr[0].reshape(XX.shape)
+    Z = Pr[plot_time].reshape(XX.shape)
 
     # Plot flat color map.
-    fig = plt.figure(figsize=(3, 3))
+    fig = plt.figure(figsize=(fig_width, fig_height))
     ax = fig.add_subplot(111)
 
     plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")
-    plt.colorbar()
+    if show_colorbar is True:
+        plt.colorbar(ax=ax)
+
+    if show_x_axis is False:
+        ax.get_xaxis().set_visible(False)
+    if show_y_axis is False:
+        ax.get_yaxis().set_visible(False)
+
+    if show_x_label is True:
+        ax.set_xlabel(r"$x_1$")
+    if show_y_label is True:
+        ax.set_ylabel(r"$x_2$")
 
     plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
 
     # Plot 3D projection.
-    fig = plt.figure(figsize=(3, 3))
+    fig = plt.figure(figsize=(fig_width, fig_height))
     ax = fig.add_subplot(111, projection="3d")
 
     ax.tick_params(direction="out", pad=-1)
