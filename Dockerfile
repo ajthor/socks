@@ -16,8 +16,8 @@ RUN apt-get -y update && \
   texlive-plain-generic && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY . /usr/local/gym_socks/
-WORKDIR /usr/local/gym_socks/
+# COPY . /usr/local/gym_socks/
+# WORKDIR /usr/local/gym_socks/
 
 RUN pip install -U \
   black \
