@@ -37,8 +37,8 @@ class Test4DCWHSystem(unittest.TestCase):
 
         env = cls.env
 
-        env.state = np.array([-0.1, -0.1, 0, 0])
-        action = np.array([0, 0])
+        env.state = np.array([-0.1, -0.1, 0, 0], dtype=np.float32)
+        action = np.array([0, 0], dtype=np.float32)
 
         trajectory = []
         trajectory.append(env.state)
@@ -108,8 +108,8 @@ class Test6DCWHSystem(unittest.TestCase):
 
         env = cls.env
 
-        env.state = np.array([-0.1, -0.1, 0, 0, 0, 0])
-        action = np.array([0, 0, 0])
+        env.state = np.array([-0.1, -0.1, 0, 0, 0, 0], dtype=np.float32)
+        action = np.array([0, 0, 0], dtype=np.float32)
 
         trajectory = []
         trajectory.append(env.state)

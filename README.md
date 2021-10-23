@@ -15,7 +15,7 @@ To install the toolbox, use `pip install gym-socks`.
 
 Alternatively, download the code from the GitHub repo and install using `pip install .` from the code directory.
 
-We support Python versions 3.7, 3.8 and 3.9 on Linux and macOS. We do not officially support Windows.
+We support Python versions 3.7, 3.8, and 3.9 on Linux and macOS. We do not officially support Windows.
 
 ## Examples
 

@@ -20,8 +20,8 @@ class TestIntegratorSystem(unittest.TestCase):
 
         env = cls.env
 
-        env.state = np.array([0.1, 0.1])
-        action = np.array([0])
+        env.state = np.array([0.1, 0.1], dtype=np.float32)
+        action = np.array([0], dtype=np.float32)
 
         trajectory = []
         trajectory.append(env.state)
@@ -64,8 +64,8 @@ class TestIntegratorSystem(unittest.TestCase):
         env = cls.env
         env._euler = True
 
-        env.state = np.array([0.1, 0.1])
-        action = np.array([0])
+        env.state = np.array([0.1, 0.1], dtype=np.float32)
+        action = np.array([0], dtype=np.float32)
 
         trajectory = []
         trajectory.append(env.state)
