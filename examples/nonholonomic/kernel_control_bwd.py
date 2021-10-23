@@ -47,6 +47,8 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
+plt.set_loglevel("notset")
+
 ex = Experiment()
 
 
@@ -80,6 +82,10 @@ def config():
     initial_condition = [-0.8, 0, 0]
 
     sample_size = 1500
+
+    batch_size = None
+
+    heuristic = False
 
     amplitude = 0.5
     period = 2.0
@@ -133,6 +139,8 @@ def main(
     time_horizon,
     initial_condition,
     sample_size,
+    batch_size,
+    heuristic,
     verbose,
 ):
     """Main experiment."""
@@ -209,16 +217,15 @@ def main(
 
     # Compute policy.
     policy = KernelControlBwd(
+        num_steps=system.num_time_steps,
+        cost_fn=tracking_cost,
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
         regularization_param=1 / (sample_size ** 2),
-    )
-    policy.train_batch(
-        system=system,
-        S=S,
-        A=A,
-        cost_fn=tracking_cost,
+        batch_size=batch_size,
+        heuristic=heuristic,
         verbose=verbose,
     )
+    policy.train(S=S, A=A)
 
     t1 = time()
     _log.info(f"computation time: {t1 - t0} s")
@@ -230,7 +237,7 @@ def main(
     # Simulate the system using the computed policy.
     for t in range(num_time_steps):
 
-        action = np.array(policy(time=t, state=[system.state]))
+        action = np.array(policy(time=t, T=[system.state]))
         obs, cost, done, _ = system.step(action)
 
         trajectory.append(list(obs))

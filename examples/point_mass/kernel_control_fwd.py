@@ -47,6 +47,8 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
+plt.set_loglevel("notset")
+
 ex = Experiment()
 
 
@@ -81,9 +83,13 @@ def config():
 
     sample_size = 2500
 
+    heuristic = False
+
 
 @ex.main
-def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_size):
+def main(
+    seed, sigma, sampling_time, time_horizon, initial_condition, sample_size, heuristic
+):
     """Main experiment."""
 
     system = gym_socks.envs.NDPointMassEnv(2)
@@ -186,17 +192,14 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
 
     # Compute policy.
     policy = KernelControlFwd(
+        cost_fn=tracking_cost,
+        constraint_fn=tracking_constraint,
+        heuristic=heuristic,
         kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
         regularization_param=1 / (sample_size ** 2),
     )
 
-    policy.train(
-        system=system,
-        S=S,
-        A=A,
-        cost_fn=tracking_cost,
-        constraint_fn=tracking_constraint,
-    )
+    policy.train(S=S, A=A)
 
     t1 = time()
     print(f"Total time: {t1 - t0} s")
@@ -208,7 +211,7 @@ def main(seed, sigma, sampling_time, time_horizon, initial_condition, sample_siz
     # Simulate the system using the computed policy.
     for t in range(num_time_steps):
 
-        action = np.array(policy(time=t, state=[system.state]))
+        action = np.array(policy(time=t, T=[system.state]))
 
         obs, cost, done, _ = system.step(action)
 

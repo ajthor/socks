@@ -40,6 +40,8 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
+plt.set_loglevel("noteset")
+
 ex = Experiment()
 
 
@@ -96,6 +98,8 @@ def config():
 
     verbose = True
 
+    result_data_filename = "results/data.npy"
+
 
 @ex.main
 def main(
@@ -119,6 +123,7 @@ def main(
     problem,
     batch_size,
     verbose,
+    result_data_filename,
 ):
     """Main experiment."""
 
@@ -237,7 +242,7 @@ def main(
     _log.info(f"computation time: {t1 - t0} s")
 
     # Save the result to NPY file.
-    with open("results/data.npy", "wb") as f:
+    with open(result_data_filename, "wb") as f:
         np.save(f, Pr)
 
 
@@ -259,6 +264,12 @@ def plot_config():
 
     plot_time = 0
 
+    plot_filename = "results/plot.png"
+
+    plot_3d = False
+    elev = 30
+    azim = -45
+
 
 @ex.command(unobserved=True)
 def plot_results(
@@ -274,10 +285,15 @@ def plot_results(
     show_y_label,
     show_colorbar,
     plot_time,
+    result_data_filename,
+    plot_filename,
+    plot_3d,
+    elev,
+    azim,
 ):
     """Plot the results of the experiement."""
 
-    with open("results/data.npy", "rb") as f:
+    with open(result_data_filename, "rb") as f:
         Pr = np.load(f)
 
     x1 = np.linspace(test_points_lb, test_points_ub, test_points_grid_resolution)
@@ -285,13 +301,30 @@ def plot_results(
     XX, YY = np.meshgrid(x1, x2, indexing="ij")
     Z = Pr[plot_time].reshape(XX.shape)
 
-    # Plot flat color map.
-    fig = plt.figure(figsize=(fig_width, fig_height))
-    ax = fig.add_subplot(111)
+    if plot_3d is False:
+        # Plot flat color map.
+        fig = plt.figure(figsize=(fig_width, fig_height))
+        ax = fig.add_subplot(111)
 
-    plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")
-    if show_colorbar is True:
-        plt.colorbar(ax=ax)
+        plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")
+
+        if show_colorbar is True:
+            plt.colorbar(ax=ax)
+
+    else:
+        # Plot 3D projection.
+        fig = plt.figure(figsize=(fig_width, fig_height))
+        ax = fig.add_subplot(111, projection="3d")
+        ax.view_init(elev, azim)
+
+        ax.tick_params(direction="out", pad=-1)
+
+        ax.plot_surface(XX, YY, Z, cmap=colormap, linewidth=0, antialiased=False)
+        ax.set_zlim(0, 1)
+
+        ax.set_zlabel(r"$\Pr$")
+
+        ax.contour(XX, YY, Z, zdir="z", offset=0)
 
     if show_x_axis is False:
         ax.get_xaxis().set_visible(False)
@@ -303,21 +336,7 @@ def plot_results(
     if show_y_label is True:
         ax.set_ylabel(r"$x_2$")
 
-    plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
-    plt.savefig("results/plot.pgf")
-
-    # Plot 3D projection.
-    fig = plt.figure(figsize=(fig_width, fig_height))
-    ax = fig.add_subplot(111, projection="3d")
-
-    ax.plot_surface(XX, YY, Z, cmap=colormap, linewidth=0, antialiased=False)
-    ax.set_zlim(0, 1)
-    ax.set_xlabel(r"$x_1$")
-    ax.set_ylabel(r"$x_2$")
-    ax.set_zlabel(r"$\Pr$")
-
-    plt.savefig("results/plot_3d.png", dpi=300, bbox_inches="tight")
-    plt.savefig("results/plot_3d.pgf")
+    plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
 
 
 if __name__ == "__main__":

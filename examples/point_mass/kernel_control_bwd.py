@@ -47,6 +47,8 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
+plt.set_loglevel("notset")
+
 ex = Experiment()
 
 

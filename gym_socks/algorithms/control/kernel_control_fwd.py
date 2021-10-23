@@ -1,11 +1,20 @@
-"""Forward in time stochastic optimal control."""
+"""Forward in time stochastic optimal control.
+
+References:
+    .. [1] `Stochastic Optimal Control via
+            Hilbert Space Embeddings of Distributions, 2021
+            Adam J. Thorpe, Meeko M. K. Oishi
+            IEEE Conference on Decision and Control,
+            <https://arxiv.org/abs/2103.12759>`_
+"""
 
 from functools import partial
 
 import gym_socks
 
 from gym_socks.envs.policy import BasePolicy
-import gym_socks.kernel.metrics as kernel
+from gym_socks.algorithms.control.control_common import compute_solution
+from gym_socks.kernel.metrics import rbf_kernel, regularized_inverse
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
@@ -13,41 +22,58 @@ import numpy as np
 from tqdm.auto import tqdm
 
 
+def kernel_control_fwd(
+    S=None,
+    A=None,
+    cost_fn=None,
+    constraint_fn=None,
+    heuristic=False,
+    regularization_param=None,
+    kernel_fn=None,
+    verbose: bool = True,
+):
+
+    alg = KernelControlFwd(
+        cost_fn=cost_fn,
+        constraint_fn=constraint_fn,
+        heuristic=heuristic,
+        regularization_param=regularization_param,
+        kernel_fn=kernel_fn,
+        verbose=verbose,
+    )
+    alg.train(S, A)
+
+    return alg
+
+
 class KernelControlFwd(BasePolicy):
-    """
-    Stochastic optimal control policy forward in time.
+    """Stochastic optimal control policy forward in time."""
 
-    References
-    ----------
-    .. [1] `Stochastic Optimal Control via
-            Hilbert Space Embeddings of Distributions, 2021
-           Adam J. Thorpe, Meeko M. K. Oishi
-           IEEE Conference on Decision and Control,
-           <https://arxiv.org/abs/2103.12759>`_
-
-    """
-
-    def __init__(self, kernel_fn=None, regularization_param=None, *args, **kwargs):
-        """
-        Initialize the algorithm.
-        """
+    def __init__(
+        self,
+        cost_fn=None,
+        constraint_fn=None,
+        heuristic=False,
+        regularization_param=None,
+        kernel_fn=None,
+        verbose: bool = True,
+        *args,
+        **kwargs,
+    ):
+        """Initialize the algorithm."""
         super().__init__(*args, **kwargs)
 
-        if kernel_fn is None:
-            kernel_fn = partial(kernel.rbf_kernel, sigma=0.1)
+        self.cost_fn = cost_fn
+        self.constraint_fn = constraint_fn
 
-        if regularization_param is None:
-            regularization_param = 1
+        self.heuristic = heuristic
 
         self.kernel_fn = kernel_fn
         self.regularization_param = regularization_param
 
-    def _validate_inputs(
-        self, system=None, S=None, A=None, cost_fn=None, constraint_fn=None
-    ):
+        self.verbose = verbose
 
-        if system is None:
-            raise ValueError("Must supply a system.")
+    def _validate_params(self, S=None, A=None):
 
         if S is None:
             raise ValueError("Must supply a sample.")
@@ -55,105 +81,88 @@ class KernelControlFwd(BasePolicy):
         if A is None:
             raise ValueError("Must supply a sample.")
 
-        if cost_fn is None:
+        if self.kernel_fn is None:
+            self.kernel_fn = partial(rbf_kernel, sigma=0.1)
+
+        if self.regularization_param is None:
+            self.regularization_param = 1
+
+        if self.cost_fn is None:
             raise ValueError("Must supply a cost function.")
 
-    def train(
-        self,
-        system=None,
-        S=None,
-        A=None,
-        cost_fn=None,
-        constraint_fn=None,
-        verbose: bool = True,
-    ):
+        if self.constraint_fn is None:
+            # raise ValueError("Must supply a constraint function.")
+            self._constrained = False
+        else:
+            self._constrained = True
 
-        self._validate_inputs(
-            system=system, S=S, A=A, cost_fn=cost_fn, constraint_fn=constraint_fn
-        )
+    def _validate_data(self, S):
 
-        kernel_fn = self.kernel_fn
-        regularization_param = self.regularization_param
+        if S is None:
+            raise ValueError("Must supply a sample.")
+
+    def train(self, S=None, A=None):
+
+        self._validate_data(S)
+        self._validate_data(A)
+        self._validate_params(S=S, A=A)
 
         X, U, Y = gym_socks.envs.sample.transpose_sample(S)
         X = np.array(X)
         U = np.array(U)
         Y = np.array(Y)
 
+        self.X = X
+
         A = np.array(A)
 
-        pbar = ms_tqdm(
-            total=3,
-            bar_format=_progress_fmt,
-            disable=False if verbose is True else True,
-        )
-
-        W = kernel.regularized_inverse(
-            X, U=U, kernel_fn=kernel_fn, regularization_param=regularization_param
-        )
-        pbar.update()
-
-        CUA = kernel_fn(U, A)
-        pbar.update()
-
-        self.X = X
         self.A = A
 
-        self.CUA = CUA
+        gym_socks.logger.debug("Computing matrix inverse.")
+        self.W = regularized_inverse(
+            X,
+            U=U,
+            kernel_fn=self.kernel_fn,
+            regularization_param=self.regularization_param,
+        )
 
-        self.W = W
+        gym_socks.logger.debug("Computing covariance matrix.")
+        self.CUA = self.kernel_fn(U, A)
 
-        self.cost = partial(cost_fn, state=Y)
+        gym_socks.logger.debug("Computing cost function.")
+        self.cost_fn = partial(self.cost_fn, state=Y)
 
-        self.constraint = None
-        if constraint_fn is not None:
-            self.constraint = partial(constraint_fn, state=Y)
+        gym_socks.logger.debug("Computing constraint function.")
+        if self.constraint_fn is not None:
+            self.constraint_fn = partial(self.constraint_fn, state=Y)
 
-        pbar.update()
-        pbar.close()
+        return self
 
-    def train_batch(
-        self,
-        system=None,
-        S=None,
-        A=None,
-        cost_fn=None,
-        constraint_fn=None,
-        verbose: bool = True,
-        batch_size=5,
-    ):
-        raise NotImplementedError
+    def __call__(self, time=0, T=None, *args, **kwargs):
 
-    def __call__(self, time=0, state=None, *args, **kwargs):
-
-        if state is None:
+        if T is None:
             print("Must supply a state to the policy.")
             return None
 
-        T = np.array(state)
+        T = np.array(T)
 
-        n = len(self.A)
-
+        # Compute covariance matrix.
         CXT = self.kernel_fn(self.X, T)
-
+        # Compute beta.
         betaXT = self.W @ (CXT * self.CUA)
-        C = np.matmul(np.array(self.cost(time=time), dtype=np.float32), betaXT)
 
-        if self.constraint is not None:
+        # Compute cost vector.
+        C = np.matmul(np.array(self.cost_fn(time=time), dtype=np.float32), betaXT)
+
+        # Compute constraint vector.
+        D = None
+        if self.constraint_fn is not None:
             D = np.matmul(
-                np.array(self.constraint(time=time), dtype=np.float32), betaXT
+                np.array(self.constraint_fn(time=time), dtype=np.float32), betaXT
             )
 
-            satisfies_constraints = np.where(D <= 0)
-            CA = C[satisfies_constraints]
-
-            if CA.size == 0:
-                idx = np.argmin(C)
-                return np.array(self.A[idx], dtype=np.float32)
-
-            idx = np.argmin(CA)
-            return np.array(self.A[satisfies_constraints][idx], dtype=np.float32)
-
-        else:
-            idx = np.argmin(C)
-            return np.array(self.A[idx], dtype=np.float32)
+        # Compute the solution to the LP.
+        gym_socks.logger.debug("Computing solution to the LP.")
+        sol = compute_solution(C, D, heuristic=self.heuristic)
+        idx = np.argmax(sol)
+        return np.array(self.A[idx], dtype=np.float32)
