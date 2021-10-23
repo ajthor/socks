@@ -12,12 +12,10 @@ class AlgorithmInterface(ABC):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        """Initialize the algorithm."""
-
-        # Algorithm parameters go here.
-
-    @classmethod
     @abstractmethod
-    def run(cls, *args, **kwargs):
+    def fit(cls, *args, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    def predict(cls, *args, **kwargs):
         raise NotImplementedError

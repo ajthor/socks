@@ -21,12 +21,7 @@ from sacred import Experiment
 import gym
 import gym_socks
 
-# from gym_socks.algorithms.reach.stochastic_reachability import KernelSR
-
-from gym_socks.algorithms.reach.stochastic_reachability import (
-    KernelSR,
-    kernel_stochastic_reachability,
-)
+from gym_socks.algorithms.reach.kernel_sr import kernel_sr
 from gym_socks.envs.sample import sample
 
 import numpy as np
@@ -65,31 +60,45 @@ def config():
     Example:
         To run the experiment normally, just run:
 
-            $ python -m experiment.<experiment>
+            $ python -m <experiment>
 
         To specify configuration variables, use `with variable=value`, e.g.
 
-            $ python -m experiment.<experiment> with seed=123
+            $ python -m <experiment> with seed=123
+
+        To use the default configuration, use:
+
+            $ python -m <experiment> with examples/integrator/config.json
 
     .. _sacred:
         https://sacred.readthedocs.io/en/stable/index.html
 
     """
 
+    system_id = "2DIntegratorEnv-v0"
+
     sigma = 0.1
+    regularization_param = 1
+
+    sample_space_lb = -1.1
+    sample_space_ub = 1.1
     sample_size = 2500
 
     time_horizon = 4
     sampling_time = 0.25
 
-    grid_resolution = 50
+    constraint_tube_lb = -1
+    constraint_tube_ub = 1
+    target_tube_lb = -0.5
+    target_tube_ub = 0.5
 
-    test_points = [
-        np.linspace(-1, 1, grid_resolution),
-        np.linspace(-1, 1, grid_resolution),
-    ]
+    test_points_lb = -1
+    test_points_ub = 1
+    test_points_grid_resolution = 50
 
-    sr_problem = "THT"
+    problem = "THT"
+
+    batch_size = None
 
     verbose = True
 
@@ -98,17 +107,28 @@ def config():
 def main(
     seed,
     _log,
+    system_id,
     sigma,
+    regularization_param,
+    sample_space_lb,
+    sample_space_ub,
     sample_size,
     time_horizon,
     sampling_time,
-    test_points,
-    sr_problem,
+    constraint_tube_lb,
+    constraint_tube_ub,
+    target_tube_lb,
+    target_tube_ub,
+    test_points_lb,
+    test_points_ub,
+    test_points_grid_resolution,
+    problem,
+    batch_size,
     verbose,
 ):
     """Main experiment."""
 
-    system = gym_socks.envs.NDIntegratorEnv(2)
+    system = gym.make(system_id)
 
     # Set the random seed.
     system.seed(seed=seed)
@@ -123,34 +143,47 @@ def main(
 
     # We define the constraint tube such that at the final time step, the system is in a
     # box [-0.5, 0.5]^d, but that all prior time steps the system is in a box [-1, 1]^d.
+
+    if np.isscalar(constraint_tube_lb) is False:
+        constraint_tube_lb = np.array(constraint_tube_lb)
+    if np.isscalar(constraint_tube_ub) is False:
+        constraint_tube_ub = np.array(constraint_tube_ub)
+
     constraint_tube = [
         gym.spaces.Box(
-            low=-1,
-            high=1,
-            shape=system.observation_space.shape,
+            low=constraint_tube_lb,
+            high=constraint_tube_ub,
+            shape=system.state_space.shape,
             dtype=np.float32,
         )
         for i in range(num_time_steps)
     ]
 
+    if np.isscalar(target_tube_lb) is False:
+        target_tube_lb = np.array(target_tube_lb)
+    if np.isscalar(target_tube_ub) is False:
+        target_tube_ub = np.array(target_tube_ub)
+
     target_tube = [
         gym.spaces.Box(
-            low=-0.5, high=0.5, shape=system.observation_space.shape, dtype=np.float32
+            low=target_tube_lb,
+            high=target_tube_ub,
+            shape=system.state_space.shape,
+            dtype=np.float32,
         )
         for i in range(num_time_steps)
     ]
 
     # Generate the sample.
     sample_space = gym.spaces.Box(
-        low=-1.1,
-        high=1.1,
-        shape=system.observation_space.shape,
+        low=sample_space_lb,
+        high=sample_space_ub,
+        shape=system.state_space.shape,
         dtype=np.float32,
     )
 
     S = sample(
-        sampler=gym_socks.envs.sample.uniform_grid_step_sampler(
-            [np.linspace(-1, 1, 50), np.linspace(-1, 1, 50)],
+        sampler=gym_socks.envs.sample.step_sampler(
             system=system,
             policy=gym_socks.envs.policy.ZeroPolicy(system),
             sample_space=sample_space,
@@ -159,22 +192,22 @@ def main(
     )
 
     # Generate the test points.
-    x1 = test_points[0]
-    x2 = test_points[1]
+    x1 = np.linspace(test_points_lb, test_points_ub, test_points_grid_resolution)
+    x2 = np.linspace(test_points_lb, test_points_ub, test_points_grid_resolution)
     T = gym_socks.envs.sample.uniform_grid([x1, x2])
 
     t0 = time()
 
-    alg = KernelSR(kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))))
-
-    # Run the algorithm.
-    Pr, _ = alg.run(
-        system=system,
+    Pr = kernel_sr(
         S=S,
         T=T,
+        num_steps=system.num_time_steps,
         constraint_tube=constraint_tube,
         target_tube=target_tube,
-        problem=sr_problem,
+        problem=problem,
+        regularization_param=regularization_param,
+        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+        batch_size=batch_size,
         verbose=verbose,
     )
 
@@ -200,9 +233,6 @@ def plot_config():
     show_x_label = True
     show_y_label = True
 
-    x_ticks = [-1, -0.5, 0, 0.5, 1]
-    y_ticks = [-1, -0.5, 0, 0.5, 1]
-
     show_colorbar = True
 
     plot_time = 0
@@ -210,7 +240,9 @@ def plot_config():
 
 @ex.command(unobserved=True)
 def plot_results(
-    test_points,
+    test_points_lb,
+    test_points_ub,
+    test_points_grid_resolution,
     fig_width,
     fig_height,
     colormap,
@@ -226,8 +258,8 @@ def plot_results(
     with open("results/data.npy", "rb") as f:
         Pr = np.load(f)
 
-    x1 = np.round(test_points[0], 3)
-    x2 = np.round(test_points[1], 3)
+    x1 = np.linspace(test_points_lb, test_points_ub, test_points_grid_resolution)
+    x2 = np.linspace(test_points_lb, test_points_ub, test_points_grid_resolution)
     XX, YY = np.meshgrid(x1, x2, indexing="ij")
     Z = Pr[plot_time].reshape(XX.shape)
 

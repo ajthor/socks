@@ -1,0 +1,42 @@
+{
+  "__doc__": "Experiment configuration variables.\n\nSOCKS uses sacred to run experiments in order to ensure repeatability. Configuration\nvariables are parameters that are passed to the experiment, such as the random seed,\nand can be specified at the command-line.\n\nExample:\n    To run the experiment normally, just run:\n\n        $ python -m experiment.<experiment>\n\n    To specify configuration variables, use `with variable=value`, e.g.\n\n        $ python -m experiment.<experiment> with seed=123\n\n.. _sacred:\n    https://sacred.readthedocs.io/en/stable/index.html\n\n",
+  "batch_size": null,
+  "colormap": "viridis",
+  "constraint_tube_lb": -1,
+  "constraint_tube_ub": 1,
+  "fig_height": 3,
+  "fig_width": 3,
+  "plot_time": 0,
+  "problem": "THT",
+  "regularization_param": 1,
+  "sample_size": 2500,
+  "sampling_time": 0.25,
+  "seed": 123,
+  "show_colorbar": true,
+  "show_x_axis": true,
+  "show_x_label": true,
+  "show_y_axis": true,
+  "show_y_label": true,
+  "sigma": 0.1,
+  "target_tube_lb": -0.5,
+  "target_tube_ub": 0.5,
+  "test_points_grid_resolution": 50,
+  "test_points_lb": -1,
+  "test_points_ub": 1,
+  "time_horizon": 4,
+  "verbose": true,
+  "x_ticks": [
+    -1,
+    -0.5,
+    0,
+    0.5,
+    1
+  ],
+  "y_ticks": [
+    -1,
+    -0.5,
+    0,
+    0.5,
+    1
+  ]
+}

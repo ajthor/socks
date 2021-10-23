@@ -35,6 +35,13 @@ register(
 )
 
 register(
+    id="2DIntegratorEnv-v0",
+    entry_point=NDIntegratorEnv,
+    kwargs={"dim": 2},
+    order_enforce=False,
+)
+
+register(
     id="NonholonomicVehicleEnv-v0",
     entry_point="gym_socks.envs:NonholonomicVehicleEnv",
 )
@@ -42,6 +49,13 @@ register(
 register(
     id="PlanarQuadrotorEnv-v0",
     entry_point="gym_socks.envs:PlanarQuadrotorEnv",
+)
+
+register(
+    id="2DPointMassEnv-v0",
+    entry_point=NDPointMassEnv,
+    kwargs={"dim": 2},
+    order_enforce=False,
 )
 
 register(
