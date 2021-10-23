@@ -22,7 +22,6 @@ import gym
 import gym_socks
 
 from gym_socks.algorithms.reach.kernel_sr import kernel_sr
-from gym_socks.algorithms.reach.kernel_sr_rff import kernel_sr_rff
 from gym_socks.envs.sample import sample
 
 import numpy as np
@@ -47,7 +46,7 @@ matplotlib.rcParams.update(
 
 import matplotlib.pyplot as plt
 
-plt.set_loglevel("noteset")
+plt.set_loglevel("notset")
 
 ex = Experiment()
 
@@ -204,32 +203,18 @@ def main(
 
     t0 = time()
 
-    Pr = kernel_sr_rff(
+    Pr = kernel_sr(
         S=S,
         T=T,
         num_steps=system.num_time_steps,
         constraint_tube=constraint_tube,
         target_tube=target_tube,
         problem=problem,
-        num_features=1000,
-        sigma=sigma,
         regularization_param=regularization_param,
+        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
         batch_size=batch_size,
         verbose=verbose,
     )
-
-    # Pr = kernel_sr(
-    #     S=S,
-    #     T=T,
-    #     num_steps=system.num_time_steps,
-    #     constraint_tube=constraint_tube,
-    #     target_tube=target_tube,
-    #     problem=problem,
-    #     regularization_param=regularization_param,
-    #     kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
-    #     batch_size=batch_size,
-    #     verbose=verbose,
-    # )
 
     t1 = time()
     _log.info(f"computation time: {t1 - t0} s")
