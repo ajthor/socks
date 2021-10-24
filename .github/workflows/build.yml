@@ -24,5 +24,4 @@ jobs:
             --build-arg PYTHON_VERSION=${{ matrix.python-version }} \
             --tag gym-socks-docker .
       - name: Run Tests
-        run: docker run gym-docker pytest
-        
+        run: docker run gym-socks-docker pytest
