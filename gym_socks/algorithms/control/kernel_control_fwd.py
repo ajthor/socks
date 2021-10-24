@@ -23,15 +23,35 @@ from tqdm.auto import tqdm
 
 
 def kernel_control_fwd(
-    S=None,
-    A=None,
+    S: np.ndarray,
+    A: np.ndarray,
     cost_fn=None,
     constraint_fn=None,
-    heuristic=False,
-    regularization_param=None,
+    heuristic: bool = False,
+    regularization_param: float = None,
     kernel_fn=None,
     verbose: bool = True,
 ):
+    """Stochastic optimal control policy forward in time.
+
+    Computes the optimal control action at each time step in a greedy fashion. In other
+    words, at each time step, the policy optimizes the cost function from the current
+    state. It does not "look ahead" in time.
+
+    Args:
+        S: Sample taken iid from the system evolution.
+        A: Collection of admissible control actions.
+        cost_fn: The cost function. Should return a real value.
+        constraint_fn: The constraint function. Should return a real value.
+        heuristic: Whether to use the heuristic solution instead of solving the LP.
+        regularization_param: Regularization prameter for the regularized least-squares
+            problem used to construct the approximation.
+        kernel_fn: The kernel function used by the algorithm.
+        verbose: Whether the algorithm should print verbose output.
+
+    Returns:
+        The policy.
+    """
 
     alg = KernelControlFwd(
         cost_fn=cost_fn,
@@ -47,20 +67,34 @@ def kernel_control_fwd(
 
 
 class KernelControlFwd(BasePolicy):
-    """Stochastic optimal control policy forward in time."""
+    """Stochastic optimal control policy forward in time.
+
+    Computes the optimal control action at each time step in a greedy fashion. In other
+    words, at each time step, the policy optimizes the cost function from the current
+    state. It does not "look ahead" in time.
+
+    Args:
+        cost_fn: The cost function. Should return a real value.
+        constraint_fn: The constraint function. Should return a real value.
+        heuristic: Whether to use the heuristic solution instead of solving the LP.
+        regularization_param: Regularization prameter for the regularized least-squares
+            problem used to construct the approximation.
+        kernel_fn: The kernel function used by the algorithm.
+        verbose: Whether the algorithm should print verbose output.
+
+    """
 
     def __init__(
         self,
         cost_fn=None,
         constraint_fn=None,
-        heuristic=False,
-        regularization_param=None,
+        heuristic: bool = False,
+        regularization_param: float = None,
         kernel_fn=None,
         verbose: bool = True,
         *args,
         **kwargs,
     ):
-        """Initialize the algorithm."""
         super().__init__(*args, **kwargs)
 
         self.cost_fn = cost_fn
@@ -101,7 +135,17 @@ class KernelControlFwd(BasePolicy):
         if S is None:
             raise ValueError("Must supply a sample.")
 
-    def train(self, S=None, A=None):
+    def train(self, S: np.ndarray, A: np.ndarray):
+        """Train the algorithm.
+
+        Args:
+            S: Sample taken iid from the system evolution.
+            A: Collection of admissible control actions.
+
+        Returns:
+            self: An instance of the KernelControlFwd algorithm class.
+
+        """
 
         self._validate_data(S)
         self._validate_data(A)

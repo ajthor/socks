@@ -1,6 +1,10 @@
-"""
-ARCH-COMP20 Category Report: Continuous and Hybrid Systems with Nonlinear Dynamics
-https://easychair.org/publications/open/nrdD
+"""Quadrotor system.
+
+References:
+    .. [1] `ARCH-COMP20 Category Report:
+            Continuous and Hybrid Systems with Nonlinear Dynamics
+            <https://easychair.org/publications/open/nrdD>`_
+
 """
 
 import gym
@@ -12,12 +16,15 @@ from scipy.constants import g
 
 
 class QuadrotorEnv(DynamicalSystem):
-    """
-    Quadrotor system.
+    """Quadrotor system.
+
+    The quadrotor system is a high-dimensional (12D) system. The states are the
+    position, velocity, and angles of the system, and the inputs are the torques on the
+    angles.
+
     """
 
     def __init__(self, *args, **kwargs):
-        """Initialize the system."""
         super().__init__(
             observation_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
@@ -39,8 +46,8 @@ class QuadrotorEnv(DynamicalSystem):
         self._rotor_mass = 0.1  # [kg]
         self._center_mass = 1  # [kg]
 
-        self.compute_total_mass()
-        self.compute_inertia()
+        self._compute_total_mass()
+        self._compute_inertia()
 
     @property
     def gravitational_acceleration(self):
@@ -57,7 +64,7 @@ class QuadrotorEnv(DynamicalSystem):
     @radius_center_mass.setter
     def radius_center_mass(self, value):
         self._radius_center_mass = value
-        self.compute_inertia()
+        self._compute_inertia()
 
     @property
     def rotor_distance(self):
@@ -66,7 +73,7 @@ class QuadrotorEnv(DynamicalSystem):
     @rotor_distance.setter
     def rotor_distance(self, value):
         self._rotor_distance = value
-        self.compute_inertia()
+        self._compute_inertia()
 
     @property
     def rotor_mass(self):
@@ -75,8 +82,8 @@ class QuadrotorEnv(DynamicalSystem):
     @rotor_mass.setter
     def rotor_mass(self, value):
         self._rotor_mass = value
-        self.compute_total_mass()
-        self.compute_inertia()
+        self._compute_total_mass()
+        self._compute_inertia()
 
     @property
     def center_mass(self):
@@ -85,13 +92,13 @@ class QuadrotorEnv(DynamicalSystem):
     @center_mass.setter
     def center_mass(self, value):
         self._center_mass = value
-        self.compute_total_mass()
-        self.compute_inertia()
+        self._compute_total_mass()
+        self._compute_inertia()
 
-    def compute_total_mass(self):
+    def _compute_total_mass(self):
         self.total_mass = self.center_mass + 4 * self.rotor_mass
 
-    def compute_inertia(self):
+    def _compute_inertia(self):
         self.Jx = (2 / 5) * self.center_mass * (self.radius_center_mass ** 2) + 2 * (
             self.rotor_distance ** 2
         ) * self.rotor_mass

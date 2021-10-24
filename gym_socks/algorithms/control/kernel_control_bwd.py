@@ -57,11 +57,12 @@ def _compute_backward_recursion(
         Z = np.matmul(value_functions[t + 1, :], W)
         C = np.einsum("i,ijk->jk", Z, beta)
 
+        V = np.zeros((len(Y),))
+
         if constraint_fn is not None:
             R = np.matmul(constraint_fn(time=t), W)
             D = np.einsum("i,ijk->jk", R, beta)
 
-            V = np.zeros((len(Y),))
             for i in range(len(Y)):
                 CA = C[i][D[i] <= 0]
                 if CA.size == 0:
@@ -70,8 +71,13 @@ def _compute_backward_recursion(
                     V[i] = np.min(CA)
 
         else:
-
             V = np.min(C, axis=1)
+
+        # for i in range(len(Y)):
+        #     sol = compute_solution(C[i], D[i])
+        #     # idx = np.argmax(sol)
+        #     # V =
+        #     V[i] = sol
 
         out[t, :] = cost_fn(time=t) + V
 
@@ -110,44 +116,56 @@ def _compute_backward_recursion_batch(
     # run backwards in time and compute the safety probabilities
     for t in range(num_steps - 2, -1, -1):
 
-        if constraint_fn is not None:
+        Z = np.matmul(value_functions[t + 1, :], W)
+        # C = np.empty((1, len(Y)))
+        C = np.empty_like(CUA)
 
-            Z = np.matmul(value_functions[t + 1, :], W)
-            R = np.matmul(constraint_fn(time=t), W)
+        # if constraint_fn is not None:
+        # D = np.empty((1, len(Y)))
+        D = np.empty_like(CUA)
 
-            C = np.zeros_like(CUA)
-            D = np.zeros_like(CUA)
+        print(f"D shape {D.shape}")
 
-            for batch in generate_batches(num_elements=len(Y), batch_size=batch_size):
+        for batch in generate_batches(num_elements=len(Y), batch_size=batch_size):
 
-                beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
-                C[batch, :] = np.einsum("i,ijk->jk", Z, beta)
+            beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
+            C[batch, :] = np.einsum("i,ijk->jk", Z, beta)
+
+            if constraint_fn is not None:
+                R = np.matmul(constraint_fn(time=t), W)
                 D[batch, :] = np.einsum("i,ijk->jk", R, beta)
 
-            V = np.zeros((len(Y),))
-            for i in range(len(Y)):
-                CA = C[i][D[i] <= 0]
-                if CA.size == 0:
-                    V[i] = np.min(C[i])
-                else:
-                    V[i] = np.min(CA)
+        V = np.zeros((len(Y),))
+        for i in range(len(Y)):
+            # sol = compute_solution(C[i], D[i])
+            # idx = np.argmax(sol)
+            # # print(f"V shape {V.shape}")
+            # # print(f"V shape {V[i].shape}")
+            # # print(f"C chape {C.shape}")
+            # V[i] = C[:, idx]
 
-            out[t, :] = cost_fn(time=t) + V
+            CA = C[i][D[i] <= 0]
+            if CA.size == 0:
+                V[i] = np.min(C[i])
+            else:
+                V[i] = np.min(CA)
 
-        else:
+            #     out[t, :] = cost_fn(time=t) + V
 
-            Z = np.matmul(value_functions[t + 1, :], W)
+            # else:
 
-            C = np.zeros_like(CUA)
+            #     Z = np.matmul(value_functions[t + 1, :], W)
 
-            for batch in generate_batches(num_elements=len(Y), batch_size=batch_size):
+            #     C = np.zeros_like(CUA)
 
-                beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
-                C[batch, :] = np.einsum("i,ijk->jk", Z, beta)
+            #     for batch in generate_batches(num_elements=len(Y), batch_size=batch_size):
 
-            V = np.min(C, axis=1)
+            #         beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
+            #         C[batch, :] = np.einsum("i,ijk->jk", Z, beta)
 
-            out[t, :] = cost_fn(time=t) + V
+            #     V = np.min(C, axis=1)
+
+        out[t, :] = cost_fn(time=t) + V
 
         pbar.update()
 
@@ -157,17 +175,33 @@ def _compute_backward_recursion_batch(
 
 
 def kernel_control_bwd(
-    S=None,
-    A=None,
-    num_steps=None,
+    S: np.ndarray,
+    A: np.ndarray,
+    num_steps: int = None,
     cost_fn=None,
     constraint_fn=None,
-    heuristic=False,
-    regularization_param=None,
+    heuristic: bool = False,
+    regularization_param: float = None,
     kernel_fn=None,
-    batch_size=None,
+    batch_size: int = None,
     verbose: bool = True,
 ):
+    """Stochastic optimal control policy backward in time.
+
+    Computes the optimal policy using dynamic programming. The solution computes an approximation of the value functions starting at the terminal time and working backwards. Then, when the policy is evaluated, it moves forward in time, optimizing over the value functions and choosing the action which has the highest "value".
+
+    Args:
+        S: Sample taken iid from the system evolution.
+        A: Collection of admissible control actions.
+        cost_fn: The cost function. Should return a real value.
+        constraint_fn: The constraint function. Should return a real value.
+        heuristic: Whether to use the heuristic solution instead of solving the LP.
+        regularization_param: Regularization prameter for the regularized least-squares
+            problem used to construct the approximation.
+        kernel_fn: The kernel function used by the algorithm.
+        verbose: Whether the algorithm should print verbose output.
+
+    """
 
     alg = KernelControlBwd(
         num_steps=num_steps,
@@ -185,22 +219,36 @@ def kernel_control_bwd(
 
 
 class KernelControlBwd(BasePolicy):
-    """Stochastic optimal control policy backward in time."""
+    """Stochastic optimal control policy backward in time.
+
+    Computes the optimal policy using dynamic programming. The solution computes an approximation of the value functions starting at the terminal time and working backwards. Then, when the policy is evaluated, it moves forward in time, optimizing over the value functions and choosing the action which has the highest "value".
+
+    Args:
+        S: Sample taken iid from the system evolution.
+        A: Collection of admissible control actions.
+        cost_fn: The cost function. Should return a real value.
+        constraint_fn: The constraint function. Should return a real value.
+        heuristic: Whether to use the heuristic solution instead of solving the LP.
+        regularization_param: Regularization prameter for the regularized least-squares
+            problem used to construct the approximation.
+        kernel_fn: The kernel function used by the algorithm.
+        verbose: Whether the algorithm should print verbose output.
+
+    """
 
     def __init__(
         self,
-        num_steps=None,
+        num_steps: int = None,
         cost_fn=None,
         constraint_fn=None,
-        heuristic=False,
-        regularization_param=None,
+        heuristic: bool = False,
+        regularization_param: float = None,
         kernel_fn=None,
-        batch_size=None,
+        batch_size: int = None,
         verbose: bool = True,
         *args,
-        **kwargs
+        **kwargs,
     ):
-        """Initialize the algorithm."""
         super().__init__(*args, **kwargs)
 
         self.num_steps = num_steps
@@ -253,7 +301,17 @@ class KernelControlBwd(BasePolicy):
         if S is None:
             raise ValueError("Must supply a sample.")
 
-    def train(self, S=None, A=None):
+    def train(self, S: np.ndarray, A: np.ndarray):
+        """Train the algorithm.
+
+        Args:
+            S: Sample taken iid from the system evolution.
+            A: Collection of admissible control actions.
+
+        Returns:
+            self: An instance of the KernelControlFwd algorithm class.
+
+        """
 
         self._validate_data(S)
         self._validate_data(A)

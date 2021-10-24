@@ -89,18 +89,18 @@ class TestDynamicalSystem(unittest.TestCase):
                 ),
             )
 
-    def test_system_warns_time_step(cls):
-        """
-        Test that system throws a warning if sampling time is greater than time horizon.
-        """
+    # def test_system_warns_time_step(cls):
+    #     """
+    #     Test that system throws a warning if sampling time is greater than time horizon.
+    #     """
 
-        with cls.assertWarns(Warning):
-            cls.env.time_horizon = 1
-            cls.env.sampling_time = 2
+    #     with cls.assertWarns(Warning):
+    #         cls.env.time_horizon = 1
+    #         cls.env.sampling_time = 2
 
-        with cls.assertWarns(Warning):
-            cls.env.sampling_time = 1
-            cls.env.time_horizon = 0.1
+    #     with cls.assertWarns(Warning):
+    #         cls.env.sampling_time = 1
+    #         cls.env.time_horizon = 0.1
 
     def test_system_num_time_steps(cls):
         """System returns correct number of time steps."""

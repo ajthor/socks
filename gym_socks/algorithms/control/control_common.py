@@ -23,14 +23,28 @@ def _check_constraint_matrix(D):
     return np.any(np.negative(D))
 
 
-def compute_solution(C: np.ndarray, D, heuristic: bool = False) -> list:
+def compute_solution(
+    C: np.ndarray, D: np.ndarray = None, heuristic: bool = False
+) -> np.ndarray:
+    """Compute the solution to the LP.
+
+    Computes a solution to the linear program, choosing either to delegate to the unconstrained or constrained solver depending on whether D is `None`.
+
+    Args:
+        C: Array holding values of the cost function evaluated at sample points.
+        D: Array holding values of the constraint function evaluated at sample points.
+        heuristic: Whether to compute the heuristic solution.
+
+    Returns:
+        gamma: Probability vector.
+    """
     if D is None:
         return _compute_unconstrained_solution(C, heuristic)
     else:
         return _compute_constrained_solution(C, D, heuristic)
 
 
-def _compute_unconstrained_solution(C: np.ndarray, heuristic=False):
+def _compute_unconstrained_solution(C: np.ndarray, heuristic=False) -> np.ndarray:
     """Compute the unconstrained solution to the LP.
 
     NOTE: A heuristic solution is available, but due to the speed of the LP solver for
@@ -43,11 +57,11 @@ def _compute_unconstrained_solution(C: np.ndarray, heuristic=False):
     unconstrained case.
 
     Args:
-        C : Array holding values of the cost function evaluated at sample points.
-        heuristic : Whether to compute the heuristic solution.
+        C: Array holding values of the cost function evaluated at sample points.
+        heuristic: Whether to compute the heuristic solution.
 
     Returns:
-        gamma : Probability vector.
+        gamma: Probability vector.
 
     """
     # C = (Cx @ K + Cu)
@@ -87,7 +101,9 @@ def _compute_unconstrained_solution(C: np.ndarray, heuristic=False):
     return heuristic_sol
 
 
-def _compute_constrained_solution(C, D, heuristic=False):
+def _compute_constrained_solution(
+    C: np.ndarray, D: np.ndarray, heuristic=False
+) -> np.ndarray:
     """Compute the constrained solution to the LP.
 
     NOTE: A heuristic solution is available, but due to the speed of the LP solver for
@@ -101,12 +117,12 @@ def _compute_constrained_solution(C, D, heuristic=False):
     and then finding the minimum value of the masked cost vector.
 
     Args:
-        C : Array holding values of the cost function evaluated at sample points.
-        D : Array holding values of the constraint function evaluated at sample points.
-        heuristic : Whether to compute the heuristic solution.
+        C: Array holding values of the cost function evaluated at sample points.
+        D: Array holding values of the constraint function evaluated at sample points.
+        heuristic: Whether to compute the heuristic solution.
 
     Returns:
-        gamma : Probability vector.
+        gamma: Probability vector.
 
     """
     # C = (Cx @ K + Cu)

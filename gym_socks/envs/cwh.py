@@ -9,8 +9,27 @@ from scipy.constants import gravitational_constant
 
 
 class CWHBase(object):
+    """CWH base class.
+
+    This class is ABSTRACT, meaning it is not meant to be instantiated directly.
+    Instead, define a new class that inherits from `CWHBase`, and define a custom
+    `compute_state_matrix` and `compute_input_matrix` function.
+
+    This class holds the shared parameters for the CWH systems, which include:
+
+    * orbital radius
+    * gravitational constant
+    * celestial body mass
+    * chief mass
+
+    And provides methods to compute:
+
+    * graviational parameter (mu)
+    * angular velocity (n)
+
+    """
+
     def __init__(self, *args, **kwargs):
-        """Initialize the system."""
         super().__init__(*args, **kwargs)
 
         self.time_horizon = 600  # [s]
@@ -81,11 +100,14 @@ class CWHBase(object):
 
 
 class CWH4DEnv(CWHBase, DynamicalSystem):
-    """4D Clohessy-Wiltshire-Hill (CWH) system."""
+    """4D Clohessy-Wiltshire-Hill (CWH) system.
+
+    The 4D CWH system is a simplification of the 6D dynamics to operate within a plane.
+    Essentially, it ignores the 'z' component of the dynamics.
+
+    """
 
     def __init__(self, *args, **kwargs):
-        """Initialize the system."""
-
         super().__init__(
             observation_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
@@ -222,7 +244,6 @@ class CWH6DEnv(CWHBase, DynamicalSystem):
     """6D Clohessy-Wiltshire-Hill (CWH) system."""
 
     def __init__(self, *args, **kwargs):
-        """Initialize the system."""
         super().__init__(
             observation_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32

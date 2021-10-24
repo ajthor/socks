@@ -1,3 +1,5 @@
+"""Planar quadrotor system."""
+
 import gym
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
@@ -8,8 +10,10 @@ from scipy.integrate import solve_ivp
 
 
 class PlanarQuadrotorEnv(DynamicalSystem):
-    """
-    Planar quadrotor system.
+    """Planar quadrotor system.
+
+    A planar quadrotor is quadrotor restricted to two dimensions. Similar to the OpenAI gym lunar lander benchmark, the planar quadrotor is a bar with two independent rotors at either end. Inputs are the trust of the rotors, and apply a torque to the bar. The system is also subject to gravitational forces.
+
     """
 
     def __init__(self, *args, **kwargs):

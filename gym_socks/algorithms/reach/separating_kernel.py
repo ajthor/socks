@@ -13,21 +13,48 @@ References:
             <https://arxiv.org/abs/2011.09678>`_
 
 """
+
 from functools import partial
 
 from gym_socks.algorithms.algorithm import AlgorithmInterface
 from gym_socks.kernel.metrics import abel_kernel, regularized_inverse
 
-from gym_socks.utils import generate_batches
-
 import numpy as np
 
 
 class SeparatingKernelClassifier(AlgorithmInterface):
-    """Separating kernel classifier."""
+    """Separating kernel classifier.
 
-    def __init__(self, kernel_fn=None, regularization_param=None, *args, **kwargs):
-        """Initialize the algorithm."""
+    A kernel-based support classifier for unknown distributions. Given a set of data taken iid from the distribution, the `SeparatingKernelClassifier` constructs a kernel-based classifier of the support of the distribution based on the theory of separating kernels.
+
+    Note:
+        The sample used by the classifier is from the marginal distribution, not the
+        joint or conditional. Thus, the data should be an array of points organized such
+        that each point occupies a single row in a 2D-array.
+
+    Args:
+        kernel_fn: The kernel function used by the classifier.
+        regularization_param: The regularization parameter used in the regularized
+            least-squares problem. Determines the smoothness of the solution.
+
+    Example:
+        >>> from gym_socks.algorithms.reach import SeparatingKernelClassifier
+        >>> from gym_socks.kernel.metrics import abel_kernel
+        >>> from functools import partial
+        >>> kernel_fn = partial(abel_kernel, sigma=0.1)
+        >>> classifier = SeparatingKernelClassifier(kernel_fn)
+        >>> classifier.fit(S)
+        >>> classifications = classifier.predict(T)
+
+    """
+
+    def __init__(
+        self,
+        kernel_fn=None,
+        regularization_param=None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
 
         self.kernel_fn = kernel_fn
@@ -50,44 +77,41 @@ class SeparatingKernelClassifier(AlgorithmInterface):
         """Fit separating kernel classifier.
 
         Args:
-            X : Data drawn from distribution.
+            X: Data drawn from distribution.
 
         Returns:
-            self : Instance of SeparatingKernelClassifier
+            self: Instance of SeparatingKernelClassifier
 
         """
 
         self._validate_data(X)
         X = np.array(X)
 
+        self.X = X
+
         K = self.kernel_fn(X)
 
-        W = regularized_inverse(
+        self.W = regularized_inverse(
             X, kernel_fn=self.kernel_fn, regularization_param=self.regularization_param
         )
 
-        tau = 1 - np.min(np.diagonal((1 / len(X)) * K.T @ W @ K))
-
-        self.X = X
-        self.W = W
-
-        self.tau = tau
+        self.tau = 1 - np.min(np.diagonal((1 / len(X)) * K.T @ self.W @ K))
 
         return self
 
-    def predict(self, X: np.ndarray):
+    def predict(self, T: np.ndarray):
         """Predict using the separating kernel classifier.
 
         Args:
-            X : Evaluation points where the separating kernel classifier is evaluated.
+            T: Evaluation points where the separating kernel classifier is evaluated.
 
         Returns:
-            y (bool) : Boolean indicator of classifier.
+            Boolean indicator of classifier.
 
         """
 
-        self._validate_data(X)
-        T = np.array(X)
+        self._validate_data(T)
+        T = np.array(T)
 
         K = self.kernel_fn(self.X, T)
 

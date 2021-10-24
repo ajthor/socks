@@ -137,18 +137,50 @@ def _compute_backward_recursion_batch(
 
 
 def kernel_sr_max(
-    S=None,
-    A=None,
-    T=None,
-    num_steps=None,
-    constraint_tube=None,
-    target_tube=None,
-    problem="THT",
-    regularization_param=None,
+    S: np.ndarray,
+    A: np.ndarray,
+    T: np.ndarray,
+    num_steps: int = None,
+    constraint_tube: list = None,
+    target_tube: list = None,
+    problem: str = "THT",
+    regularization_param: float = None,
     kernel_fn=None,
-    batch_size=None,
-    verbose=False,
+    batch_size: int = None,
+    verbose: bool = False,
 ):
+    """Stochastic reachability using kernel distribution embeddings.
+
+    Computes an approximation of the maximal safety probabilities of the stochastic
+    reachability problem using kernel methods.
+
+    Args:
+        S: Sample of (x, u, y) tuples taken iid from the system evolution. The
+            sample should be in the form of a list of tuples.
+        A: Collection of admissible control action to choose from. Should be in the
+            form of a 2D-array, where each row indicates a point.
+        T: Evaluation points to evaluate the safety probabilities at. Should be in the
+            form of a 2D-array, where each row indicates a point.
+        num_steps: Number of time steps to compute the approximation.
+        constraint_tube: List of spaces or constraint functions. Must be the same
+            length as `num_steps`.
+        target_tube: List of spaces or target functions. Must be the same length as
+            `num_steps`.
+        problem: One of `{"THT", "FHT"}`. `"THT"` specifies the terminal-hitting time
+            problem and `"FHT"` specifies the first-hitting time problem.
+        kernel_fn: Kernel function used by the approximation.
+        regularization_param: Regularization parameter used in the solution to the
+            regularized least-squares problem.
+        batch_size: The batch size for more memory-efficient computations. Omit this
+            parameter or set to `None` to compute without batch processing.
+        verbose: Boolean flag to indicate verbose output.
+
+    Returns:
+        An array of safety probabilities of shape {len(T), num_steps}, where each row
+        indicates the safety probabilities of the evaluation points at a different time
+        step.
+
+    """
 
     alg = KernelMaximalSR(
         num_steps=num_steps,
@@ -165,27 +197,41 @@ def kernel_sr_max(
 
 
 class KernelMaximalSR(AlgorithmInterface):
-    """
-    Stochastic reachability using kernel distribution embeddings.
+    """Stochastic reachability using kernel distribution embeddings.
+
+    Computes an approximation of the maximal safety probabilities of the stochastic
+    reachability problem using kernel methods.
+
+    Args:
+        num_steps: Number of time steps to compute the approximation.
+        constraint_tube: List of spaces or constraint functions. Must be the same
+            length as `num_steps`.
+        target_tube: List of spaces or target functions. Must be the same length as
+            `num_steps`.
+        problem: One of `{"THT", "FHT"}`. `"THT"` specifies the terminal-hitting time
+            problem and `"FHT"` specifies the first-hitting time problem.
+        kernel_fn: Kernel function used by the approximation.
+        regularization_param: Regularization parameter used in the solution to the
+            regularized least-squares problem.
+        batch_size: The batch size for more memory-efficient computations. Omit this
+            parameter or set to `None` to compute without batch processing.
+        verbose: Boolean flag to indicate verbose output.
 
     """
 
     def __init__(
         self,
-        num_steps=None,
-        constraint_tube=None,
-        target_tube=None,
-        problem="THT",
-        regularization_param=None,
+        num_steps: int = None,
+        constraint_tube: list = None,
+        target_tube: list = None,
+        problem: str = "THT",
+        regularization_param: float = None,
         kernel_fn=None,
-        batch_size=None,
-        verbose=False,
+        batch_size: int = None,
+        verbose: bool = False,
         *args,
         **kwargs,
     ):
-        """
-        Initialize the algorithm.
-        """
         super().__init__(*args, **kwargs)
 
         self.num_steps = num_steps
@@ -239,13 +285,17 @@ class KernelMaximalSR(AlgorithmInterface):
         if S is None:
             raise ValueError("Must supply a sample.")
 
-    def fit(self, S, A):
+    def fit(self, S: np.ndarray, A: np.ndarray):
         """Run the algorithm.
 
         Args:
+            S: Sample of (x, u, y) tuples taken iid from the system evolution. The
+                sample should be in the form of a list of tuples.
+            A: Collection of admissible control action to choose from. Should be in
+                the form of a 2D-array, where each row indicates a point.
 
         Returns:
-            self : Instance of KernelSR class.
+            self : Instance of KernelMaximalSR class.
 
         """
 
@@ -291,7 +341,19 @@ class KernelMaximalSR(AlgorithmInterface):
         )
 
     def predict(self, T):
-        """Predict."""
+        """Predict.
+
+        Args:
+            T: Evaluation points to evaluate the safety probabilities at. Should be in
+                the form of a 2D-array, where each row indicates a point.
+
+        Returns:
+            An array of safety probabilities of shape {len(T), num_steps}, where each
+            row indicates the safety probabilities of the evaluation points at a
+            different time step.
+
+        """
+
         self._validate_data(T)
         T = np.array(T)
 

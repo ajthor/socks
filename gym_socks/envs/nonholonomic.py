@@ -1,3 +1,5 @@
+"""Nonholonomic vehicle system."""
+
 import gym
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
@@ -7,12 +9,16 @@ from scipy.integrate import solve_ivp
 
 
 class NonholonomicVehicleEnv(DynamicalSystem):
-    """
-    Nonholonomic vehicle system.
+    """Nonholonomic vehicle system.
+
+    A nonholonomic vehicle (car-like) is typically modeled using what are known as
+    "unicycle" dynamics. It is useful for modeling vehicles which can move forward and
+    backward, and incorporates a steering angle or heading. The inputs are the velocity
+    and change in steering angle.
+
     """
 
     def __init__(self, *args, **kwargs):
-        """Initialize the system."""
         super().__init__(
             observation_space=gym.spaces.Box(
                 low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
@@ -70,7 +76,6 @@ class NonholonomicVehicleEnv(DynamicalSystem):
         return 1e-2 * np.array(w)
 
     def dynamics(self, time, state, action, disturbance):
-        """Dynamics for the system."""
 
         x1, x2, x3 = state
         u1, u2 = action

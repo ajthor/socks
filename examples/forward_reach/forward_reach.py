@@ -22,7 +22,7 @@ from sacred import Experiment
 import gym
 import gym_socks
 
-from gym_socks.algorithms.reach.forward_reach import KernelForwardReachClassifier
+from gym_socks.algorithms.reach.separating_kernel import SeparatingKernelClassifier
 from gym_socks.envs.sample import sample
 
 import numpy as np
@@ -75,9 +75,11 @@ def config():
     sigma = 0.1
     sample_size = 500
 
+    regularization_param = 1 / (sample_size ** 2)
+
 
 @ex.main
-def main(sigma, sample_size):
+def main(sigma, regularization_param, sample_size):
     """Main experiment."""
 
     @gym_socks.envs.sample.sample_generator
@@ -107,19 +109,20 @@ def main(sigma, sample_size):
     T = gym_socks.envs.sample.uniform_grid([x1, x2])
 
     # Construct the algorithm.
-    alg = KernelForwardReachClassifier(
+    alg = SeparatingKernelClassifier(
         kernel_fn=partial(
             gym_socks.kernel.metrics.abel_kernel,
             sigma=sigma,
             distance_fn=euclidean_distances,
-        )
+        ),
+        regularization_param=regularization_param,
     )
 
     t0 = time()
 
     # Train and classify the test points.
-    alg.train(S)
-    classifications = alg.classify(T)
+    alg.fit(S)
+    classifications = alg.predict(T)
 
     t1 = time()
     print(f"Total time: {t1 - t0} s")
