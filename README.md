@@ -1,5 +1,6 @@
 # SOCKS :socks:
 
+![build](https://github.com/ajthor/socks/actions/workflows/build.yml/badge.svg)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 __NOTE__: SOCKS is still under active (alpha) development 🚧👷🚧. Code is provided as-is, and some algorithms may not work as intended before the initial release. Please check back soon for the official 1.0 release.
