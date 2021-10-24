@@ -9,25 +9,28 @@ the functions defined here.
 
 To use the sklearn functions, use them like so:
 
-from sklearn.metrics import pairwise_distances
-from sklearn.metrics.pairwise import pairwise_kernels
-from sklearn.metrics.pairwise import rbf_kernel
-from sklearn.metrics.pairwise import euclidean_distances
-
-X = np.arange(4).reshape((2, 2))
-Y = np.arange(6).reshape((3, 2))
-K = gym_socks.kernel.metrics.rbf_kernel(X, Y, distance_fn=euclidean_distances)
+    >>> from sklearn.metrics import pairwise_distances
+    >>> from sklearn.metrics.pairwise import pairwise_kernels
+    >>> from sklearn.metrics.pairwise import rbf_kernel
+    >>> from sklearn.metrics.pairwise import euclidean_distances
+    >>> X = np.arange(4).reshape((2, 2))
+    >>> Y = np.arange(6).reshape((3, 2))
+    >>> K = gym_socks.kernel.metrics.rbf_kernel(X, Y, distance_fn=euclidean_distances)
 
 """
+
 from functools import partial, reduce
 
 import numpy as np
 from numpy.linalg import inv
 
 
-def euclidean_distance(X, Y=None, squared: bool = False):
-    """
-    Euclidean distance function.
+def euclidean_distance(
+    X: np.ndarray,
+    Y: np.ndarray = None,
+    squared: bool = False,
+) -> np.ndarray:
+    """Euclidean distance function.
 
     The main difference between the way this function calculates euclidean
     distance over other implementations such as in sklearn.metrics.pairwise is
@@ -35,17 +38,14 @@ def euclidean_distance(X, Y=None, squared: bool = False):
     input data, and generally works well for high-dimensional vectors and dense
     data sets, such as state trajectories over a long time horizon.
 
-    Parameters
-    ----------
+    Args:
+        X: The observations are oganized in ROWS.
+        Y: The observations are oganized in ROWS.
+        squared: Whether or not the result is the squared Euclidean distance.
 
-    X : ndarray
-        The observations are oganized in ROWS.
+    Returns:
+        np.ndarray: Matrix of pairwise distances between points.
 
-    Y : ndarray
-        The observations are oganized in ROWS.
-
-    squared : bool
-        Whether or not the result is the squared Euclidean distance.
     """
 
     if Y is None:
@@ -68,48 +68,49 @@ def euclidean_distance(X, Y=None, squared: bool = False):
     return distances if squared else np.sqrt(distances)
 
 
-def rbf_kernel(X, Y=None, sigma=None, distance_fn=None):
-    """
-    RBF kernel function.
+def rbf_kernel(
+    X: np.ndarray,
+    Y: np.ndarray = None,
+    sigma: float = None,
+    distance_fn=None,
+) -> np.ndarray:
+    """RBF kernel function.
 
     Computes the pairwise evaluation of the RBF kernel on each vector in X and
     Y. For instance, if X has n vecotrs, and Y has m vectors, then the result is
     an n x m matrix K where K_ij = k(xi, yj).
+    ::
 
-    X = [[--- x1 ---],
-         [--- x2 ---],
-         ...
-         [--- xn ---]]
+        X = [[--- x1 ---],
+             [--- x2 ---],
+             ...
+             [--- xn ---]]
 
-    Y = [[--- y1 ---],
-         [--- y2 ---],
-         ...
-         [--- ym ---]]
+        Y = [[--- y1 ---],
+             [--- y2 ---],
+             ...
+             [--- ym ---]]
 
     The result is a matrix,
+    ::
 
-    K = [[k(x1,y1), ..., k(x1,ym)],
-          ...
-         [k(xn,y1), ..., k(xn,ym)]]
+        K = [[k(x1,y1), ..., k(x1,ym)],
+             ...
+             [k(xn,y1), ..., k(xn,ym)]]
 
     The main difference between this implementation and the rbf_kernel in
     sklearn.metrics.pairwise is that this function optionally allows you to
     specify a different distance metric in the event the data is non-Euclidean.
 
-    Parameters
-    ----------
+    Args:
+        X: The observations are oganized in ROWS.
+        Y: The observations are oganized in ROWS.
+        sigma: Strictly positive real-valued kernel parameter.
+        distance_fn: Distance function to use in the kernel evaluation.
 
-    X : ndarray
-        The observations are oganized in ROWS.
+    Returns:
+        np.ndarray: Gram matrix of pairwise evaluations of the kernel function.
 
-    Y : ndarray
-        The observations are oganized in ROWS.
-
-    sigma : float
-        Strictly positive real-valued kernel parameter.
-
-    distance_fn : function
-        Distance function to use in the kernel evaluation.
     """
 
     if distance_fn is None:
@@ -128,7 +129,22 @@ def rbf_kernel(X, Y=None, sigma=None, distance_fn=None):
     return K
 
 
-def rbf_kernel_derivative(X, Y=None, sigma=None, distance_fn=None):
+def rbf_kernel_rff_transform(X, num_features=None, sigma=None):
+
+    D = np.shape(X)[1]
+    w = (1 / sigma) * np.random.standard_normal(size=(D, num_features))
+    b = np.random.uniform(low=0, high=2 * np.pi, size=(num_features,))
+    Z = (np.sqrt(2) / np.sqrt(num_features)) * np.cos(X @ w + b)
+
+    return Z
+
+
+def rbf_kernel_derivative(
+    X: np.ndarray,
+    Y: np.ndarray = None,
+    sigma: float = None,
+    distance_fn=None,
+) -> np.ndarray:
 
     if distance_fn is None:
         distance_fn = euclidean_distance
@@ -143,24 +159,23 @@ def rbf_kernel_derivative(X, Y=None, sigma=None, distance_fn=None):
     D *= 2 / (2 * (sigma ** 2))
 
 
-def abel_kernel(X, Y=None, sigma=None, distance_fn=None):
-    """
-    Abel kernel function.
+def abel_kernel(
+    X: np.ndarray,
+    Y: np.ndarray = None,
+    sigma: float = None,
+    distance_fn=None,
+) -> np.ndarray:
+    """Abel kernel function.
 
-    Parameters
-    ----------
+    Args:
+        X: The observations are oganized in ROWS.
+        Y: The observations are oganized in ROWS.
+        sigma: Strictly positive real-valued kernel parameter.
+        distance_fn: Distance function to use in the kernel evaluation.
 
-    X : ndarray
-        The observations are oganized in ROWS.
+    Returns:
+        np.ndarray: Gram matrix of pairwise evaluations of the kernel function.
 
-    Y : ndarray
-        The observations are oganized in ROWS.
-
-    sigma : float
-        Strictly positive real-valued kernel parameter.
-
-    distance : function
-        Distance function to use in the kernel evaluation.
     """
 
     if distance_fn is None:
@@ -180,33 +195,30 @@ def abel_kernel(X, Y=None, sigma=None, distance_fn=None):
 
 
 def regularized_inverse(
-    X,
-    Y=None,
-    U=None,
-    V=None,
-    regularization_param=None,
+    X: np.ndarray,
+    Y: np.ndarray = None,
+    U: np.ndarray = None,
+    V: np.ndarray = None,
+    regularization_param: float = None,
     kernel_fn=None,
-):
-    """
-    Regularized inverse.
+) -> np.ndarray:
+    """Regularized inverse.
 
     Computes the regularized matrix inverse (K + lambda * M * I)^-1.
 
 
-    Parameters
-    ----------
+    Args:
+        X: The observations are oganized in ROWS.
+        Y: The observations are oganized in ROWS.
+        regularization_param: Regularization parameter, which is a strictly positive
+            real value.
+        kernel_fn: The kernel function is a function that returns an ndarray where
+            each element is the pairwise evaluation of a kernel function. See sklearn.
+            metrics.pairwise for more info. The default is the RBF kernel.
 
-    X : ndarray
-        The observations are oganized in ROWS.
+    Returns:
+        np.ndarray: Regularized matrix inverse.
 
-    Y : ndarray
-        The observations are oganized in ROWS.
-
-    regularization_param : float
-        Regularization parameter, which is a strictly positive real value.
-
-    kernel_fn : function
-        The kernel function is a function that returns an ndarray where each element is the pairwise evaluation of a kernel function. See sklearn.metrics.pairwise for more info. The default is the RBF kernel.
     """
 
     if Y is None:
