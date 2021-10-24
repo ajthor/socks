@@ -32,3 +32,5 @@ RUN pip install -U \
   scikit-learn \
   matplotlib \
   tqdm
+
+RUN pip install .
