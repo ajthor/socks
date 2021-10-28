@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 
 class BasePolicy(ABC):
     """Base policy class.
@@ -81,7 +83,11 @@ class ConstantPolicy(BasePolicy):
         self.constant = constant
 
     def __call__(self, *args, **kwargs):
-        return [self.constant] * self.system.action_space.shape[0]
+        return np.full(
+            self.system.action_space.shape,
+            self.constant,
+            dtype=self.system.action_space.dtype,
+        )
 
 
 class ZeroPolicy(ConstantPolicy):

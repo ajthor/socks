@@ -7,7 +7,8 @@ function that returns a single observation into a generator, that can be sampled
 `islice`.
 
 Example:
-    Sample the stochastic kernel of a dynamical system (i.e. the state transition probability kernel).
+    Sample the stochastic kernel of a dynamical system (i.e. the state transition
+    probability kernel).
 
         >>> env = NdIntegrator(2)
         >>> sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
@@ -254,7 +255,9 @@ def transpose_sample(sample):
 def reshape_trajectory_sample(sample):
     """Reshapes trajectory samples.
 
-    Often, trajectory samples are organized such that the "trajectory" components are a 2D array of points indexed by time. However, for kernel methods, we typically require that the trajectories be concatenated into a single vector (1D array)::
+    Often, trajectory samples are organized such that the "trajectory" components are a
+    2D array of points indexed by time. However, for kernel methods, we typically
+    require that the trajectories be concatenated into a single vector (1D array)::
 
         [[x1], [x2], ..., [xn]] -> [x1, x2, ..., xn]
 

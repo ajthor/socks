@@ -32,21 +32,6 @@ from sklearn.metrics.pairwise import euclidean_distances
 
 from time import time
 
-import matplotlib
-
-matplotlib.use("Agg")
-matplotlib.rcParams.update(
-    {
-        "pgf.texsystem": "pdflatex",
-        "font.family": "serif",
-        "font.size": 8,
-        "text.usetex": True,
-        "pgf.rcfonts": False,
-    }
-)
-
-import matplotlib.pyplot as plt
-
 ex = Experiment()
 
 
@@ -136,6 +121,21 @@ def main(sigma, regularization_param, sample_size):
 @ex.command(unobserved=True)
 def plot_results():
     """Plot the results of the experiement."""
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    matplotlib.rcParams.update(
+        {
+            "pgf.texsystem": "pdflatex",
+            "font.family": "serif",
+            "font.size": 8,
+            "text.usetex": True,
+            "pgf.rcfonts": False,
+        }
+    )
+
+    import matplotlib.pyplot as plt
 
     with open("results/forward_reach.npy", "rb") as f:
         S = np.array(np.load(f))

@@ -33,11 +33,13 @@ from gym.envs.registration import register
 register(
     id="CWH4DEnv-v0",
     entry_point="gym_socks.envs:CWH4DEnv",
+    order_enforce=False,
 )
 
 register(
     id="CWH6DEnv-v0",
     entry_point="gym_socks.envs:CWH6DEnv",
+    order_enforce=False,
 )
 
 register(
@@ -50,11 +52,13 @@ register(
 register(
     id="NonholonomicVehicleEnv-v0",
     entry_point="gym_socks.envs:NonholonomicVehicleEnv",
+    order_enforce=False,
 )
 
 register(
     id="PlanarQuadrotorEnv-v0",
     entry_point="gym_socks.envs:PlanarQuadrotorEnv",
+    order_enforce=False,
 )
 
 register(
@@ -67,9 +71,11 @@ register(
 register(
     id="QuadrotorEnv-v0",
     entry_point="gym_socks.envs:QuadrotorEnv",
+    order_enforce=False,
 )
 
 register(
     id="TORAEnv-v0",
     entry_point="gym_socks.envs:TORAEnv",
+    order_enforce=False,
 )

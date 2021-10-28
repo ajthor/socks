@@ -182,13 +182,13 @@ class KernelControlFwd(BasePolicy):
 
         return self
 
-    def __call__(self, time=0, T=None, *args, **kwargs):
+    def __call__(self, time=0, state=None, *args, **kwargs):
 
-        if T is None:
+        if state is None:
             print("Must supply a state to the policy.")
             return None
 
-        T = np.array(T)
+        T = np.array(state)
 
         # Compute covariance matrix.
         CXT = self.kernel_fn(self.X, T)
