@@ -22,8 +22,8 @@ def parse_array(value: float or list, shape: tuple, dtype: type) -> list:
 
     result = value
 
-    if np.isscalar(result):
-        result = np.full(shape, result, dtype=dtype)
+    if np.isscalar(value):
+        result = np.full(shape, value, dtype=dtype)
 
     result = np.asarray(result, dtype=dtype)
 
@@ -63,9 +63,8 @@ def grid_ranges(
 
     xi = []
     for i in range(space.shape[0]):
-        xi.append(
-            np.linspace(lower_bound[i], upper_bound[i], grid_resolution[i]).tolist()
-        )
+        points = np.linspace(lower_bound[i], upper_bound[i], grid_resolution[i])
+        xi.append(points.tolist())
 
     return xi
 
@@ -76,4 +75,4 @@ def grid_sample_size(
 ) -> int:
     """Compute grid sample size."""
     grid_resolution = parse_array(grid_resolution, shape=space.shape, dtype=int)
-    return np.product(grid_resolution)
+    return int(np.product(grid_resolution))

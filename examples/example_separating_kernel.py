@@ -30,9 +30,22 @@ import numpy as np
 from functools import partial
 from sklearn.metrics.pairwise import euclidean_distances
 
-from time import time
+from examples._computation_timer import ComputationTimer
+from examples.ingredients.forward_reach_ingredient import forward_reach_ingredient
+from examples.ingredients.forward_reach_ingredient import generate_test_points
 
-ex = Experiment()
+
+@forward_reach_ingredient.config
+def forward_reach_config():
+
+    test_points = {
+        "lower_bound": -1,
+        "upper_bound": 1,
+        "grid_resolution": 100,
+    }
+
+
+ex = Experiment(ingredients=[forward_reach_ingredient])
 
 
 @ex.config
@@ -60,12 +73,16 @@ def config():
     sigma = 0.1
     sample_size = 500
 
-    regularization_param = 1 / (sample_size ** 2)
+    regularization_param = 1 / sample_size
+
+    filename = "results/data.npy"
 
 
 @ex.main
-def main(sigma, regularization_param, sample_size):
+def main(_log, seed, sigma, regularization_param, sample_size, filename):
     """Main experiment."""
+
+    np.random.seed(seed)
 
     @gym_socks.envs.sample.sample_generator
     def donut_sampler() -> tuple:
@@ -89,37 +106,49 @@ def main(sigma, regularization_param, sample_size):
     S = sample(sampler=donut_sampler, sample_size=sample_size)
 
     # Generate the test points.
-    x1 = np.linspace(-1, 1, 100)
-    x2 = np.linspace(-1, 1, 100)
-    T = gym_socks.envs.sample.uniform_grid([x1, x2])
+    T = generate_test_points((2,))
 
-    # Construct the algorithm.
-    alg = SeparatingKernelClassifier(
-        kernel_fn=partial(
+    with ComputationTimer():
+
+        kernel_fn = partial(
             gym_socks.kernel.metrics.abel_kernel,
             sigma=sigma,
             distance_fn=euclidean_distances,
-        ),
-        regularization_param=regularization_param,
-    )
+        )
 
-    t0 = time()
+        # Construct the algorithm.
+        alg = SeparatingKernelClassifier(
+            kernel_fn=kernel_fn,
+            regularization_param=regularization_param,
+        )
 
-    # Train and classify the test points.
-    alg.fit(S)
-    classifications = alg.predict(T)
+        # Train and classify the test points.
+        alg.fit(S)
+        labels = alg.predict(T)
 
-    t1 = time()
-    print(f"Total time: {t1 - t0} s")
+    if not np.any(labels):
+        _log.warning("No test points classified within reach set.")
 
-    with open("results/forward_reach.npy", "wb") as f:
+    with open(filename, "wb") as f:
         np.save(f, S)
         np.save(f, T)
-        np.save(f, classifications)
+        np.save(f, labels)
+
+
+@forward_reach_ingredient.config_hook
+def _plot_config(config, command_name, logger):
+    if command_name == "plot_results":
+        return {
+            "plot_marker": "None",
+            "plot_markersize": 2.5,
+            "plot_linewidth": 0.5,
+            "plot_linestyle": "--",
+            "dpi": 300,
+        }
 
 
 @ex.command(unobserved=True)
-def plot_results():
+def plot_results(filename):
     """Plot the results of the experiement."""
 
     import matplotlib
@@ -137,16 +166,15 @@ def plot_results():
 
     import matplotlib.pyplot as plt
 
-    with open("results/forward_reach.npy", "rb") as f:
+    with open(filename, "rb") as f:
         S = np.array(np.load(f))
         T = np.array(np.load(f))
-        classifications = np.load(f)
+        labels = np.load(f)
 
     fig = plt.figure(figsize=(3, 3))
     ax = fig.add_subplot(111)
 
-    points_in = T[classifications == True]
-    points_out = T[classifications == False]
+    points_in = T[labels == True]
 
     plt.scatter(
         points_in[:, 0],
@@ -167,4 +195,3 @@ def plot_results():
 
 if __name__ == "__main__":
     ex.run_commandline()
-    plot_results()

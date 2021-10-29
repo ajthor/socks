@@ -47,8 +47,7 @@ def sample_generator(fun):
     single observation (as a tuple) can be converted into a sample generator.
 
     Args:
-        fun: Sample function that returns or yields an observation from a probability
-            measure.
+        fun: Sample function that returns or yields an observation.
 
     Returns:
         A function that can be used to `islice` a sample from the sample generator.
@@ -63,6 +62,7 @@ def sample_generator(fun):
         ...     action = policy(state=state)
         ...     next_state, *_ = system.step(action)
         ...     yield (system.state, action, next_state)
+        >>> S = list(islice(custom_sampler(), 100))
 
     """
 
@@ -128,7 +128,7 @@ def uniform_grid(xi):
 
 
 def uniform_grid_step_sampler(
-    xi,
+    xi: list,
     system: DynamicalSystem = None,
     policy: BasePolicy = None,
     sample_space: gym.Space = None,
@@ -160,6 +160,31 @@ def uniform_grid_step_sampler(
             yield (state, action, next_state)
 
     return _sample_generator
+
+
+def sequential_action_sampler(
+    ui: list,
+    env: DynamicalSystem,
+    sample_space: gym.Space,
+    sampler,
+):
+
+    uc = uniform_grid(ui)
+
+    @sample_generator
+    def _wrapper(*args, **kwargs):
+        for action in uc:
+            _policy = ConstantPolicy(env, constant=action)
+
+            sampler_instance = sampler(
+                system=env,
+                policy=_policy,
+                sample_space=sample_space,
+            )
+
+            yield sampler_instance(*args, **kwargs)
+
+    return _wrapper
 
 
 def trajectory_sampler(

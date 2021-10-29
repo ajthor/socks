@@ -33,30 +33,26 @@ from numpy.linalg import norm
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
 
-from time import time
+from examples._computation_timer import ComputationTimer
 
 from examples.ingredients.system_ingredient import system_ingredient
 from examples.ingredients.system_ingredient import set_system_seed
 from examples.ingredients.system_ingredient import make_system
 
-from examples.ingredients.simulation_ingredient import (
-    load_simulation,
-    save_simulation,
-    simulation_ingredient,
-)
+from examples.ingredients.simulation_ingredient import simulation_ingredient
 from examples.ingredients.simulation_ingredient import simulate_system
+from examples.ingredients.simulation_ingredient import load_simulation
+from examples.ingredients.simulation_ingredient import save_simulation
 from examples.ingredients.simulation_ingredient import plot_simulation
 
 from examples.ingredients.sample_ingredient import sample_ingredient
 from examples.ingredients.sample_ingredient import generate_sample
 from examples.ingredients.sample_ingredient import generate_admissible_actions
 
-from examples.ingredients.tracking_ingredient import (
-    make_cost,
-    plot_target_trajectory,
-    tracking_ingredient,
-)
+from examples.ingredients.tracking_ingredient import tracking_ingredient
 from examples.ingredients.tracking_ingredient import compute_target_trajectory
+from examples.ingredients.tracking_ingredient import make_cost
+from examples.ingredients.tracking_ingredient import plot_target_trajectory
 
 
 @system_ingredient.config
@@ -176,23 +172,20 @@ def main(
     else:
         alg_class = KernelControlFwd
 
-    t0 = time()
+    with ComputationTimer():
 
-    # Compute policy.
-    policy = alg_class(
-        num_steps=env.num_time_steps,
-        cost_fn=tracking_cost,
-        heuristic=heuristic,
-        verbose=verbose,
-        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
-        regularization_param=regularization_param,
-        batch_size=batch_size,
-    )
+        # Compute policy.
+        policy = alg_class(
+            num_steps=env.num_time_steps,
+            cost_fn=tracking_cost,
+            heuristic=heuristic,
+            verbose=verbose,
+            kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+            regularization_param=regularization_param,
+            batch_size=batch_size,
+        )
 
-    policy.train(S=S, A=A)
-
-    t1 = time()
-    _log.info(f"computation time: {t1 - t0} s")
+        policy.train(S=S, A=A)
 
     trajectory = simulate_system(env, policy)
     save_simulation(trajectory)

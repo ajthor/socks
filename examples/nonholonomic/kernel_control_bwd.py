@@ -237,7 +237,7 @@ def main(
     # Simulate the system using the computed policy.
     for t in range(num_time_steps):
 
-        action = np.array(policy(time=t, T=[system.state]))
+        action = np.array(policy(time=t, state=[system.state]))
         obs, cost, done, _ = system.step(action)
 
         trajectory.append(list(obs))

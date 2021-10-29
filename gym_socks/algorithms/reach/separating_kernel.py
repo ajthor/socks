@@ -99,7 +99,7 @@ class SeparatingKernelClassifier(AlgorithmInterface):
 
         return self
 
-    def predict(self, T: np.ndarray):
+    def predict(self, T: np.ndarray) -> list[bool]:
         """Predict using the separating kernel classifier.
 
         Args:

@@ -1,13 +1,13 @@
-"""Stochastic reachability.
+"""Maximal stochastic reachability.
 
-This example shows the stochastic reachability algorithm.
+This example shows the maximal stochastic reachability algorithm.
 
 By default, the system is a double integrator (2D stochastic chain of integrators).
 
 Example:
     To run the example, use the following command:
 
-        $ python -m examples.benchmark_stochastic_reachability
+        $ python -m examples.benchmark_maximal_stochastic_reachability
 
 .. [1] `Model-Free Stochastic Reachability
         Using Kernel Distribution Embeddings, 2019
@@ -17,22 +17,21 @@ Example:
 
 """
 
-from sacred import Experiment
-
 import gym
 import gym_socks
 
-from gym_socks.algorithms.reach.kernel_sr import kernel_sr
-from gym_socks.envs.policy import RandomizedPolicy, ZeroPolicy
-from gym_socks.envs.sample import sample
-
 import numpy as np
+
+from sacred import Experiment
 
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
 
-from examples._computation_timer import ComputationTimer
+from gym_socks.algorithms.reach.kernel_sr_max import kernel_sr_max
 
+from gym_socks.envs.sample import sample
+
+from examples._computation_timer import ComputationTimer
 
 from examples.ingredients.system_ingredient import system_ingredient
 from examples.ingredients.system_ingredient import set_system_seed
@@ -40,6 +39,7 @@ from examples.ingredients.system_ingredient import make_system
 
 from examples.ingredients.sample_ingredient import sample_ingredient
 from examples.ingredients.sample_ingredient import generate_sample
+from examples.ingredients.sample_ingredient import generate_admissible_actions
 
 from examples.ingredients.backward_reach_ingredient import backward_reach_ingredient
 from examples.ingredients.backward_reach_ingredient import generate_test_points
@@ -62,26 +62,35 @@ def sample_config():
         "sample_scheme": "grid",
         "lower_bound": -1.1,
         "upper_bound": 1.1,
-        "grid_resolution": 50,
+        "grid_resolution": 25,
     }
 
-    sample_policy = {"sample_scheme": "zero"}
+    sample_policy = {
+        "sample_scheme": "grid",
+        "lower_bound": -1,
+        "upper_bound": 1,
+        "grid_resolution": 5,
+    }
 
     action_space = {"sample_scheme": "grid"}
 
 
 @backward_reach_ingredient.config
 def backward_reach_config():
+    """Backward reachability configuration.
 
-    # By default, the constraint tube is defined as a box [-1, 1]^d.
+    We define the constraint tube such that at the final time step, the system is in a
+    box [-0.5, 0.5]^d, but that all prior time steps the system is in a box [-1, 1]^d.
+
+    """
+
     constraint_tube_bounds = {"lower_bound": -1, "upper_bound": 1}
-    # By default, the target tube is defined as a box [-0.5, 0.5]^d.
     target_tube_bounds = {"lower_bound": -0.5, "upper_bound": 0.5}
 
     test_points = {
         "lower_bound": -1,
         "upper_bound": 1,
-        "grid_resolution": 100,
+        "grid_resolution": 25,
     }
 
 
@@ -153,15 +162,22 @@ def main(
     constraint_tube = generate_tube(env, backward_reach["constraint_tube_bounds"])
 
     # Generate the sample.
+    _log.info("Generating the sample.")
     S = generate_sample(seed=seed, env=env)
 
+    # Generate admissible control actions.
+    _log.info("Generating admissible control actions.")
+    A = generate_admissible_actions(seed=seed, env=env)
+
     # Generate the test points.
+    _log.info("Generating test points.")
     T = generate_test_points(env=env)
 
     with ComputationTimer():
 
-        safety_probabilities = kernel_sr(
+        safety_probabilities = kernel_sr_max(
             S=S,
+            A=A,
             T=T,
             num_steps=env.num_time_steps,
             constraint_tube=constraint_tube,
@@ -174,6 +190,7 @@ def main(
         )
 
     # Save the result to NPY file.
+    # save_safety_probabilities(env=env, safety_probabilities=safety_probabilities)
     xi = compute_test_point_ranges(env)
     with open(filename, "wb") as f:
         np.save(f, xi)
@@ -198,6 +215,21 @@ def plot_config(config, command_name, logger):
             "plot_time": 0,
         }
 
+    # fig_width = 3
+    # fig_height = 3
+
+    # show_x_axis = True
+    # show_y_axis = True
+
+    # show_x_label = True
+    # show_y_label = True
+
+    # plot_filename = "results/plot.png"
+
+    # plot_3d = False
+    # elev = 30
+    # azim = -45
+
 
 @ex.command(unobserved=True)
 def plot_results(
@@ -215,6 +247,7 @@ def plot_results(
     elev,
     azim,
     filename,
+    _log,
 ):
     """Plot the results of the experiement."""
 
@@ -237,6 +270,7 @@ def plot_results(
     plt.set_loglevel("notset")
 
     # Load the result from NPY file.
+    # xi, safety_probabilities = load_safety_probabilities()
     with open(filename, "rb") as f:
         xi = np.load(f)
         safety_probabilities = np.load(f)

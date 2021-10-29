@@ -24,6 +24,7 @@ class ComputationTimer(object):
         self._start_time = None
 
     def __enter__(self):
+        logger.debug("Starting timer.")
         self._start_time = perf_counter()
         return self
 
@@ -34,4 +35,5 @@ class ComputationTimer(object):
     def log_time(self):
         """Output the computation time to the log."""
         elapsed_time = perf_counter() - self._start_time
+        logger.debug("Stopping timer.")
         logger.info(f"computation time: {elapsed_time} s")
