@@ -19,7 +19,7 @@ def _config():
 
 @tracking_ingredient.capture
 def compute_target_trajectory(num_steps, path_amplitude, path_period):
-    """Computes the traget trajectory to follow.
+    """Computes the target trajectory to follow.
 
     The default trajectory is a V-shaped path based on a triangle function. The amplitude and period are set by the config.
 
@@ -76,43 +76,3 @@ def make_cost(target_trajectory, norm_order, squared):
         return result
 
     return _tracking_cost
-
-
-@tracking_ingredient.config_hook
-def _plot_config(config, command_name, logger):
-    if command_name == "plot_results":
-        return {
-            "plot_marker": "x",
-            "plot_markersize": 2.5,
-            "plot_linewidth": 0.5,
-            "plot_linestyle": "--",
-        }
-
-    # plot_marker = "x"
-    # plot_markersize = 2.5
-    # plot_linewidth = 0.5
-    # plot_linestyle = "--"
-
-
-@tracking_ingredient.capture
-def plot_target_trajectory(
-    plt,
-    target_trajectory,
-    plot_marker,
-    plot_markersize,
-    plot_linewidth,
-    plot_linestyle,
-    *args,
-    **kwargs,
-):
-    target_trajectory = np.array(target_trajectory, dtype=np.float32)
-    plt.plot(
-        target_trajectory[:, 0],
-        target_trajectory[:, 1],
-        marker=plot_marker,
-        markersize=plot_markersize,
-        linewidth=plot_linewidth,
-        linestyle=plot_linestyle,
-        *args,
-        **kwargs,
-    )

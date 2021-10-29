@@ -17,18 +17,19 @@ Example:
 
 """
 
-from sacred import Experiment
-
 import gym
 import gym_socks
-
-from gym_socks.algorithms.reach.separating_kernel import SeparatingKernelClassifier
-from gym_socks.envs.sample import sample
 
 import numpy as np
 
 from functools import partial
+from sacred import Experiment
+
+from gym_socks.algorithms.reach.separating_kernel import SeparatingKernelClassifier
+
 from sklearn.metrics.pairwise import euclidean_distances
+
+from gym_socks.envs.sample import sample
 
 from examples._computation_timer import ComputationTimer
 from examples.ingredients.forward_reach_ingredient import forward_reach_ingredient
@@ -57,13 +58,17 @@ def config():
     and can be specified at the command-line.
 
     Example:
-        To run the experiment normally, just run:
+        To run the experiment normally, use:
 
-            $ python -m experiment.<experiment>
+            $ python -m <experiment>
+
+        The full configuration can be viewed using:
+
+            $ python -m <experiment> print_config
 
         To specify configuration variables, use `with variable=value`, e.g.
 
-            $ python -m experiment.<experiment> with seed=123
+            $ python -m <experiment> with seed=123 system.time_horizon=5
 
     .. _sacred:
         https://sacred.readthedocs.io/en/stable/index.html

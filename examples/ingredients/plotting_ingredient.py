@@ -4,38 +4,29 @@ This ingredient is used for experiments with a plotting component.
 
 """
 
-from sacred import Ingredient
+import os
 
 import numpy as np
 
-plotting_ingredient = Ingredient("plot")
+from sacred import Ingredient
+
+plotting_ingredient = Ingredient("plot_cfg")
 
 
 @plotting_ingredient.config
 def _config():
-    font_size = 8
+    rc_params = dict()
+    rc_params_filename = os.path.abspath("examples/ingredients/matplotlibrc")
 
-    fig_height = 3  # Figure height in inches.
-    fig_width = 3  # Figure width in inches.
+    plot_filename = "results/plot.png"
 
 
 @plotting_ingredient.capture
-def load_matplotlib(font_size):
-    import matplotlib
-
-    matplotlib.use("Agg")
-    matplotlib.rcParams.update(
-        {
-            "pgf.texsystem": "pdflatex",
-            "font.family": "serif",
-            "font.size": font_size,
-            "text.usetex": True,
-            "pgf.rcfonts": False,
-        }
+def update_rc_params(matplotlib, rc_params, rc_params_filename):
+    custom_rc_params = matplotlib.rc_params_from_file(
+        fname=rc_params_filename, use_default_template=True
     )
+    matplotlib.rcParams.update(custom_rc_params)
 
-    import matplotlib.pyplot as plt
-
-    plt.set_loglevel("notset")
-
-    return plt
+    for key, value in rc_params.items():
+        matplotlib.rc(key, **value)

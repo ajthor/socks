@@ -135,35 +135,49 @@ def _compute_backward_recursion_batch(
                 R = np.matmul(constraint_fn(time=t), W)
                 D[batch, :] = np.einsum("i,ijk->jk", R, beta)
 
-        V = np.zeros((len(Y),))
-        for i in range(len(Y)):
-            # sol = compute_solution(C[i], D[i])
-            # idx = np.argmax(sol)
-            # # print(f"V shape {V.shape}")
-            # # print(f"V shape {V[i].shape}")
-            # # print(f"C chape {C.shape}")
-            # V[i] = C[:, idx]
+        # V = np.zeros((len(Y),))
+        # for i in range(len(Y)):
+        #     # sol = compute_solution(C[i], D[i])
+        #     # idx = np.argmax(sol)
+        #     # # print(f"V shape {V.shape}")
+        #     # # print(f"V shape {V[i].shape}")
+        #     # # print(f"C chape {C.shape}")
+        #     # V[i] = C[:, idx]
 
-            CA = C[i][D[i] <= 0]
-            if CA.size == 0:
-                V[i] = np.min(C[i])
-            else:
-                V[i] = np.min(CA)
+        #     CA = C[i][D[i] <= 0]
+        #     if CA.size == 0:
+        #         V[i] = np.min(C[i])
+        #     else:
+        #         V[i] = np.min(CA)
 
-            #     out[t, :] = cost_fn(time=t) + V
+        #     #     out[t, :] = cost_fn(time=t) + V
 
-            # else:
+        #     # else:
 
-            #     Z = np.matmul(value_functions[t + 1, :], W)
+        #     #     Z = np.matmul(value_functions[t + 1, :], W)
 
-            #     C = np.zeros_like(CUA)
+        #     #     C = np.zeros_like(CUA)
 
-            #     for batch in generate_batches(num_elements=len(Y), batch_size=batch_size):
+        #     #     for batch in generate_batches(num_elements=len(Y), batch_size=batch_size):
 
-            #         beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
-            #         C[batch, :] = np.einsum("i,ijk->jk", Z, beta)
+        #     #         beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
+        #     #         C[batch, :] = np.einsum("i,ijk->jk", Z, beta)
 
-            #     V = np.min(C, axis=1)
+        #     #     V = np.min(C, axis=1)
+
+        if constraint_fn is not None:
+
+            V = np.zeros((len(Y),))
+
+            for i in range(len(Y)):
+
+                CA = C[i][D[i] <= 0]
+                if CA.size == 0:
+                    V[i] = np.min(C[i])
+                else:
+                    V[i] = np.min(CA)
+        else:
+            V = np.min(C, axis=1)
 
         out[t, :] = cost_fn(time=t) + V
 

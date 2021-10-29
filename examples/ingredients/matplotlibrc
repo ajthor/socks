@@ -1,0 +1,14 @@
+pgf.texsystem: pdflatex
+font.family: serif
+font.size: 8
+text.usetex: True
+pgf.rcfonts: False
+figure.figsize: 3, 3
+figure.dpi: 100
+image.cmap: viridis
+savefig.dpi: 300
+savefig.bbox: tight
+lines.marker: o
+lines.markersize: 2.5
+lines.linewidth: 0.75
+lines.linestyle: -

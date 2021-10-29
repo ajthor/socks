@@ -1,0 +1,27 @@
+system:
+  system_id: "2DPointMassEnv-v0"
+  sampling_time: 0.1
+  time_horizon: 2
+
+  action_space:
+    lower_bound: "-inf"
+    upper_bound: "inf"
+
+sample:
+  sample_space:
+    sample_scheme: "uniform"
+    lower_bound: [-1, -1]
+    upper_bound: [1, 1]
+    sample_size: 500
+
+  sample_policy:
+    sample_scheme: "random"
+
+  action_space:
+    sample_scheme: "grid"
+    lower_bound: [-1.1, -1.1]
+    upper_bound: [1.1, 1.1]
+    grid_resolution: [5, 5]
+
+simulation:
+  initial_condition: [-0.8, 0]

@@ -207,21 +207,6 @@ def _sample_space_factory(shape: tuple, space_config: dict):
     return _space
 
 
-# @sample_ingredient.capture
-# def _policy_factory(env: DynamicalSystem, sample_policy: dict) -> BasePolicy:
-#     if sample_policy["sample_scheme"] not in {"random", "zero", "grid"}:
-#         raise ValueError(
-#             f"sample_policy config variable must be one of {'random', 'zero', 'grid'}."
-#         )
-
-#     _sample_policy_map = {
-#         "random": RandomizedPolicy,
-#         "zero": ZeroPolicy,
-#     }
-
-#     return _sample_policy_map[sample_policy["sample_scheme"]](env)
-
-
 def _get_sample_size(space: gym.spaces.Box, space_config: dict):
     """Gets the sample size from config variables."""
 
@@ -436,6 +421,7 @@ def generate_sample(
     sample_space: dict,
     sample_policy: dict,
     action_space: dict,
+    _log,
 ):
     """Generate a sample based on the ingredient config.
 
@@ -457,19 +443,19 @@ def generate_sample(
 
     """
 
-    _sample_space = _sample_space_factory(env.state_space.shape, sample_space)
-    _sample_space.seed(seed=seed)
-
-    _action_space = _sample_space_factory(env.action_space.shape, action_space)
-    _action_space.seed(seed=seed)
+    _log.debug("Generating sample.")
 
     _sampler = _sample_ingredient_sampler(seed=seed, env=env)
 
+    _sample_space = _sample_space_factory(env.state_space.shape, sample_space)
     sample_size = _get_sample_size(_sample_space, sample_space)
 
     if sample_policy["sample_scheme"] == "grid":
+        _action_space = _sample_space_factory(env.action_space.shape, action_space)
         action_size = _get_sample_size(_action_space, sample_policy)
         sample_size = sample_size * action_size
+
+    _log.debug(f"Sample size: {sample_size}")
 
     S = sample(
         sampler=_sampler,
@@ -479,197 +465,16 @@ def generate_sample(
     return S
 
 
-# @sample_ingredient.capture
-# def _random_sample(
-#     seed: int,
-#     env: DynamicalSystem,
-#     sample_space: dict,
-#     sample_policy: dict,
-# ) -> list:
-
-#     _sample_space = _sample_space_factory(env.state_space.shape, sample_space)
-#     _sample_space.seed(seed=seed)
-
-#     sample_size = _get_sample_size(_sample_space, sample_space)
-
-#     _sample_policy = _policy_factory(env, sample_policy)
-
-#     # Generate the sample.
-#     S = sample(
-#         sampler=step_sampler(
-#             system=env,
-#             policy=_sample_policy,
-#             sample_space=_sample_space,
-#         ),
-#         sample_size=sample_size,
-#     )
-
-#     return S
-
-
-# @sample_ingredient.capture
-# def _grid_sample(
-#     seed: int,
-#     env: DynamicalSystem,
-#     sample_space: dict,
-#     sample_policy: dict,
-# ) -> list:
-
-#     _sample_space = _sample_space_factory(env.state_space.shape, sample_space)
-#     _sample_space.seed(seed=seed)
-
-#     _sample_policy = _policy_factory(env, sample_policy)
-
-#     xi = grid_ranges(_sample_space, sample_space["grid_resolution"])
-#     sample_size = _get_sample_size(_sample_space, sample_space)
-
-#     # Generate the sample.
-#     S = sample(
-#         sampler=uniform_grid_step_sampler(
-#             xi=xi,
-#             system=env,
-#             policy=_sample_policy,
-#             sample_space=_sample_space,
-#         ),
-#         sample_size=sample_size,
-#     )
-
-#     return S
-
-
-# @sample_ingredient.capture
-# def _grid_action_sample(
-#     seed: int,
-#     env: DynamicalSystem,
-#     sample_space: dict,
-#     sample_policy: dict,
-#     action_space: dict,
-# ) -> list:
-
-#     _sample_space = _sample_space_factory(env.state_space.shape, sample_space)
-#     _sample_space.seed(seed=seed)
-
-#     _action_space = _sample_space_factory(env.action_space.shape, action_space)
-
-#     sample_size = _get_sample_size(_sample_space, sample_space)
-#     print(type(sample_size))
-
-#     @sample_generator
-#     def _grid_action_sampler() -> tuple:
-#         """Uniform action sampler.
-
-#         Generates a sample using multiple actions at a uniform grid of points taken from
-#         within the range specified by 'ranges'. Note that this is a simplification to
-#         make the result appear more uniform, but is not necessary for the correct
-#         operation of the algorithm. A random iid sample taken from the state space is
-#         sufficient.
-
-#         Yields:
-#             observation : Observation of input/output from the stochastic kernel.
-
-#         """
-
-#         xi = grid_ranges(_sample_space, sample_space["grid_resolution"])
-#         ui = grid_ranges(_action_space, sample_policy["grid_resolution"])
-
-#         xc = uniform_grid(xi)
-
-#         for action in ui[0]:
-#             for point in xc:
-
-#                 state = point
-
-#                 env.state = state
-#                 next_state, cost, done, _ = env.step([action])
-
-#                 yield (state, [action], next_state)
-
-#     # Generate the sample.
-#     S = sample(
-#         sampler=_grid_action_sampler,
-#         sample_size=sample_size,
-#     )
-
-#     return S
-
-
-# @sample_ingredient.capture
-# def generate_sample(
-#     seed: int,
-#     env: DynamicalSystem,
-#     sample_space: dict,
-#     sample_policy: dict,
-#     action_space: dict,
-# ) -> list:
-
-#     # if sample_space["sample_scheme"] == "random":
-#     #     return _random_sample(seed, env)
-
-#     # if sample_space["sample_scheme"] == "uniform":
-#     #     return _random_sample(seed, env)
-
-#     # if sample_space["sample_scheme"] == "grid":
-#     #     if sample_policy["sample_scheme"] == "grid":
-#     #         return _grid_action_sample(seed, env)
-
-#     #     return _grid_sample(seed, env)
-
-#     sample_scheme = sample_space["sample_scheme"]
-#     sample_size = _get_sample_size(space=env.state_space, sample_space=sample_space)
-
-#     _sample_space = _sample_space_factory(env.state_space.shape, sample_space)
-#     _sample_space.seed(seed=seed)
-
-#     _action_space = _sample_space_factory(env.action_space.shape, action_space)
-
-#     _sampler_map = {
-#         "random": step_sampler,
-#         "uniform": step_sampler,
-#         "grid": uniform_grid_step_sampler,
-#     }
-
-#     _sampler = _sampler_map[sample_scheme]
-
-#     if sample_policy["sample_scheme"] == "grid":
-
-#         ui = grid_ranges(_action_space, sample_policy["grid_resolution"])
-#         # _sampler = _grid_action_decorator(ui, env, _sample_space, _sampler)
-
-#         # g = _sampler(ui, env=env, sample_space=_sample_space)
-#         # print(next(g))
-#         # print(next(g))
-#         # print(next(g))
-
-#         S = sample(
-#             sampler=_grid_action_decorator(
-#                 ui,
-#                 env=env,
-#                 sample_space=_sample_space,
-#                 sampler=_sampler,
-#             ),
-#             sample_size=sample_size,
-#         )
-
-#         return S
-
-#     _sample_policy = _policy_factory(env, sample_policy)
-
-#     # Generate the sample.
-#     S = sample(
-#         sampler=_sampler(
-#             system=env,
-#             policy=_sample_policy,
-#             sample_space=_sample_space,
-#         ),
-#         sample_size=sample_size,
-#     )
-
-#     return S
-
-
 @sample_ingredient.capture
-def generate_admissible_actions(seed: int, env: DynamicalSystem, action_space: dict):
+def generate_admissible_actions(
+    seed: int,
+    env: DynamicalSystem,
+    action_space: dict,
+    _log,
+):
     """Generate a collection of admissible control actions."""
+
+    _log.debug("Generating admissible control actions.")
 
     sample_scheme = action_space["sample_scheme"]
     grid_resolution = action_space["grid_resolution"]

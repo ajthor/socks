@@ -1,12 +1,17 @@
-"""Stochastic Optimal Control for a nonholonomic vehicle system.
+"""Stochastic optimal control.
 
-This example demonstrates the optimal controller synthesis algorithm on a nonlinear
-dynamical system with nonholonomic vehicle dynamics.
+This example demonstrates the optimal controller synthesis algorithm.
+
+By default, it uses a nonlinear dynamical system with nonholonomic vehicle dynamics. Other dynamical systems can also be used, by modifying the configuration as needed.
+
+Several configuration files are included in the `examples/configs` folder, and can be used by running the example using the `with` syntax, e.g.
+
+    $ python -m <experiment> with examples/configs/<config_file>
 
 Example:
     To run the example, use the following command:
 
-        $ python -m examples.nonholonomic.kernel_control_fwd
+        $ python -m examples.benchmark_tracking_problem
 
 .. [1] `Stochastic Optimal Control via
         Hilbert Space Embeddings of Distributions, 2021
@@ -16,22 +21,20 @@ Example:
 
 """
 
-from os import system
-from sacred import Experiment
 
 import gym
 import gym_socks
 
-from gym_socks.algorithms.control import KernelControlFwd
-from gym_socks.algorithms.control import KernelControlBwd
-from gym_socks.envs.policy import ZeroPolicy, RandomizedPolicy
-from gym_socks.envs.sample import sample, transpose_sample
-
 import numpy as np
 from numpy.linalg import norm
 
+from sacred import Experiment
+
 from functools import partial
 from sklearn.metrics.pairwise import rbf_kernel
+
+from gym_socks.algorithms.control import KernelControlFwd
+from gym_socks.algorithms.control import KernelControlBwd
 
 from examples._computation_timer import ComputationTimer
 
@@ -41,9 +44,6 @@ from examples.ingredients.system_ingredient import make_system
 
 from examples.ingredients.simulation_ingredient import simulation_ingredient
 from examples.ingredients.simulation_ingredient import simulate_system
-from examples.ingredients.simulation_ingredient import load_simulation
-from examples.ingredients.simulation_ingredient import save_simulation
-from examples.ingredients.simulation_ingredient import plot_simulation
 
 from examples.ingredients.sample_ingredient import sample_ingredient
 from examples.ingredients.sample_ingredient import generate_sample
@@ -52,7 +52,9 @@ from examples.ingredients.sample_ingredient import generate_admissible_actions
 from examples.ingredients.tracking_ingredient import tracking_ingredient
 from examples.ingredients.tracking_ingredient import compute_target_trajectory
 from examples.ingredients.tracking_ingredient import make_cost
-from examples.ingredients.tracking_ingredient import plot_target_trajectory
+
+from examples.ingredients.plotting_ingredient import plotting_ingredient
+from examples.ingredients.plotting_ingredient import update_rc_params
 
 
 @system_ingredient.config
@@ -62,6 +64,11 @@ def system_config():
 
     sampling_time = 0.1
     time_horizon = 2
+
+    action_space = {
+        "lower_bound": [0.1, -10.1],
+        "upper_bound": [1.1, 10.1],
+    }
 
 
 @sample_ingredient.config
@@ -94,6 +101,7 @@ ex = Experiment(
         simulation_ingredient,
         sample_ingredient,
         tracking_ingredient,
+        plotting_ingredient,
     ]
 )
 
@@ -102,18 +110,22 @@ ex = Experiment(
 def config(sample):
     """Experiment configuration variables.
 
-    SOCKS uses sacred to run experiments in order to ensure repeatability.
-    Configuration variables are parameters that are passed to the experiment, such as
-    the random seed, and can be specified at the command-line.
+    SOCKS uses sacred to run experiments in order to ensure repeatability. Configuration
+    variables are parameters that are passed to the experiment, such as the random seed,
+    and can be specified at the command-line.
 
     Example:
-        To run the experiment normally, use::
+        To run the experiment normally, use:
 
-            $ python -m experiment.<experiment>
+            $ python -m <experiment>
 
-        To specify configuration variables, use `with variable=value`, e.g.::
+        The full configuration can be viewed using:
 
-            $ python -m experiment.<experiment> with seed=123
+            $ python -m <experiment> print_config
+
+        To specify configuration variables, use `with variable=value`, e.g.
+
+            $ python -m <experiment> with seed=123 system.time_horizon=5
 
     .. _sacred:
         https://sacred.readthedocs.io/en/stable/index.html
@@ -131,28 +143,27 @@ def config(sample):
 
     verbose = True
 
+    results_filename = "results/data.npy"
+    no_plot = False
+
 
 @ex.main
 def main(
     seed,
-    _log,
     sigma,
     regularization_param,
     dynamic_programming,
     batch_size,
     heuristic,
     verbose,
+    results_filename,
+    no_plot,
+    _log,
 ):
     """Main experiment."""
 
     # Make the system.
     env = make_system()
-
-    env.action_space = gym.spaces.Box(
-        low=np.array([0.1, -10.1]),
-        high=np.array([1.1, 10.1]),
-        dtype=np.float32,
-    )
 
     # Set the random seed.
     set_system_seed(seed=seed, env=env)
@@ -188,41 +199,42 @@ def main(
         policy.train(S=S, A=A)
 
     trajectory = simulate_system(env, policy)
-    save_simulation(trajectory)
+
+    with open(results_filename, "wb") as f:
+        np.save(f, target_trajectory)
+        np.save(f, trajectory)
+
+    if not no_plot:
+        plot_results()
 
 
-@ex.config_hook
+@plotting_ingredient.config_hook
 def plot_config(config, command_name, logger):
-    if command_name == "plot_results":
-        config.update(
-            {
-                "fig_width": 3,
-                "fig_height": 3,
-                "show_x_axis": True,
-                "show_y_axis": True,
-                "show_x_label": True,
-                "show_y_label": True,
-            }
-        )
-
-    return config
-    # fig_width = 3
-    # fig_height = 3
-
-    # show_x_axis = True
-    # show_y_axis = True
-    # show_x_label = True
-    # show_y_label = True
+    if command_name in {"main", "plot_results"}:
+        return {
+            "target_trajectory_style": {
+                "lines.marker": "x",
+                "lines.linestyle": "--",
+                "lines.color": "C0",
+            },
+            "trajectory_style": {
+                "lines.linewidth": 1,
+                "lines.linestyle": "-",
+                "lines.color": "C1",
+            },
+            "axes": {
+                "xlabel": r"$x_1$",
+                "ylabel": r"$x_2$",
+                "xlim": (-1.1, 1.1),
+                "ylim": (-1.1, 1.1),
+            },
+        }
 
 
 @ex.command(unobserved=True)
 def plot_results(
-    fig_width,
-    fig_height,
-    show_x_axis,
-    show_y_axis,
-    show_x_label,
-    show_y_label,
+    system,
+    plot_cfg,
 ):
     """Plot the results of the experiement."""
 
@@ -230,57 +242,53 @@ def plot_results(
     import matplotlib
 
     matplotlib.use("Agg")
-    matplotlib.rcParams.update(
-        {
-            "pgf.texsystem": "pdflatex",
-            "font.family": "serif",
-            "font.size": 8,
-            "text.usetex": True,
-            "pgf.rcfonts": False,
-        }
-    )
+    update_rc_params(matplotlib, plot_cfg["rc_params"])
 
     import matplotlib.pyplot as plt
 
+    matplotlib.set_loglevel("notset")
     plt.set_loglevel("notset")
 
-    trajectory = load_simulation()
+    with open("results/data.npy", "rb") as f:
+        target_trajectory = np.load(f)
+        trajectory = np.load(f)
 
-    fig = plt.figure(figsize=(fig_width, fig_height))
-    ax = fig.add_subplot(111)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, **plot_cfg["axes"])
 
     # Plot target trajectory.
-    target_trajectory = np.array(compute_target_trajectory(len(trajectory)))
-    plot_target_trajectory(plt, target_trajectory)
+    with plt.style.context(plot_cfg["target_trajectory_style"]):
+        target_trajectory = np.array(target_trajectory, dtype=np.float32)
+        plt.plot(
+            target_trajectory[:, 0],
+            target_trajectory[:, 1],
+            label="Target Trajectory",
+        )
 
     # Plot generated trajectory.
-    plot_simulation(plt, trajectory, color="C1")
+    with plt.style.context(plot_cfg["trajectory_style"]):
+        trajectory = np.array(trajectory, dtype=np.float32)
+        plt.plot(
+            trajectory[:, 0],
+            trajectory[:, 1],
+            label="System Trajectory",
+        )
 
-    # Plot the markers as arrows, showing vehicle heading.
-    paper_airplane = [(0, -0.25), (0.5, -0.5), (0, 1), (-0.5, -0.5), (0, -0.25)]
+    plt.legend()
 
-    for x in trajectory:
-        angle = -np.rad2deg(x[2])
+    # # Plot the markers as arrows, showing vehicle heading.
+    # paper_airplane = [(0, -0.25), (0.5, -0.5), (0, 1), (-0.5, -0.5), (0, -0.25)]
 
-        t = matplotlib.markers.MarkerStyle(marker=paper_airplane)
-        t._transform = t.get_transform().rotate_deg(angle)
+    # if system["system_id"] == "NonholonomicVehicleEnv-v0":
+    #     for x in trajectory:
+    #         angle = -np.rad2deg(x[2])
 
-        plt.plot(x[0], x[1], marker=t, markersize=4, linestyle="None", color="C1")
+    #         t = matplotlib.markers.MarkerStyle(marker=paper_airplane)
+    #         t._transform = t.get_transform().rotate_deg(angle)
 
-    if show_x_axis is False:
-        ax.get_xaxis().set_visible(False)
-    if show_y_axis is False:
-        ax.get_yaxis().set_visible(False)
+    #         plt.plot(x[0], x[1], marker=t, markersize=4, linestyle="None", color="C1")
 
-    if show_x_label is True:
-        ax.set_xlabel(r"$x_1$")
-    if show_y_label is True:
-        ax.set_ylabel(r"$x_2$")
-
-    ax.set_xlim(-1.1, 1.1)
-    ax.set_ylim(-1.1, 1.1)
-
-    plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
+    plt.savefig(plot_cfg["plot_filename"])
 
 
 if __name__ == "__main__":

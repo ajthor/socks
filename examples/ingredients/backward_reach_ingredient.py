@@ -89,28 +89,10 @@ def compute_test_point_ranges(env, test_points):
 
 
 @backward_reach_ingredient.capture
-def generate_test_points(env):
+def generate_test_points(env, _log):
     """Generate test points to evaluate the safety probabilities."""
+    _log.debug("Generating test points.")
     xi = compute_test_point_ranges(env)
     T = uniform_grid(xi)
 
     return T
-
-
-# @backward_reach_ingredient.capture
-# def save_safety_probabilities(env, safety_probabilities, filename):
-#     xi = compute_test_point_ranges(env)
-#     # Save the result to NPY file.
-#     with open(filename, "wb") as f:
-#         np.save(f, xi)
-#         np.save(f, safety_probabilities)
-
-
-# @backward_reach_ingredient.capture
-# def load_safety_probabilities(filename):
-#     # Load the result from NPY file.
-#     with open(filename, "rb") as f:
-#         xi = np.load(f)
-#         safety_probabilities = np.load(f)
-
-#     return xi, safety_probabilities

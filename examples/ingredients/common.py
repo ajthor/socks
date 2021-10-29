@@ -5,6 +5,13 @@ import gym
 import numpy as np
 
 
+def assert_config_has_key(_config, key):
+    # if key not in _config:
+    #     raise KeyError(f"Configuration {_config} missing entry: '{key}'.")
+    msg = f"Configuration {_config} missing entry: '{key}'."
+    assert key in _config, msg
+
+
 def parse_array(value: float or list, shape: tuple, dtype: type) -> list:
     """Utility function for parsing configuration variables.
 
@@ -24,6 +31,12 @@ def parse_array(value: float or list, shape: tuple, dtype: type) -> list:
 
     if np.isscalar(value):
         result = np.full(shape, value, dtype=dtype)
+
+    for i, item in enumerate(result):
+        if item == "inf":
+            result[i] = np.inf
+        elif item == "-inf":
+            result[i] = -np.inf
 
     result = np.asarray(result, dtype=dtype)
 

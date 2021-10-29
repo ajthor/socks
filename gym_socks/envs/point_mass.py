@@ -42,4 +42,4 @@ class NDPointMassEnv(DynamicalSystem):
         return 1e-2 * np.array(w)
 
     def dynamics(self, time, state, action, disturbance):
-        return (1 / self.mass) * action + disturbance
+        return (1 / self.mass) * np.array([*action], dtype=np.float32) + disturbance

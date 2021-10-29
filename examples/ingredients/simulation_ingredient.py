@@ -43,7 +43,8 @@ def simulate_system(
     # Simulate the env using the computed policy.
     for t in range(env.num_time_steps):
 
-        action = np.array(policy(time=t, state=[env.state]))
+        action = np.array(policy(time=t, state=[env.state]), dtype=np.float32)
+        # action = policy(time=t, state=[env.state])
         obs, cost, done, _ = env.step(action)
 
         trajectory.append(list(obs))
@@ -52,54 +53,3 @@ def simulate_system(
             break
 
     return trajectory
-
-
-@simulation_ingredient.capture
-def save_simulation(trajectory: list[list], filename: str):
-    """Save the result to NPY file."""
-    with open(filename, "wb") as f:
-        np.save(f, trajectory)
-
-
-@simulation_ingredient.capture
-def load_simulation(filename: str):
-    """Load the result from NPY file."""
-    with open("results/data.npy", "rb") as f:
-        trajectory = np.load(f)
-
-    return trajectory
-
-
-@simulation_ingredient.config_hook
-def _plot_config(config, command_name, logger):
-    if command_name == "plot_results":
-        return {
-            "plot_marker": "None",
-            "plot_markersize": 2.5,
-            "plot_linewidth": 0.5,
-            "plot_linestyle": "--",
-        }
-
-
-@simulation_ingredient.capture
-def plot_simulation(
-    plt,
-    trajectory,
-    plot_marker,
-    plot_markersize,
-    plot_linewidth,
-    plot_linestyle,
-    *args,
-    **kwargs,
-):
-    trajectory = np.array(trajectory, dtype=np.float32)
-    plt.plot(
-        trajectory[:, 0],
-        trajectory[:, 1],
-        marker=plot_marker,
-        markersize=plot_markersize,
-        linewidth=plot_linewidth,
-        linestyle=plot_linestyle,
-        *args,
-        **kwargs,
-    )
