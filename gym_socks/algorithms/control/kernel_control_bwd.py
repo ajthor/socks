@@ -124,8 +124,6 @@ def _compute_backward_recursion_batch(
         # D = np.empty((1, len(Y)))
         D = np.empty_like(CUA)
 
-        print(f"D shape {D.shape}")
-
         for batch in generate_batches(num_elements=len(Y), batch_size=batch_size):
 
             beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)

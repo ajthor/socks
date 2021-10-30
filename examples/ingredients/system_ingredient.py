@@ -53,12 +53,19 @@ def make_system(
         env.sampling_time = sampling_time
 
     if "action_space" in _config:
+        _log.debug(f"Setting action space.")
         assert_config_has_key(_config["action_space"], "lower_bound")
         assert_config_has_key(_config["action_space"], "upper_bound")
 
+        lower_bound = _config["action_space"]["lower_bound"]
+        upper_bound = _config["action_space"]["upper_bound"]
+
+        _log.debug(f"Action space lower bound: {lower_bound}")
+        _log.debug(f"Action space upper bound: {upper_bound}")
+
         env.action_space = box_factory(
-            lower_bound=_config["action_space"]["lower_bound"],
-            upper_bound=_config["action_space"]["upper_bound"],
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
             shape=env.action_space.shape,
             dtype=np.float32,
         )

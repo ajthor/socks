@@ -477,17 +477,18 @@ def generate_admissible_actions(
     _log.debug("Generating admissible control actions.")
 
     sample_scheme = action_space["sample_scheme"]
-    grid_resolution = action_space["grid_resolution"]
 
     _action_space = _sample_space_factory(env.action_space.shape, action_space)
     _action_space.seed(seed=seed)
 
-    if sample_scheme == "random":
+    if sample_scheme in {"random", "uniform"}:
         A = []
         for i in range(action_space["sample_size"]):
             A.append(_action_space.sample())
 
-    ui = grid_ranges(_action_space, grid_resolution)
+        return A
+
+    ui = grid_ranges(_action_space, action_space["grid_resolution"])
     A = uniform_grid(ui)
 
     return A

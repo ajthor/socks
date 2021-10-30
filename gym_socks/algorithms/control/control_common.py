@@ -161,14 +161,17 @@ def _compute_constrained_solution(
         if sol.success is True:
             return sol.x
         else:
-            gym_socks.logger.warn(
-                "No solution found via scipy.optimize.linprog."
-                "Returning heuristic solution."
-            )
+            gym_socks.logger.debug("No solution found via scipy.optimize.linprog.")
+            gym_socks.logger.debug("Returning heuristic solution.")
 
     heuristic_sol = np.zeros((len(C),))
     satisfies_constraints = np.where(D <= 0)
-    idx = satisfies_constraints[0][C[satisfies_constraints].argmin()]
+    if len(satisfies_constraints[0]) == 0:
+        gym_socks.logger.warn("No feasible solution found!")
+        gym_socks.logger.debug("Returning minimal unconstrained solution.")
+        idx = C.argmin()
+    else:
+        idx = satisfies_constraints[0][C[satisfies_constraints].argmin()]
     heuristic_sol[idx] = 1
 
     return heuristic_sol

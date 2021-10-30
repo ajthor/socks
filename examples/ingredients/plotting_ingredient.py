@@ -5,6 +5,7 @@ This ingredient is used for experiments with a plotting component.
 """
 
 import os
+import logging
 
 import numpy as np
 
