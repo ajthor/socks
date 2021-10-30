@@ -46,6 +46,9 @@ from examples.ingredients.backward_reach_ingredient import generate_test_points
 from examples.ingredients.backward_reach_ingredient import compute_test_point_ranges
 from examples.ingredients.backward_reach_ingredient import generate_tube
 
+from examples.ingredients.plotting_ingredient import plotting_ingredient
+from examples.ingredients.plotting_ingredient import update_rc_params
+
 
 @system_ingredient.config
 def system_config():
@@ -77,14 +80,10 @@ def sample_config():
 
 @backward_reach_ingredient.config
 def backward_reach_config():
-    """Backward reachability configuration.
 
-    We define the constraint tube such that at the final time step, the system is in a
-    box [-0.5, 0.5]^d, but that all prior time steps the system is in a box [-1, 1]^d.
-
-    """
-
+    # By default, the constraint tube is defined as a box [-1, 1]^d.
     constraint_tube_bounds = {"lower_bound": -1, "upper_bound": 1}
+    # By default, the target tube is defined as a box [-0.5, 0.5]^d.
     target_tube_bounds = {"lower_bound": -0.5, "upper_bound": 0.5}
 
     test_points = {
@@ -99,6 +98,7 @@ ex = Experiment(
         system_ingredient,
         sample_ingredient,
         backward_reach_ingredient,
+        plotting_ingredient,
     ]
 )
 
@@ -112,17 +112,17 @@ def config():
     and can be specified at the command-line.
 
     Example:
-        To run the experiment normally, just run:
+        To run the experiment normally, use:
 
             $ python -m <experiment>
 
+        The full configuration can be viewed using:
+
+            $ python -m <experiment> print_config
+
         To specify configuration variables, use `with variable=value`, e.g.
 
-            $ python -m <experiment> with seed=123
-
-        To use the default configuration, use:
-
-            $ python -m <experiment> with examples/integrator/config.json
+            $ python -m <experiment> with seed=123 system.time_horizon=5
 
     .. _sacred:
         https://sacred.readthedocs.io/en/stable/index.html
@@ -136,7 +136,8 @@ def config():
 
     verbose = True
 
-    filename = "results/data.npy"
+    results_filename = "results/data.npy"
+    no_plot = False
 
 
 @ex.main
@@ -148,7 +149,8 @@ def main(
     backward_reach,
     batch_size,
     verbose,
-    filename,
+    results_filename,
+    no_plot,
 ):
     """Main experiment."""
 
@@ -162,15 +164,12 @@ def main(
     constraint_tube = generate_tube(env, backward_reach["constraint_tube_bounds"])
 
     # Generate the sample.
-    _log.info("Generating the sample.")
     S = generate_sample(seed=seed, env=env)
 
     # Generate admissible control actions.
-    _log.info("Generating admissible control actions.")
     A = generate_admissible_actions(seed=seed, env=env)
 
     # Generate the test points.
-    _log.info("Generating test points.")
     T = generate_test_points(env=env)
 
     with ComputationTimer():
@@ -190,64 +189,39 @@ def main(
         )
 
     # Save the result to NPY file.
-    # save_safety_probabilities(env=env, safety_probabilities=safety_probabilities)
+    _log.debug(f"Saving the results to file {results_filename}.")
     xi = compute_test_point_ranges(env)
-    with open(filename, "wb") as f:
+    with open(results_filename, "wb") as f:
         np.save(f, xi)
         np.save(f, safety_probabilities)
 
+    if not no_plot:
+        plot_results()
 
-@ex.config_hook
-def plot_config(config, command_name, logger):
-    if command_name == "plot_results":
+
+@plotting_ingredient.config_hook
+def _plot_config(config, command_name, logger):
+    if command_name in {"main", "plot_results"}:
         return {
-            "fig_width": 3,
-            "fig_height": 3,
-            "show_x_axis": True,
-            "show_y_axis": True,
-            "show_x_label": True,
-            "show_y_label": True,
-            "plot_filename": "results/plot.png",
-            "plot_3d": False,
-            "elev": 30,
-            "azim": -45,
-            "colormap": "viridis",
             "plot_time": 0,
+            "plot_system_dims": [0, 1],
+            "pcolor_style": {
+                "vmin": 0,
+                "vmax": 1,
+                "shading": "auto",
+            },
+            "axes": {
+                "xlabel": r"$x_1$",
+                "ylabel": r"$x_2$",
+            },
+            "colorbar": True,
         }
-
-    # fig_width = 3
-    # fig_height = 3
-
-    # show_x_axis = True
-    # show_y_axis = True
-
-    # show_x_label = True
-    # show_y_label = True
-
-    # plot_filename = "results/plot.png"
-
-    # plot_3d = False
-    # elev = 30
-    # azim = -45
 
 
 @ex.command(unobserved=True)
 def plot_results(
-    backward_reach,
-    fig_width,
-    fig_height,
-    colormap,
-    show_x_axis,
-    show_y_axis,
-    show_x_label,
-    show_y_label,
-    plot_time,
-    plot_filename,
-    plot_3d,
-    elev,
-    azim,
-    filename,
-    _log,
+    plot_cfg,
+    results_filename,
 ):
     """Plot the results of the experiement."""
 
@@ -255,66 +229,106 @@ def plot_results(
     import matplotlib
 
     matplotlib.use("Agg")
-    matplotlib.rcParams.update(
-        {
-            "pgf.texsystem": "pdflatex",
-            "font.family": "serif",
-            "font.size": 8,
-            "text.usetex": True,
-            "pgf.rcfonts": False,
-        }
-    )
+    update_rc_params(matplotlib, plot_cfg["rc_params"])
 
     import matplotlib.pyplot as plt
 
+    matplotlib.set_loglevel("notset")
     plt.set_loglevel("notset")
 
     # Load the result from NPY file.
-    # xi, safety_probabilities = load_safety_probabilities()
-    with open(filename, "rb") as f:
+    with open(results_filename, "rb") as f:
         xi = np.load(f)
         safety_probabilities = np.load(f)
 
-    x1, x2, *_ = xi
+    plot_system_dims = plot_cfg["plot_system_dims"]
+    x1 = xi[plot_system_dims[0]]
+    x2 = xi[plot_system_dims[1]]
     XX, YY = np.meshgrid(x1, x2, indexing="ij")
-    Z = safety_probabilities[plot_time].reshape(XX.shape)
+    Z = safety_probabilities[plot_cfg["plot_time"]].reshape(XX.shape)
 
-    if plot_3d is False:
-        # Plot flat color map.
-        fig = plt.figure(figsize=(fig_width, fig_height))
-        ax = fig.add_subplot(111)
+    # Plot flat color map.
+    fig = plt.figure()
+    ax = plt.axes(**plot_cfg["axes"])
 
-        # plot_safety_probabilities(plt, XX, YY, Z)
+    plt.pcolor(XX, YY, Z, **plot_cfg["pcolor_style"])
 
-        plt.pcolor(XX, YY, Z, cmap=colormap, vmin=0, vmax=1, shading="auto")
-
-        # if plot_colorbar is True:
+    if plot_cfg["colorbar"] is True:
         plt.colorbar()
 
-    else:
-        # Plot 3D projection.
-        fig = plt.figure(figsize=(fig_width, fig_height))
-        ax = fig.add_subplot(111, projection="3d")
-        ax.view_init(elev, azim)
+    plt.savefig(plot_cfg["plot_filename"])
 
-        ax.tick_params(direction="out", pad=-1)
 
-        ax.plot_surface(XX, YY, Z, cmap=colormap, linewidth=0, antialiased=False)
-        ax.set_zlim(0, 1)
+@plotting_ingredient.config_hook
+def plot_config_3d(config, command_name, logger):
+    if command_name in {"plot_results_3d"}:
+        return {
+            "plot_time": 0,
+            "plot_system_dims": [0, 1],
+            "axes": {
+                "elev": 30,
+                "azim": -45,
+                "xlabel": r"$x_1$",
+                "ylabel": r"$x_2$",
+                "zlabel": r"$\Pr$",
+                "zlim": (0, 1),
+            },
+            "cmap": "viridis",
+            "surface_style": {
+                "linewidth": 0,
+                "antialiased": False,
+            },
+        }
 
-        ax.set_zlabel(r"$\Pr$")
 
-    if show_x_axis is False:
-        ax.get_xaxis().set_visible(False)
-    if show_y_axis is False:
-        ax.get_yaxis().set_visible(False)
+@ex.command(unobserved=True)
+def plot_results_3d(plot_cfg, results_filename):
 
-    if show_x_label is True:
-        ax.set_xlabel(r"$x_1$")
-    if show_y_label is True:
-        ax.set_ylabel(r"$x_2$")
+    # Dynamically load for speed.
+    import matplotlib
 
-    plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
+    matplotlib.use("Agg")
+    rc_params = matplotlib.rc_params_from_file(
+        fname=plot_cfg["rc_params_filename"],
+        use_default_template=True,
+    )
+    matplotlib.rcParams.update(rc_params)
+
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
+
+    matplotlib.set_loglevel("notset")
+    plt.set_loglevel("notset")
+
+    # Load the result from NPY file.
+    with open(results_filename, "rb") as f:
+        xi = np.load(f)
+        safety_probabilities = np.load(f)
+
+    plot_system_dims = plot_cfg["plot_system_dims"]
+    x1 = xi[plot_system_dims[0]]
+    x2 = xi[plot_system_dims[1]]
+    XX, YY = np.meshgrid(x1, x2, indexing="ij")
+    Z = safety_probabilities[plot_cfg["plot_time"]].reshape(XX.shape)
+
+    # Plot 3D projection.
+    fig = plt.figure()
+    ax = plt.axes(projection="3d", **plot_cfg["axes"])
+
+    mappable = cm.ScalarMappable(cmap=plot_cfg["cmap"])
+    mappable.set_array(Z)
+    mappable.set_clim(vmin=0, vmax=1)
+
+    surf = ax.plot_surface(
+        XX,
+        YY,
+        Z,
+        cmap=mappable.cmap,
+        norm=mappable.norm,
+        **plot_cfg["surface_style"],
+    )
+
+    plt.savefig(plot_cfg["plot_filename"])
 
 
 if __name__ == "__main__":

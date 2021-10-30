@@ -44,6 +44,7 @@ from examples.ingredients.backward_reach_ingredient import compute_test_point_ra
 from examples.ingredients.backward_reach_ingredient import generate_tube
 
 from examples.ingredients.plotting_ingredient import plotting_ingredient
+from examples.ingredients.plotting_ingredient import update_rc_params
 
 
 @system_ingredient.config
@@ -216,11 +217,7 @@ def plot_results(
     import matplotlib
 
     matplotlib.use("Agg")
-    rc_params = matplotlib.rc_params_from_file(
-        fname=plot_cfg["rc_params_filename"],
-        use_default_template=True,
-    )
-    matplotlib.rcParams.update(rc_params)
+    update_rc_params(matplotlib, plot_cfg["rc_params"])
 
     import matplotlib.pyplot as plt
 
