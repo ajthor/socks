@@ -27,16 +27,23 @@ def parse_array(value: float or list, shape: tuple, dtype: type) -> list:
 
     """
 
-    result = value
+    if value is str:
+        if value == "inf":
+            value = np.inf
+        elif value == "-inf":
+            value = -np.inf
+
+    elif value is list:
+        for i, item in enumerate(value):
+            if item == "inf":
+                value[i] = np.inf
+            elif item == "-inf":
+                value[i] = -np.inf
+
+    result = np.asarray(value)
 
     if np.isscalar(value):
         result = np.full(shape, value, dtype=dtype)
-
-    for i, item in enumerate(result):
-        if item == "inf":
-            result[i] = np.inf
-        elif item == "-inf":
-            result[i] = -np.inf
 
     result = np.asarray(result, dtype=dtype)
 

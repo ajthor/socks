@@ -20,6 +20,8 @@ Example:
 import gym
 import gym_socks
 
+import logging
+
 import numpy as np
 
 from sacred import Experiment
@@ -213,6 +215,9 @@ def plot_results(
 ):
     """Plot the results of the experiement."""
 
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
+    logging.getLogger("PIL").setLevel(logging.WARNING)
+
     # Dynamically load for speed.
     import matplotlib
 
@@ -220,9 +225,6 @@ def plot_results(
     update_rc_params(matplotlib, plot_cfg["rc_params"])
 
     import matplotlib.pyplot as plt
-
-    matplotlib.set_loglevel("notset")
-    plt.set_loglevel("notset")
 
     # Load the result from NPY file.
     with open(results_filename, "rb") as f:

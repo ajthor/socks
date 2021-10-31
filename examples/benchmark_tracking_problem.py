@@ -25,6 +25,8 @@ Example:
 import gym
 import gym_socks
 
+import logging
+
 import numpy as np
 from numpy.linalg import norm
 
@@ -238,6 +240,9 @@ def plot_results(
 ):
     """Plot the results of the experiement."""
 
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
+    logging.getLogger("PIL").setLevel(logging.WARNING)
+
     # Dynamically load for speed.
     import matplotlib
 
@@ -246,15 +251,12 @@ def plot_results(
 
     import matplotlib.pyplot as plt
 
-    matplotlib.set_loglevel("notset")
-    plt.set_loglevel("notset")
-
     with open("results/data.npy", "rb") as f:
         target_trajectory = np.load(f)
         trajectory = np.load(f)
 
     fig = plt.figure()
-    ax = fig.add_subplot(111, **plot_cfg["axes"])
+    ax = plt.axes(**plot_cfg["axes"])
 
     # Plot target trajectory.
     with plt.style.context(plot_cfg["target_trajectory_style"]):

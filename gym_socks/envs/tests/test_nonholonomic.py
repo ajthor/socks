@@ -16,7 +16,7 @@ class TestNonholonomicSystem(unittest.TestCase):
         )
 
         system.state = np.array([0, 0, 4 * np.pi])
-        action = [0, 0]
+        action = np.array([0, 0], dtype=np.float32)
         obs, cost, done, _ = system.step(action)
 
         cls.assertTrue((system.state[2] <= 2 * np.pi) & (system.state[2] >= -2 * np.pi))

@@ -110,7 +110,7 @@ def _compute_backward_recursion_batch(
     # set up empty array to hold value functions
     if out is None:
         out = np.zeros((num_steps + 1, len(Y)), dtype=np.float32)
-    out[num_steps - 1, :] = np.array(cost_fn(time=num_steps), dtype=np.float32)
+    out[num_steps - 1, :] = np.array(cost_fn(time=num_steps - 1), dtype=np.float32)
     pbar.update()
 
     # run backwards in time and compute the safety probabilities
