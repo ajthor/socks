@@ -20,6 +20,8 @@ Example:
 import gym
 import gym_socks
 
+import logging
+
 import numpy as np
 
 from functools import partial
@@ -35,6 +37,9 @@ from examples._computation_timer import ComputationTimer
 from examples.ingredients.forward_reach_ingredient import forward_reach_ingredient
 from examples.ingredients.forward_reach_ingredient import generate_test_points
 
+from examples.ingredients.plotting_ingredient import plotting_ingredient
+from examples.ingredients.plotting_ingredient import update_rc_params
+
 
 @forward_reach_ingredient.config
 def forward_reach_config():
@@ -46,7 +51,12 @@ def forward_reach_config():
     }
 
 
-ex = Experiment(ingredients=[forward_reach_ingredient])
+ex = Experiment(
+    ingredients=[
+        forward_reach_ingredient,
+        plotting_ingredient,
+    ]
+)
 
 
 @ex.config
@@ -80,11 +90,20 @@ def config():
 
     regularization_param = 1 / sample_size
 
-    filename = "results/data.npy"
+    results_filename = "results/data.npy"
+    no_plot = False
 
 
 @ex.main
-def main(_log, seed, sigma, regularization_param, sample_size, filename):
+def main(
+    _log,
+    seed,
+    sigma,
+    regularization_param,
+    sample_size,
+    results_filename,
+    no_plot,
+):
     """Main experiment."""
 
     np.random.seed(seed)
@@ -134,50 +153,49 @@ def main(_log, seed, sigma, regularization_param, sample_size, filename):
     if not np.any(labels):
         _log.warning("No test points classified within reach set.")
 
-    with open(filename, "wb") as f:
+    with open(results_filename, "wb") as f:
         np.save(f, S)
         np.save(f, T)
         np.save(f, labels)
 
+    if not no_plot:
+        plot_results()
 
-@forward_reach_ingredient.config_hook
-def _plot_config(config, command_name, logger):
-    if command_name == "plot_results":
+
+@plotting_ingredient.config_hook
+def plot_config(config, command_name, logger):
+    if command_name in {"main", "plot_results"}:
         return {
-            "plot_marker": "None",
-            "plot_markersize": 2.5,
-            "plot_linewidth": 0.5,
-            "plot_linestyle": "--",
-            "dpi": 300,
+            "axes": {
+                "xlabel": r"$x_1$",
+                "ylabel": r"$x_2$",
+                "xlim": (-1.1, 1.1),
+                "ylim": (-1.1, 1.1),
+            },
         }
 
 
 @ex.command(unobserved=True)
-def plot_results(filename):
+def plot_results(results_filename, plot_cfg):
     """Plot the results of the experiement."""
+
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
+    logging.getLogger("PIL").setLevel(logging.WARNING)
 
     import matplotlib
 
     matplotlib.use("Agg")
-    matplotlib.rcParams.update(
-        {
-            "pgf.texsystem": "pdflatex",
-            "font.family": "serif",
-            "font.size": 8,
-            "text.usetex": True,
-            "pgf.rcfonts": False,
-        }
-    )
+    update_rc_params(matplotlib, plot_cfg["rc_params"])
 
     import matplotlib.pyplot as plt
 
-    with open(filename, "rb") as f:
+    with open(results_filename, "rb") as f:
         S = np.array(np.load(f))
         T = np.array(np.load(f))
         labels = np.load(f)
 
-    fig = plt.figure(figsize=(3, 3))
-    ax = fig.add_subplot(111)
+    fig = plt.figure()
+    ax = plt.axes(**plot_cfg["axes"])
 
     points_in = T[labels == True]
 
@@ -189,13 +207,19 @@ def plot_results(filename):
         s=(300.0 / fig.dpi) ** 2,
     )
 
-    plt.scatter(S[:, 0], S[:, 1], color="r", marker=".", s=1)
+    plt.scatter(
+        S[:, 0],
+        S[:, 1],
+        color="r",
+        marker=".",
+        s=1,
+    )
 
     # Plot support region.
-    plt.gca().add_patch(plt.Circle((0, 0), 0.5, fc="none", ec="blue", lw=0.5))
-    plt.gca().add_patch(plt.Circle((0, 0), 0.75, fc="none", ec="blue", lw=0.5))
+    plt.gca().add_patch(plt.Circle((0, 0), 0.5, fc="none", ec="blue"))
+    plt.gca().add_patch(plt.Circle((0, 0), 0.75, fc="none", ec="blue"))
 
-    plt.savefig("results/plot.png", dpi=300, bbox_inches="tight")
+    plt.savefig(plot_cfg["plot_filename"])
 
 
 if __name__ == "__main__":
