@@ -27,7 +27,7 @@ def config():
 @simulation_ingredient.capture
 def simulate_system(
     env: DynamicalSystem, policy: BasePolicy, initial_condition: list, _log
-) -> list[list]:
+) -> list:
     """Simulate the system from a given initial condition."""
 
     _log.debug("Simulating the system.")

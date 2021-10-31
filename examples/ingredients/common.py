@@ -72,7 +72,7 @@ def box_factory(lower_bound, upper_bound, shape: tuple, dtype: type) -> gym.spac
 
 def grid_ranges(
     space: gym.Space,
-    grid_resolution: list[int] or int,
+    grid_resolution: list or int,
 ) -> list:
     """Compute grid ranges."""
 
@@ -91,7 +91,7 @@ def grid_ranges(
 
 def grid_sample_size(
     space: gym.Space,
-    grid_resolution: list[int] or int,
+    grid_resolution: list or int,
 ) -> int:
     """Compute grid sample size."""
     grid_resolution = parse_array(grid_resolution, shape=space.shape, dtype=int)
