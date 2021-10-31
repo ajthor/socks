@@ -3,7 +3,7 @@
 ![build](https://github.com/ajthor/socks/actions/workflows/build.yml/badge.svg)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-__NOTE__: SOCKS is still under active (alpha) development 🚧👷🚧. Code is provided as-is, and some algorithms may not work as intended before the initial release. Please check back soon for the official 1.0 release.
+__NOTE__: SOCKS is still under active (alpha) development 🚧👷🚧. Code is provided as-is, and some algorithms may not work as intended before the initial release. Please check back soon for the official release.
 
 SOCKS is a suite of algorithms for stochastic optimal control using kernel
 methods.
@@ -20,9 +20,10 @@ We support Python versions 3.7, 3.8, and 3.9 on Linux and macOS. We do not offic
 
 ## Examples
 
-SOCKS comes with several examples in the GitHub repo. In order to run the examples, first install the package and use `python -m <example>` from the code directory.
+SOCKS comes with several examples in the GitHub repo.
+In order to run the examples, first install the package and use `python -m <example>` from the code directory.
 
-For example, `python -m examples.nonholonomic.kernel_control_bwd` will run the nonholonomic vehicle (backward in time) optimal control algorithm.
+For example, `python -m examples.benchmark_tracking_problem` will run the optimal control algorithm on the tracking benchmark using nonholonomic vehicle dynamics.
 
 ## Citation
 
