@@ -12,6 +12,7 @@ system_list = [
     gym_socks.envs.NDIntegratorEnv(2),
     gym_socks.envs.NDIntegratorEnv(3),
     gym_socks.envs.NDIntegratorEnv(4),
+    gym_socks.envs.RepeatedIntegratorEnv(),
     gym_socks.envs.NDPointMassEnv(1),
     gym_socks.envs.NDPointMassEnv(2),
     gym_socks.envs.NDPointMassEnv(3),

@@ -15,6 +15,7 @@ from gym_socks.envs.cwh import CWH4DEnv
 from gym_socks.envs.cwh import CWH6DEnv
 
 from gym_socks.envs.integrator import NDIntegratorEnv
+from gym_socks.envs.integrator import RepeatedIntegratorEnv
 
 from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
 
@@ -46,6 +47,12 @@ register(
     id="2DIntegratorEnv-v0",
     entry_point=NDIntegratorEnv,
     kwargs={"dim": 2},
+    order_enforce=False,
+)
+
+register(
+    id="RepeatedIntegratorEnv-v0",
+    entry_point=RepeatedIntegratorEnv,
     order_enforce=False,
 )
 
