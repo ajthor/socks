@@ -5,21 +5,17 @@ import gym_socks
 
 import numpy as np
 
-from functools import partial
-
 from gym_socks.algorithms.algorithm import AlgorithmInterface
 from gym_socks.algorithms.reach.reach_common import _tht_step, _fht_step
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
 from gym_socks.envs.policy import BasePolicy
-from gym_socks.envs.policy import RandomizedPolicy
 
 from gym_socks.envs.sample import sample
 from gym_socks.envs.sample import sample_generator
 
-from gym_socks.utils import normalize, indicator_fn, generate_batches
+from gym_socks.utils import indicator_fn
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
-from tqdm.contrib.logging import logging_redirect_tqdm
 
 
 def _trajectory_indicator(
@@ -44,7 +40,7 @@ def _monte_carlo_trajectory_sampler(
     policy: BasePolicy = None,
     state: np.ndarray = None,
 ):
-    """Default trajectory sampler.
+    """Monte-Carlo trajectory sampler.
 
     Args:
         env: The system to sample from.
@@ -94,12 +90,11 @@ def monte_carlo_sr(
     problem using Monte-Carlo methods.
 
     Args:
-        env: The dynamical system model. Needed to configure the sampling spaces.
+        env: The dynamical system model.
         policy: The policy applied to the system during sampling.
         T: Points to estimate the safety probabilities at. Should be in the form of a
             2D-array, where each row indicates a point.
         num_iterations : Number of Monte-Carlo iterations.
-        num_steps : Number of time steps to compute the approximation.
         constraint_tube : List of spaces or constraint functions. Must be the same
             length as `num_steps`.
         target_tube : List of spaces or target functions. Must be the same length as
@@ -128,7 +123,6 @@ class MonteCarloSR(AlgorithmInterface):
 
     Args:
         num_iterations : Number of Monte-Carlo iterations.
-        num_steps : Number of time steps to compute the approximation.
         constraint_tube : List of spaces or constraint functions. Must be the same
             length as `num_steps`.
         target_tube : List of spaces or target functions. Must be the same length as
@@ -190,7 +184,11 @@ class MonteCarloSR(AlgorithmInterface):
     def fit_predict(self, env: DynamicalSystem, policy: BasePolicy, T: np.ndarray):
         """Run the algorithm.
 
-        Computes the safety probabilities for the points provided.
+        Computes the safety probabilities for the points provided. For each point in
+        `T`, the algorithm computes a collection of trajectories using the point as the
+        initial condition. Then, we can evaluate the indicator functions for each
+        generated trajectory and the estimated safety probability is the sum of
+        indicators divided by the number of trajectories.
 
         Args:
             env: The dynamical system model. Needed to configure the sampling spaces.

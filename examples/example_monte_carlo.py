@@ -98,6 +98,7 @@ def config():
 
     """
 
+    # Number of Monte-Carlo iterations to run at each test point.
     num_iterations = 100
 
     verbose = True
