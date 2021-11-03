@@ -27,7 +27,7 @@ different structures, e.g.
 
 from inspect import isgeneratorfunction
 from functools import partial, wraps
-from itertools import islice, product
+from itertools import islice
 
 import gym
 
@@ -105,26 +105,6 @@ def step_sampler(
         yield (state, action, next_state)
 
     return _sample_generator
-
-
-def uniform_grid(xi):
-    """Create a uniform grid from a list of ranges.
-
-    Args:
-        xi: List of ranges.
-
-    Returns:
-        Grid of points (the product of all points in ranges).
-
-    Example:
-
-        >>> import numpy as np
-        >>> from gym_socks.envs.sample import uniform_grid
-        >>> grid = uniform_grid([np.linspace(-1, 1, 5), np.linspace(-1, 1, 5)])
-
-    """
-
-    return list(product(*xi))
 
 
 def uniform_grid_step_sampler(
@@ -251,52 +231,3 @@ def sample(sampler=None, sample_size: int = None, *args, **kwargs):
         raise ValueError("Sample size must be a positive integer.")
 
     return list(islice(sampler(*args, **kwargs), sample_size))
-
-
-def transpose_sample(sample):
-    """Transpose the sample.
-
-    By default, a sample should be a list of tuples of the form::
-
-        S = [(x_1, y_1), ..., (x_n, y_n)]
-
-    For most algorithms, we need to isolate the sample components (e.g. all x's).
-    This function converts a sample from a list of tuples to a tuple of lists::
-
-        S_T = ([x_1, ..., x_n], [y_1, ..., y_n])
-
-    This can then be unpacked as: ``X, Y = S_T``
-
-    Args:
-        sample: list of tuples
-
-    Returns:
-        tuple of lists
-
-    """
-
-    return tuple(map(list, zip(*sample)))
-
-
-def reshape_trajectory_sample(sample):
-    """Reshapes trajectory samples.
-
-    Often, trajectory samples are organized such that the "trajectory" components are a
-    2D array of points indexed by time. However, for kernel methods, we typically
-    require that the trajectories be concatenated into a single vector (1D array)::
-
-        [[x1], [x2], ..., [xn]] -> [x1, x2, ..., xn]
-
-    This function converts the sample so that the trajectories are 1D arrays.
-
-    Args:
-        sample: list of tuples
-
-    Returns:
-        List of tuples, where the components of the tuples are flattened.
-
-    """
-    sample_size = len(sample)
-    _S = transpose_sample(sample)
-
-    return zip(*[np.reshape(item, (sample_size, -1)) for item in _S])
