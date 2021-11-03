@@ -68,6 +68,37 @@ def euclidean_distance(
     return distances if squared else np.sqrt(distances)
 
 
+def maximum_mean_discrepancy(X, Y, kernel_fn=None, squared: bool = True):
+    """Maximum mean discrepancy between two empirical distributions.
+
+    Args:
+        X: The observations from distribution P organized in ROWS.
+        Y: The observations from distribution Q organized in ROWS.
+        kernel_fn: The kernel function is a function that returns an ndarray where
+            each element is the pairwise evaluation of a kernel function. See sklearn.
+            metrics.pairwise for more info. The default is the RBF kernel.
+        squared: Whether or not the result is squared.
+
+    Returns:
+        The scalar value representing the MMD.
+
+    """
+
+    len_X = len(X)
+    len_Y = len(Y)
+
+    if kernel_fn is None:
+        kernel_fn = partial(rbf_kernel, sigma=1)
+
+    mmd = (
+        (1 / (len_X ** 2)) * np.sum(kernel_fn(X))
+        + (1 / (len_Y ** 2)) * np.sum(kernel_fn(Y))
+        + (2 / (len_X * len_Y)) * np.sum(kernel_fn(X, Y))
+    )
+
+    return mmd if squared else np.sqrt(mmd)
+
+
 def rbf_kernel(
     X: np.ndarray,
     Y: np.ndarray = None,
