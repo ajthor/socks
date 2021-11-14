@@ -19,6 +19,7 @@ class TestIntegratorSystem(unittest.TestCase):
         mock_generate_disturbance.return_value = np.zeros((2,))
 
         env = cls.env
+        env.sampling_time = 0.25
 
         env.state = np.array([0.1, 0.1], dtype=np.float32)
         action = np.array([0], dtype=np.float32)
@@ -26,8 +27,8 @@ class TestIntegratorSystem(unittest.TestCase):
         trajectory = []
         trajectory.append(env.state)
 
-        for i in range(env.num_time_steps):
-            obs, cost, done, _ = env.step(action)
+        for t in range(16):
+            obs, cost, done, _ = env.step(time=t, action=action)
             trajectory.append(obs)
 
         trajectory = np.array(trajectory)
@@ -63,6 +64,7 @@ class TestIntegratorSystem(unittest.TestCase):
 
         env = cls.env
         env._euler = True
+        env.sampling_time = 0.25
 
         env.state = np.array([0.1, 0.1], dtype=np.float32)
         action = np.array([0], dtype=np.float32)
@@ -70,8 +72,8 @@ class TestIntegratorSystem(unittest.TestCase):
         trajectory = []
         trajectory.append(env.state)
 
-        for i in range(env.num_time_steps):
-            obs, cost, done, _ = env.step(action)
+        for t in range(16):
+            obs, cost, done, _ = env.step(time=t, action=action)
             trajectory.append(obs)
 
         trajectory = np.array(trajectory)

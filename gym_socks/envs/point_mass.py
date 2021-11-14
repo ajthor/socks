@@ -19,21 +19,23 @@ class NDPointMassEnv(DynamicalSystem):
 
     """
 
-    def __init__(self, dim, mass=1, *args, **kwargs):
+    def __init__(self, dim, seed=None, mass=1, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
         )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+        )
+
+        self.state = None
+
+        self.seed(seed=seed)
 
         self.mass = mass
 

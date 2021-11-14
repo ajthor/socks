@@ -20,16 +20,16 @@ from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 def _trajectory_indicator(
     trajectories,
-    num_steps=None,
+    time_horizon=None,
     constraint_tube=None,
     target_tube=None,
     step_fn=None,
 ):
     trajectories = np.asarray(trajectories, dtype=np.float32)
-    result = indicator_fn(trajectories[:, num_steps], target_tube[num_steps])
+    result = indicator_fn(trajectories[:, time_horizon], target_tube[time_horizon])
     result = np.array(result, dtype=int)
 
-    for t in range(num_steps - 1, -1, -1):
+    for t in range(time_horizon - 1, -1, -1):
         result = step_fn(trajectories[:, t], result, constraint_tube[t], target_tube[t])
 
     return result

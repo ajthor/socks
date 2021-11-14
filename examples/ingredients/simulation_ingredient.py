@@ -46,7 +46,7 @@ def simulate_system(
     for t in range(env.num_time_steps):
 
         action = np.array(policy(time=t, state=[env.state]), dtype=np.float32)
-        obs, cost, done, _ = env.step(action)
+        obs, cost, done, _ = env.step(time=t, action=action)
         next_state = env.state
 
         trajectory.append(list(next_state))

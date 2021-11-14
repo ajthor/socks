@@ -13,20 +13,22 @@ class TORAEnv(DynamicalSystem):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+    def __init__(self, seed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
         )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+        )
+
+        self.state = None
+
+        self.seed(seed=seed)
 
         # system parameters
         self._damping_coefficient = 0.1

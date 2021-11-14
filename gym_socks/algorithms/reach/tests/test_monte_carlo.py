@@ -24,15 +24,17 @@ from gym_socks.algorithms.reach.monte_carlo import _trajectory_indicator
 import numpy as np
 
 
-def make_tube(env: DynamicalSystem, lower_bound: float, upper_bound: float) -> list:
+def make_tube(
+    time_horizon: int, shape: tuple, lower_bound: float, upper_bound: float
+) -> list:
     """Creates a tube for testing."""
 
     tube = []
-    for i in range(env.num_time_steps + 1):
+    for i in range(time_horizon):
         tube_t = gym.spaces.Box(
             lower_bound,
             upper_bound,
-            shape=env.state_space.shape,
+            shape=shape,
             dtype=np.float32,
         )
         tube.append(tube_t)
@@ -45,8 +47,20 @@ class TestTrajectoryIndicator(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.env = NDIntegratorEnv(2)
 
-        cls.target_tube = make_tube(cls.env, -0.5, 0.5)
-        cls.constraint_tube = make_tube(cls.env, -1, 1)
+        cls.time_horizon = 20
+
+        cls.target_tube = make_tube(
+            time_horizon=cls.time_horizon + 1,
+            shape=cls.env.state_space.shape,
+            lower_bound=-0.25,
+            upper_bound=0.25,
+        )
+        cls.constraint_tube = make_tube(
+            time_horizon=cls.time_horizon + 1,
+            shape=cls.env.state_space.shape,
+            lower_bound=-1,
+            upper_bound=1,
+        )
 
     @patch.object(gym_socks.envs.NDIntegratorEnv, "generate_disturbance")
     def test_trajectory_indicator_inside(cls, mock_generate_disturbance):
@@ -58,7 +72,7 @@ class TestTrajectoryIndicator(unittest.TestCase):
         # Test inside.
 
         # The trajectory of the system with no disturbance starts at (-0.1, 0.1) and
-        # ends at (0.3, 0.1) after 16 time steps.
+        # ends at (0.1, 0.1) after 20 time steps.
 
         sample_space = gym.spaces.Box(
             low=np.array([-0.1, 0.1], dtype=np.float32),
@@ -70,8 +84,9 @@ class TestTrajectoryIndicator(unittest.TestCase):
 
         S = sample(
             sampler=trajectory_sampler(
-                system=env,
-                policy=ZeroPolicy(system=env),
+                time_horizon=cls.time_horizon,
+                env=env,
+                policy=ZeroPolicy(action_space=env.action_space),
                 sample_space=sample_space,
             ),
             sample_size=sample_size,
@@ -82,7 +97,7 @@ class TestTrajectoryIndicator(unittest.TestCase):
 
         result = _trajectory_indicator(
             trajectories=full_trajectories,
-            num_steps=env.num_time_steps - 1,
+            time_horizon=cls.time_horizon,
             constraint_tube=cls.constraint_tube,
             target_tube=cls.target_tube,
             step_fn=_tht_step,
@@ -100,7 +115,7 @@ class TestTrajectoryIndicator(unittest.TestCase):
         # Test not inside.
 
         # The trajectory of the system with no disturbance starts at (0.2, 0.1) and
-        # ends at (0.6, 0.1) after 16 time steps.
+        # ends at (0.4, 0.1) after 20 time steps.
 
         sample_space = gym.spaces.Box(
             low=np.array([0.2, 0.1], dtype=np.float32),
@@ -112,8 +127,9 @@ class TestTrajectoryIndicator(unittest.TestCase):
 
         S = sample(
             sampler=trajectory_sampler(
-                system=env,
-                policy=ZeroPolicy(system=env),
+                time_horizon=cls.time_horizon,
+                env=env,
+                policy=ZeroPolicy(action_space=env.action_space),
                 sample_space=sample_space,
             ),
             sample_size=sample_size,
@@ -124,7 +140,7 @@ class TestTrajectoryIndicator(unittest.TestCase):
 
         result = _trajectory_indicator(
             trajectories=full_trajectories,
-            num_steps=env.num_time_steps - 1,
+            time_horizon=cls.time_horizon,
             constraint_tube=cls.constraint_tube,
             target_tube=cls.target_tube,
             step_fn=_tht_step,

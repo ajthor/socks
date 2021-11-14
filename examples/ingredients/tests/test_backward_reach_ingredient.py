@@ -25,16 +25,18 @@ class TestGenerateTube(unittest.TestCase):
         """Test that generate_tube creates a list of spaces when given scalar bounds."""
 
         env = NDIntegratorEnv(2)
-        num_time_steps = env.num_time_steps
+        time_horizon = 5
 
         tube_cfg = {
             "lower_bound": -1,
             "upper_bound": 1,
         }
 
-        tube = generate_tube(env=env, bounds=tube_cfg)
+        tube = generate_tube(
+            time_horizon=time_horizon, shape=env.state_space.shape, bounds=tube_cfg
+        )
 
-        cls.assertEqual(len(tube), num_time_steps)
+        cls.assertEqual(len(tube), time_horizon)
 
         for item in tube:
 
@@ -47,19 +49,21 @@ class TestGenerateTube(unittest.TestCase):
         """Test that generate_tube creates a list of spaces when given list bounds."""
 
         env = NDIntegratorEnv(2)
-        num_time_steps = env.num_time_steps
+        time_horizon = 5
 
-        lower_bound = (-np.arange(num_time_steps)).tolist()
-        upper_bound = np.arange(num_time_steps).tolist()
+        lower_bound = (-np.arange(time_horizon)).tolist()
+        upper_bound = np.arange(time_horizon).tolist()
 
         tube_cfg = {
             "lower_bound": lower_bound,
             "upper_bound": upper_bound,
         }
 
-        tube = generate_tube(env=env, bounds=tube_cfg)
+        tube = generate_tube(
+            time_horizon=time_horizon, shape=env.state_space.shape, bounds=tube_cfg
+        )
 
-        cls.assertEqual(len(tube), num_time_steps)
+        cls.assertEqual(len(tube), time_horizon)
 
         for i, item in enumerate(tube):
 
@@ -80,19 +84,21 @@ class TestGenerateTube(unittest.TestCase):
         """Test that generate_tube creates a list of spaces when given matrix bounds."""
 
         env = NDIntegratorEnv(2)
-        num_time_steps = env.num_time_steps
+        time_horizon = 5
 
-        lower_bound = np.full((num_time_steps, 2), -1, dtype=np.float32).tolist()
-        upper_bound = np.full((num_time_steps, 2), 1, dtype=np.float32).tolist()
+        lower_bound = np.full((time_horizon, 2), -1, dtype=np.float32).tolist()
+        upper_bound = np.full((time_horizon, 2), 1, dtype=np.float32).tolist()
 
         tube_cfg = {
             "lower_bound": lower_bound,
             "upper_bound": upper_bound,
         }
 
-        tube = generate_tube(env=env, bounds=tube_cfg)
+        tube = generate_tube(
+            time_horizon=time_horizon, shape=env.state_space.shape, bounds=tube_cfg
+        )
 
-        cls.assertEqual(len(tube), num_time_steps)
+        cls.assertEqual(len(tube), time_horizon)
 
         for i, item in enumerate(tube):
 

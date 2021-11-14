@@ -8,11 +8,11 @@ import numpy as np
 from scipy.constants import gravitational_constant
 
 
-class CWHBase(object):
+class BaseCWH(object):
     """CWH base class.
 
     This class is ABSTRACT, meaning it is not meant to be instantiated directly.
-    Instead, define a new class that inherits from `CWHBase`, and define a custom
+    Instead, define a new class that inherits from `BaseCWH`, and define a custom
     `compute_state_matrix` and `compute_input_matrix` function.
 
     This class holds the shared parameters for the CWH systems, which include:
@@ -99,7 +99,7 @@ class CWHBase(object):
         raise NotImplementedError
 
 
-class CWH4DEnv(CWHBase, DynamicalSystem):
+class CWH4DEnv(BaseCWH, DynamicalSystem):
     """4D Clohessy-Wiltshire-Hill (CWH) system.
 
     The 4D CWH system is a simplification of the 6D dynamics to operate within a plane.
@@ -107,20 +107,22 @@ class CWH4DEnv(CWHBase, DynamicalSystem):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-0.01, high=0.01, shape=(2,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+    def __init__(self, seed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
         )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-0.01, high=0.01, shape=(2,), dtype=np.float32
+        )
+
+        self.state = None
+
+        self.seed(seed=seed)
 
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
         self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
@@ -240,23 +242,25 @@ class CWH4DEnv(CWHBase, DynamicalSystem):
         return np.array([dx1, dx2, dx3, dx4], dtype=np.float32)
 
 
-class CWH6DEnv(CWHBase, DynamicalSystem):
+class CWH6DEnv(BaseCWH, DynamicalSystem):
     """6D Clohessy-Wiltshire-Hill (CWH) system."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-0.01, high=0.01, shape=(3,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+    def __init__(self, seed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
         )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-0.01, high=0.01, shape=(3,), dtype=np.float32
+        )
+
+        self.state = None
+
+        self.seed(seed=seed)
 
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
         self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)

@@ -24,20 +24,22 @@ class QuadrotorEnv(DynamicalSystem):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+    def __init__(self, seed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
         )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+        )
+
+        self.state = None
+
+        self.seed(seed=seed)
 
         # system parameters
         self._gravitational_acceleration = g  # [m/s^2]
