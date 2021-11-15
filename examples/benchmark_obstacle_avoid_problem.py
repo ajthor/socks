@@ -62,13 +62,13 @@ from examples.ingredients.plotting_ingredient import update_rc_params
 @system_ingredient.config
 def system_config():
 
-    system_id = "PlanarQuadrotorEnv-v0"
+    system_id = "NonholonomicVehicleEnv-v0"
 
     sampling_time = 0.1
 
     action_space = {
-        "lower_bound": [10, 10],
-        "upper_bound": [40, 40],
+        "lower_bound": [0.1, -10.1],
+        "upper_bound": [1.1, 10.1],
     }
 
 
@@ -77,23 +77,23 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [-1.2, -1, -2.5, -5, -2 * np.pi, -5],
-        "upper_bound": [1.2, 1, 2.5, 5, 2 * np.pi, 5],
-        "sample_size": 2500,
+        "lower_bound": [-1.2, -1.2, -2 * np.pi],
+        "upper_bound": [1.2, 1.2, 2 * np.pi],
+        "sample_size": 1500,
     }
 
     action_space = {
         "sample_scheme": "grid",
-        "lower_bound": [10, 10],
-        "upper_bound": [40, 40],
-        "grid_resolution": [20, 20],
+        "lower_bound": [0.1, -10.1],
+        "upper_bound": [1.1, 10.1],
+        "grid_resolution": [10, 21],
     }
 
 
 @simulation_ingredient.config
 def simulation_config():
 
-    initial_condition = [0, 0, 0, 0, 0, 0]
+    initial_condition = [-0.8, 0, np.pi / 2]
 
 
 ex = Experiment(
@@ -137,7 +137,7 @@ def config(sample):
     # Regularization parameter.
     regularization_param = 1e-5
 
-    time_horizon = 200
+    time_horizon = 100
 
     # Whether or not to use dynamic programming (backward in time) algorithm.
     dynamic_programming = False
@@ -193,9 +193,11 @@ def main(
     def _constraint(time: int = 0, state: np.ndarray = None) -> float:
 
         initial_obstacle_state = np.array([1, 0], dtype=np.float32)
-        actual_obstacle_state = initial_obstacle_state - [0.01 * time, 0]
+        actual_obstacle_state = initial_obstacle_state - [0.02 * time, 0]
         dist = np.linalg.norm(state[:, [0, 1]] - actual_obstacle_state, ord=2, axis=1)
-        return dist < 0.2
+        # 0.2 <= dist
+        # 0.2 - dist <= 0
+        return 0.25 - dist
 
     if dynamic_programming is True:
         alg_class = KernelControlBwd
@@ -264,6 +266,8 @@ def plot_results(
 
     # Dynamically load for speed.
     import matplotlib
+    from matplotlib.animation import FuncAnimation
+    from matplotlib.animation import PillowWriter
 
     matplotlib.use("Agg")
     update_rc_params(matplotlib, plot_cfg["rc_params"])
@@ -277,28 +281,79 @@ def plot_results(
     fig = plt.figure()
     ax = plt.axes(**plot_cfg["axes"])
 
-    # # Plot target trajectory.
-    # with plt.style.context(plot_cfg["target_trajectory_style"]):
-    #     target_trajectory = np.array(target_trajectory, dtype=np.float32)
-    #     plt.plot(
-    #         target_trajectory[:, 0],
-    #         target_trajectory[:, 1],
-    #         label="Target Trajectory",
-    #     )
+    trajectory = np.array(trajectory, dtype=np.float32)
 
-    # Plot generated trajectory.
-    with plt.style.context(plot_cfg["trajectory_style"]):
-        trajectory = np.array(trajectory, dtype=np.float32)
-        plt.plot(
-            trajectory[:, 0],
-            trajectory[:, 1],
-            label="System Trajectory",
-        )
+    def plot_frame(t):
 
-    plt.legend()
+        ax.clear()
+        ax.set_xlim(plot_cfg["axes"]["xlim"])
+        ax.set_ylim(plot_cfg["axes"]["ylim"])
+        ax.grid(True)
 
-    for t in range(time_horizon):
-        ax.add_patch(plt.Circle((1 - 0.01 * t, 0), 0.2, fc="none", ec="red"))
+        # # Plot target trajectory.
+        # with plt.style.context(plot_cfg["target_trajectory_style"]):
+        #     target_trajectory = np.array(target_trajectory, dtype=np.float32)
+        #     plt.plot(
+        #         target_trajectory[:, 0],
+        #         target_trajectory[:, 1],
+        #         label="Target Trajectory",
+        #     )
+
+        # Plot generated trajectory.
+        with plt.style.context(plot_cfg["trajectory_style"]):
+            # trajectory = np.array(trajectory, dtype=np.float32)
+            line = plt.plot(
+                trajectory[0:t, 0],
+                trajectory[0:t, 1],
+                alpha=0.1,
+                marker="None",
+                label="System Trajectory",
+            )
+
+        # Plot the markers as arrows, showing vehicle heading.
+        paper_airplane = [(0, -0.25), (0.5, -0.5), (0, 1), (-0.5, -0.5), (0, -0.25)]
+
+        if system["system_id"] == "NonholonomicVehicleEnv-v0":
+            angle = -np.rad2deg(trajectory[t, 2])
+            ms = matplotlib.markers.MarkerStyle(marker=paper_airplane)
+            ms._transform = ms.get_transform().rotate_deg(angle)
+
+            marker = plt.plot(
+                trajectory[t, 0],
+                trajectory[t, 1],
+                marker=ms,
+                markersize=4,
+                linestyle="None",
+                color="C0",
+            )
+            # for x in trajectory:
+            #     angle = -np.rad2deg(x[2])
+
+            #     ms = matplotlib.markers.MarkerStyle(marker=paper_airplane)
+            #     ms._transform = ms.get_transform().rotate_deg(angle)
+
+            #     marker = plt.plot(
+            #         x[0], x[1], marker=ms, markersize=4, linestyle="None", color="C0"
+            #     )
+        else:
+            marker = plt.plot(
+                trajectory[t, 0], trajectory[t, 1], marker="o", color="C0"
+            )
+
+        # plt.legend()
+
+        patch = ax.add_patch(plt.Circle((1 - 0.02 * t, 0), 0.2, fc="none", ec="red"))
+
+        return line, marker, patch
+
+    animation = FuncAnimation(
+        fig,
+        plot_frame,
+        frames=time_horizon,
+        interval=system["sampling_time"],
+    )
+
+    animation.save("results/plot.gif", dpi=300, fps=30)
 
     # # Plot the markers as arrows, showing vehicle heading.
     # paper_airplane = [(0, -0.25), (0.5, -0.5), (0, 1), (-0.5, -0.5), (0, -0.25)]
@@ -312,7 +367,7 @@ def plot_results(
 
     #         plt.plot(x[0], x[1], marker=t, markersize=4, linestyle="None", color="C1")
 
-    plt.savefig(plot_cfg["plot_filename"])
+    # plt.savefig(plot_cfg["plot_filename"])
 
 
 if __name__ == "__main__":

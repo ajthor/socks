@@ -100,3 +100,10 @@ def generate_batches(num_elements, batch_size) -> Generator[slice, None, None]:
 
     if start < num_elements:
         yield slice(start, num_elements)
+
+
+def save_mat_file(filename: str, data: dict):
+    from scipy.io import savemat
+
+    with open(filename, "wb") as f:
+        savemat(f, data)
