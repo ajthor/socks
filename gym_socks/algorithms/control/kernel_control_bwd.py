@@ -261,7 +261,6 @@ class KernelControlBwd(BasePolicy):
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
 
         self.num_steps = num_steps
 

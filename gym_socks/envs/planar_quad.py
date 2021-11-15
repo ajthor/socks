@@ -16,6 +16,12 @@ class PlanarQuadrotorEnv(DynamicalSystem):
 
     """
 
+    # system parameters
+    _gravitational_acceleration = g  # [m/s^2]
+    _rotor_distance = 2  # [m]
+    _total_mass = 5  # [kg]
+    _inertia = 2
+
     def __init__(self, seed=None, *args, **kwargs):
         """Initialize the system."""
         super().__init__(*args, **kwargs)
@@ -33,11 +39,6 @@ class PlanarQuadrotorEnv(DynamicalSystem):
         self.state = None
 
         self.seed(seed=seed)
-
-        self._gravitational_acceleration = g  # [m/s^2]
-        self._rotor_distance = 2  # [m]
-        self._total_mass = 5  # [kg]
-        self._inertia = 2
 
     @property
     def gravitational_acceleration(self):

@@ -19,7 +19,9 @@ class NDPointMassEnv(DynamicalSystem):
 
     """
 
-    def __init__(self, dim, seed=None, mass=1, *args, **kwargs):
+    _mass = 1
+
+    def __init__(self, dim, seed=None, *args, **kwargs):
         """Initialize the system."""
         super().__init__(*args, **kwargs)
 
@@ -37,7 +39,13 @@ class NDPointMassEnv(DynamicalSystem):
 
         self.seed(seed=seed)
 
-        self.mass = mass
+    @property
+    def mass(self):
+        return self._mass
+
+    @mass.setter
+    def mass(self, value):
+        self._mass = value
 
     def generate_disturbance(self, time, state, action):
         w = self.np_random.standard_normal(size=self.state_space.shape)

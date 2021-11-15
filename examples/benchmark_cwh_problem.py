@@ -60,7 +60,6 @@ def system_config():
     system_id = "CWH4DEnv-v0"
 
     sampling_time = 20
-    time_horizon = 100
 
     action_space = {
         "lower_bound": -0.1,
@@ -138,6 +137,8 @@ def config(sample):
     # regularization_param = 1 / (sample["sample_space"]["sample_size"] ** 2)
     regularization_param = 1e-5
 
+    time_horizon = 5
+
     # Whether or not to use dynamic programming (backward in time) algorithm.
     dynamic_programming = False
     batch_size = None  # (Optional) batch size for batch computation.
@@ -154,6 +155,7 @@ def main(
     seed,
     sigma,
     regularization_param,
+    time_horizon,
     dynamic_programming,
     batch_size,
     heuristic,
@@ -179,7 +181,7 @@ def main(
 
     # Compute the target trajectory.
     cost_fn = make_cost(env=env)
-    constraint_fn = make_constraint(env=env)
+    constraint_fn = make_constraint(time_horizon=time_horizon, env=env)
 
     if dynamic_programming is True:
         alg_class = KernelControlBwd
@@ -190,7 +192,7 @@ def main(
 
         # Compute policy.
         policy = alg_class(
-            num_steps=env.num_time_steps,
+            time_horizon=time_horizon,
             cost_fn=cost_fn,
             constraint_fn=constraint_fn,
             heuristic=heuristic,
@@ -202,7 +204,7 @@ def main(
 
         policy.train(S=S, A=A)
 
-    trajectory = simulate_system(env, policy)
+    trajectory = simulate_system(time_horizon, env, policy)
 
     with open(results_filename, "wb") as f:
         np.save(f, trajectory)

@@ -13,8 +13,10 @@ class TORAEnv(DynamicalSystem):
 
     """
 
-    def __init__(self, seed=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # system parameters
+    _damping_coefficient = 0.1
+
+    def __init__(self, seed=None):
 
         self.observation_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
@@ -29,9 +31,6 @@ class TORAEnv(DynamicalSystem):
         self.state = None
 
         self.seed(seed=seed)
-
-        # system parameters
-        self._damping_coefficient = 0.1
 
     @property
     def damping_coefficient(self):

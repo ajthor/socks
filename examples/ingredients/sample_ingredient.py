@@ -288,7 +288,7 @@ def _random_action_sampler(seed: int, env: DynamicalSystem):
 
     """
 
-    _policy = RandomizedPolicy(env)
+    _policy = RandomizedPolicy(action_space=env.action_space)
 
     @sample_generator
     def _sample_generator(*args, **kwargs):
@@ -309,7 +309,7 @@ def _zero_action_sampler(seed: int, env: DynamicalSystem):
         A sampler used by the `_sample_ingredient_sampler`.
 
     """
-    _policy = ZeroPolicy(env)
+    _policy = ZeroPolicy(action_space=env.action_space)
 
     @sample_generator
     def _sample_generator(*args, **kwargs):
@@ -353,7 +353,7 @@ def _sequential_action_sampler(
         xc = uniform_grid(xi)
         for item in xc:
             for i in range(sample_size):
-                yield item
+                yield np.array(item, dtype=np.float32)
 
     return _sample_generator
 
@@ -407,7 +407,7 @@ def _sample_ingredient_sampler(
         action = next(action_sample_generator)
 
         env.state = state
-        next_state, cost, done, _ = env.step(action)
+        next_state, cost, done, _ = env.step(action=action)
 
         yield (state, action, next_state)
 

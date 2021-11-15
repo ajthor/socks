@@ -24,6 +24,13 @@ class QuadrotorEnv(DynamicalSystem):
 
     """
 
+    # system parameters
+    _gravitational_acceleration = g  # [m/s^2]
+    _radius_center_mass = 0.1  # [m]
+    _rotor_distance = 0.5  # [m]
+    _rotor_mass = 0.1  # [kg]
+    _center_mass = 1  # [kg]
+
     def __init__(self, seed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -40,13 +47,6 @@ class QuadrotorEnv(DynamicalSystem):
         self.state = None
 
         self.seed(seed=seed)
-
-        # system parameters
-        self._gravitational_acceleration = g  # [m/s^2]
-        self._radius_center_mass = 0.1  # [m]
-        self._rotor_distance = 0.5  # [m]
-        self._rotor_mass = 0.1  # [kg]
-        self._center_mass = 1  # [kg]
 
         self._compute_total_mass()
         self._compute_inertia()

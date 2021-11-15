@@ -96,13 +96,13 @@ def config():
 
 @ex.main
 def main(
-    _log,
     seed,
     sigma,
     regularization_param,
     sample_size,
     results_filename,
     no_plot,
+    _log,
 ):
     """Main experiment."""
 

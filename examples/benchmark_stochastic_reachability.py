@@ -53,7 +53,6 @@ from examples.ingredients.plotting_ingredient import update_rc_params
 def system_config():
     system_id = "2DIntegratorEnv-v0"
 
-    time_horizon = 4
     sampling_time = 0.25
 
 
@@ -126,6 +125,8 @@ def config():
     sigma = 0.1
     regularization_param = 1
 
+    time_horizon = 12
+
     batch_size = None
 
     verbose = True
@@ -140,6 +141,7 @@ def main(
     _log,
     sigma,
     regularization_param,
+    time_horizon,
     backward_reach,
     batch_size,
     verbose,
@@ -154,8 +156,16 @@ def main(
     set_system_seed(seed, env)
 
     # Generate the target and constraint tubes.
-    target_tube = generate_tube(env, backward_reach["target_tube_bounds"])
-    constraint_tube = generate_tube(env, backward_reach["constraint_tube_bounds"])
+    target_tube = generate_tube(
+        time_horizon=time_horizon,
+        shape=env.state_space.shape,
+        bounds=backward_reach["target_tube_bounds"],
+    )
+    constraint_tube = generate_tube(
+        time_horizon=time_horizon,
+        shape=env.state_space.shape,
+        bounds=backward_reach["constraint_tube_bounds"],
+    )
 
     # Generate the sample.
     S = generate_sample(seed=seed, env=env)
@@ -168,7 +178,7 @@ def main(
         safety_probabilities = kernel_sr(
             S=S,
             T=T,
-            num_steps=env.num_time_steps,
+            time_horizon=time_horizon,
             constraint_tube=constraint_tube,
             target_tube=target_tube,
             problem=backward_reach["problem"],

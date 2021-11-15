@@ -65,7 +65,6 @@ def system_config():
     system_id = "NonholonomicVehicleEnv-v0"
 
     sampling_time = 0.1
-    time_horizon = 2
 
     action_space = {
         "lower_bound": [0.1, -10.1],
@@ -136,7 +135,9 @@ def config(sample):
 
     sigma = 3  # Kernel bandwidth parameter.
     # Regularization parameter.
-    regularization_param = 1 / (sample["sample_space"]["sample_size"] ** 2)
+    regularization_param = 1e-5
+
+    time_horizon = 20
 
     # Whether or not to use dynamic programming (backward in time) algorithm.
     dynamic_programming = False
@@ -154,6 +155,7 @@ def main(
     seed,
     sigma,
     regularization_param,
+    time_horizon,
     dynamic_programming,
     batch_size,
     heuristic,
@@ -177,7 +179,7 @@ def main(
     A = generate_admissible_actions(seed=seed, env=env)
 
     # Compute the target trajectory.
-    target_trajectory = compute_target_trajectory(num_steps=env.num_time_steps)
+    target_trajectory = compute_target_trajectory(time_horizon=time_horizon)
     tracking_cost = make_cost(target_trajectory=target_trajectory)
 
     if dynamic_programming is True:
@@ -189,7 +191,7 @@ def main(
 
         # Compute policy.
         policy = alg_class(
-            num_steps=env.num_time_steps,
+            num_steps=time_horizon,
             cost_fn=tracking_cost,
             heuristic=heuristic,
             verbose=verbose,
@@ -200,7 +202,7 @@ def main(
 
         policy.train(S=S, A=A)
 
-    trajectory = simulate_system(env, policy)
+    trajectory = simulate_system(time_horizon, env, policy)
 
     with open(results_filename, "wb") as f:
         np.save(f, target_trajectory)

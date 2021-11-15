@@ -29,21 +29,14 @@ class BaseCWH(object):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    time_horizon = 600  # [s]
+    sampling_time = 20  # [s]
 
-        self.time_horizon = 600  # [s]
-        self.sampling_time = 20  # [s]
-
-        # system parameters
-        self._orbital_radius = 850 + 6378.1  # [m]
-        # self._gravitational_constant = 6.673e-11
-        self._gravitational_constant = gravitational_constant
-        self._celestial_body_mass = 5.9472e24  # [kg]
-        self._chief_mass = 300  # [kg]
-
-        self.compute_mu()
-        self.compute_angular_velocity()
+    # system parameters
+    _orbital_radius = 850 + 6378.1  # [m]
+    _gravitational_constant = gravitational_constant
+    _celestial_body_mass = 5.9472e24  # [kg]
+    _chief_mass = 300  # [kg]
 
     @property
     def orbital_radius(self):
@@ -123,6 +116,9 @@ class CWH4DEnv(BaseCWH, DynamicalSystem):
         self.state = None
 
         self.seed(seed=seed)
+
+        self.compute_mu()
+        self.compute_angular_velocity()
 
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
         self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
@@ -261,6 +257,9 @@ class CWH6DEnv(BaseCWH, DynamicalSystem):
         self.state = None
 
         self.seed(seed=seed)
+
+        self.compute_mu()
+        self.compute_angular_velocity()
 
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
         self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
