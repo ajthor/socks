@@ -1,10 +1,13 @@
-"""Stochastic optimal control.
+"""Stochastic optimal control (obstacle avoid).
 
-This example demonstrates the optimal controller synthesis algorithm.
+This example demonstrates the optimal controller synthesis algorithm on an obstacle
+avoidance problemlem.
 
-By default, it uses a nonlinear dynamical system with nonholonomic vehicle dynamics. Other dynamical systems can also be used, by modifying the configuration as needed.
+By default, it uses a nonlinear dynamical system with nonholonomic vehicle dynamics.
+Other dynamical systems can also be used, by modifying the configuration as needed.
 
-Several configuration files are included in the `examples/configs` folder, and can be used by running the example using the `with` syntax, e.g.
+Several configuration files are included in the `examples/configs` folder, and can be
+used by running the example using the `with` syntax, e.g.
 
     $ python -m <experiment> with examples/configs/<config_file>
 
