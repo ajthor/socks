@@ -22,8 +22,10 @@ import numpy as np
 class TestSample(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.system = gym_socks.envs.NDIntegratorEnv(2)
-        cls.policy = gym_socks.envs.policy.RandomizedPolicy(cls.system)
+        cls.env = gym_socks.envs.NDIntegratorEnv(2)
+        cls.policy = gym_socks.envs.policy.RandomizedPolicy(
+            action_space=cls.env.action_space
+        )
 
         cls.sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         cls.sample_space.seed(1)
@@ -32,7 +34,7 @@ class TestSample(unittest.TestCase):
 
         S = sample(
             sampler=step_sampler(
-                system=cls.system,
+                env=cls.env,
                 policy=cls.policy,
                 sample_space=cls.sample_space,
             ),
@@ -52,7 +54,7 @@ class TestSample(unittest.TestCase):
         S = sample(
             sampler=uniform_grid_step_sampler(
                 ranges,
-                system=cls.system,
+                env=cls.env,
                 policy=cls.policy,
                 sample_space=cls.sample_space,
             ),
@@ -72,7 +74,7 @@ class TestSample(unittest.TestCase):
         S = sample(
             sampler=uniform_grid_step_sampler(
                 ranges,
-                system=cls.system,
+                env=cls.env,
                 policy=cls.policy,
                 sample_space=cls.sample_space,
             ),
@@ -91,7 +93,8 @@ class TestSample(unittest.TestCase):
 
         S = sample(
             sampler=trajectory_sampler(
-                system=cls.system,
+                time_horizon=16,
+                env=cls.env,
                 policy=cls.policy,
                 sample_space=cls.sample_space,
             ),
@@ -119,10 +122,10 @@ class TestSample(unittest.TestCase):
         @sample_generator
         def custom_sampler():
             state = cls.sample_space.sample()
-            action = cls.system.action_space.sample()
+            action = cls.env.action_space.sample()
 
-            cls.system.state = state
-            next_state, cost, done, _ = cls.system.step(action)
+            cls.env.state = state
+            next_state, cost, done, _ = cls.env.step(action=action)
 
             return (state, action, next_state)
 
@@ -143,10 +146,10 @@ class TestSample(unittest.TestCase):
         @sample_generator
         def custom_sampler():
             state = cls.sample_space.sample()
-            action = cls.system.action_space.sample()
+            action = cls.env.action_space.sample()
 
-            cls.system.state = state
-            next_state, cost, done, _ = cls.system.step(action)
+            cls.env.state = state
+            next_state, cost, done, _ = cls.env.step(action=action)
 
             yield (state, action, next_state)
 

@@ -101,6 +101,8 @@ def config():
     # Number of Monte-Carlo iterations to run at each test point.
     num_iterations = 100
 
+    time_horizon = 5
+
     verbose = True
 
     results_filename = "results/data.npy"
@@ -111,6 +113,7 @@ def config():
 def main(
     seed,
     num_iterations,
+    time_horizon,
     backward_reach,
     verbose,
     results_filename,
@@ -125,8 +128,16 @@ def main(
     set_system_seed(seed, env)
 
     # Generate the target and constraint tubes.
-    target_tube = generate_tube(env, backward_reach["target_tube_bounds"])
-    constraint_tube = generate_tube(env, backward_reach["constraint_tube_bounds"])
+    target_tube = generate_tube(
+        time_horizon=time_horizon,
+        shape=env.state_space.shape,
+        bounds=backward_reach["target_tube_bounds"],
+    )
+    constraint_tube = generate_tube(
+        time_horizon=time_horizon,
+        shape=env.state_space.shape,
+        bounds=backward_reach["constraint_tube_bounds"],
+    )
 
     # Generate the test points.
     T = generate_test_points(env=env)
@@ -135,9 +146,10 @@ def main(
 
         safety_probabilities = monte_carlo_sr(
             env=env,
-            policy=RandomizedPolicy(system=env),
+            policy=RandomizedPolicy(action_space=env.action_space),
             T=T,
             num_iterations=num_iterations,
+            time_horizon=time_horizon,
             constraint_tube=constraint_tube,
             target_tube=target_tube,
             problem=backward_reach["problem"],

@@ -19,14 +19,12 @@ def _config():
 
     system_id = "2DIntegratorEnv-v0"
 
-    time_horizon = None
     sampling_time = None
 
 
 @system_ingredient.capture
 def make_system(
     system_id: str,
-    time_horizon: float,
     sampling_time: float,
     _config,
     _log,
@@ -45,9 +43,6 @@ def make_system(
 
     _log.debug(f"Making system: {system_id}")
     env = make(system_id)
-
-    if time_horizon is not None:
-        env.time_horizon = time_horizon
 
     if sampling_time is not None:
         env.sampling_time = sampling_time

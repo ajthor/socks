@@ -28,7 +28,7 @@ def _compute_backward_recursion(
     W,
     CXY,
     CUA,
-    num_steps=None,
+    time_horizon=None,
     cost_fn=None,
     constraint_fn=None,
     value_functions=None,
@@ -40,19 +40,21 @@ def _compute_backward_recursion(
     beta = np.einsum("ij,ik->ijk", CXY, CUA)
 
     pbar = ms_tqdm(
-        total=num_steps,
+        total=time_horizon,
         bar_format=_progress_fmt,
         disable=False if verbose is True else True,
     )
 
     # set up empty array to hold value functions
     if out is None:
-        out = np.zeros((num_steps, len(Y)), dtype=np.float32)
-    out[num_steps - 1, :] = np.array(cost_fn(time=num_steps - 1), dtype=np.float32)
+        out = np.zeros((time_horizon, len(Y)), dtype=np.float32)
+    out[time_horizon - 1, :] = np.array(
+        cost_fn(time=time_horizon - 1), dtype=np.float32
+    )
     pbar.update()
 
     # run backwards in time and compute the safety probabilities
-    for t in range(num_steps - 2, -1, -1):
+    for t in range(time_horizon - 2, -1, -1):
 
         Z = np.matmul(value_functions[t + 1, :], W)
         C = np.einsum("i,ijk->jk", Z, beta)
@@ -93,7 +95,7 @@ def _compute_backward_recursion_batch(
     W,
     CXY,
     CUA,
-    num_steps=None,
+    time_horizon=None,
     cost_fn=None,
     constraint_fn=None,
     value_functions=None,
@@ -102,19 +104,21 @@ def _compute_backward_recursion_batch(
     verbose=False,
 ):
     pbar = ms_tqdm(
-        total=num_steps,
+        total=time_horizon,
         bar_format=_progress_fmt,
         disable=False if verbose is True else True,
     )
 
     # set up empty array to hold value functions
     if out is None:
-        out = np.zeros((num_steps + 1, len(Y)), dtype=np.float32)
-    out[num_steps - 1, :] = np.array(cost_fn(time=num_steps - 1), dtype=np.float32)
+        out = np.zeros((time_horizon + 1, len(Y)), dtype=np.float32)
+    out[time_horizon - 1, :] = np.array(
+        cost_fn(time=time_horizon - 1), dtype=np.float32
+    )
     pbar.update()
 
     # run backwards in time and compute the safety probabilities
-    for t in range(num_steps - 2, -1, -1):
+    for t in range(time_horizon - 2, -1, -1):
 
         Z = np.matmul(value_functions[t + 1, :], W)
         # C = np.empty((1, len(Y)))
@@ -189,7 +193,7 @@ def _compute_backward_recursion_batch(
 def kernel_control_bwd(
     S: np.ndarray,
     A: np.ndarray,
-    num_steps: int = None,
+    time_horizon: int = None,
     cost_fn=None,
     constraint_fn=None,
     heuristic: bool = False,
@@ -216,7 +220,7 @@ def kernel_control_bwd(
     """
 
     alg = KernelControlBwd(
-        num_steps=num_steps,
+        time_horizon=time_horizon,
         cost_fn=cost_fn,
         constraint_fn=constraint_fn,
         heuristic=heuristic,
@@ -250,7 +254,7 @@ class KernelControlBwd(BasePolicy):
 
     def __init__(
         self,
-        num_steps: int = None,
+        time_horizon: int = None,
         cost_fn=None,
         constraint_fn=None,
         heuristic: bool = False,
@@ -261,9 +265,8 @@ class KernelControlBwd(BasePolicy):
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
 
-        self.num_steps = num_steps
+        self.time_horizon = time_horizon
 
         self.cost_fn = cost_fn
         self.constraint_fn = constraint_fn
@@ -360,13 +363,13 @@ class KernelControlBwd(BasePolicy):
             self.constraint_fn = partial(self.constraint_fn, state=Y)
 
         gym_socks.logger.debug("Computing value functions.")
-        value_functions = np.empty((self.num_steps, len(Y)))
+        value_functions = np.empty((self.time_horizon, len(Y)))
         self.value_functions = self._compute_backward_recursion_caller(
             Y,
             self.W,
             CXY,
             self.CUA,
-            num_steps=self.num_steps,
+            time_horizon=self.time_horizon,
             cost_fn=self.cost_fn,
             constraint_fn=self.constraint_fn,
             value_functions=value_functions,

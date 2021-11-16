@@ -16,26 +16,29 @@ class PlanarQuadrotorEnv(DynamicalSystem):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    # system parameters
+    _gravitational_acceleration = g  # [m/s^2]
+    _rotor_distance = 2  # [m]
+    _total_mass = 5  # [kg]
+    _inertia = 2
+
+    def __init__(self, seed=None, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+        )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
         )
 
-        self._gravitational_acceleration = g  # [m/s^2]
-        self._rotor_distance = 2  # [m]
-        self._total_mass = 5  # [kg]
-        self._inertia = 2
+        self.state = None
+
+        self.seed(seed=seed)
 
     @property
     def gravitational_acceleration(self):

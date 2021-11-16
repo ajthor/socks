@@ -35,7 +35,7 @@ def _config():
     }
 
 
-def generate_tube(env: DynamicalSystem, bounds: dict):
+def generate_tube(time_horizon: int, shape: tuple, bounds: dict):
     """Generate a stochastic reachability tube using config.
 
     This function computes a stochastic reachability tube using the tube configuration.
@@ -52,15 +52,15 @@ def generate_tube(env: DynamicalSystem, bounds: dict):
     tube_lb = bounds["lower_bound"]
     tube_ub = bounds["upper_bound"]
 
-    tube_lb = parse_array(tube_lb, shape=(env.num_time_steps,), dtype=np.float32)
-    tube_ub = parse_array(tube_ub, shape=(env.num_time_steps,), dtype=np.float32)
+    tube_lb = parse_array(tube_lb, shape=(time_horizon,), dtype=np.float32)
+    tube_ub = parse_array(tube_ub, shape=(time_horizon,), dtype=np.float32)
 
     tube = []
-    for i in range(env.num_time_steps):
+    for i in range(time_horizon):
         tube_t = box_factory(
             tube_lb[i],
             tube_ub[i],
-            shape=env.state_space.shape,
+            shape=shape,
             dtype=np.float32,
         )
         tube.append(tube_t)

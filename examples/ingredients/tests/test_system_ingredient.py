@@ -29,7 +29,6 @@ class TestMakeSystem(unittest.TestCase):
         dummy_logger = logging.getLogger(__name__)
         env = make_system(
             system_id="2DIntegratorEnv-v0",
-            time_horizon=None,
             sampling_time=None,
             _config=dict(),
             _log=dummy_logger,

@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+import gym
+
 import numpy as np
 
 
@@ -32,8 +34,8 @@ class BasePolicy(ABC):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        ...
+    action_space = None
+    state_space = None
 
     @abstractmethod
     def __call__(self, *args, **kwargs):
@@ -57,12 +59,14 @@ class RandomizedPolicy(BasePolicy):
 
     """
 
-    def __init__(self, system, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.system = system
+    def __init__(self, action_space: gym.Space = None):
+        if action_space is not None:
+            self.action_space = action_space
+        else:
+            raise ValueError("action space must be provided")
 
     def __call__(self, *args, **kwargs):
-        return self.system.action_space.sample()
+        return self.action_space.sample()
 
 
 class ConstantPolicy(BasePolicy):
@@ -77,16 +81,19 @@ class ConstantPolicy(BasePolicy):
 
     """
 
-    def __init__(self, system, constant=0, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.system = system
-        self.constant = constant
+    def __init__(self, action_space: gym.Space = None, constant=0):
+        if action_space is not None:
+            self.action_space = action_space
+        else:
+            raise ValueError("action space must be provided")
+
+        self._constant = constant
 
     def __call__(self, *args, **kwargs):
         return np.full(
-            self.system.action_space.shape,
-            self.constant,
-            dtype=self.system.action_space.dtype,
+            self.action_space.shape,
+            self._constant,
+            dtype=self.action_space.dtype,
         )
 
 
@@ -101,5 +108,10 @@ class ZeroPolicy(ConstantPolicy):
 
     """
 
-    def __init__(self, system, *args, **kwargs):
-        super().__init__(system, *args, **kwargs)
+    def __init__(self, action_space: gym.Space = None):
+        if action_space is not None:
+            self.action_space = action_space
+        else:
+            raise ValueError("action space must be provided")
+
+        self._constant = 0

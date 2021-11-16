@@ -20,22 +20,23 @@ from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 def _trajectory_indicator(
     trajectories,
-    num_steps=None,
+    time_horizon=None,
     constraint_tube=None,
     target_tube=None,
     step_fn=None,
 ):
     trajectories = np.asarray(trajectories, dtype=np.float32)
-    result = indicator_fn(trajectories[:, num_steps], target_tube[num_steps])
+    result = indicator_fn(trajectories[:, time_horizon], target_tube[time_horizon])
     result = np.array(result, dtype=int)
 
-    for t in range(num_steps - 1, -1, -1):
+    for t in range(time_horizon - 1, -1, -1):
         result = step_fn(trajectories[:, t], result, constraint_tube[t], target_tube[t])
 
     return result
 
 
 def _monte_carlo_trajectory_sampler(
+    time_horizon: int = None,
     env: DynamicalSystem = None,
     policy: BasePolicy = None,
     state: np.ndarray = None,
@@ -61,9 +62,9 @@ def _monte_carlo_trajectory_sampler(
         env.state = state
 
         time = 0
-        for t in range(env.num_time_steps):
+        for t in range(time_horizon):
             action = policy(time=time, state=env.state)
-            next_state, cost, done, _ = env.step(action)
+            next_state, cost, done, _ = env.step(time=t, action=action)
 
             state_sequence.append(next_state)
 
@@ -79,6 +80,7 @@ def monte_carlo_sr(
     policy: BasePolicy,
     T: np.ndarray,
     num_iterations: int = None,
+    time_horizon: int = None,
     constraint_tube: list = None,
     target_tube: list = None,
     problem: str = "THT",
@@ -94,19 +96,20 @@ def monte_carlo_sr(
         policy: The policy applied to the system during sampling.
         T: Points to estimate the safety probabilities at. Should be in the form of a
             2D-array, where each row indicates a point.
-        num_iterations : Number of Monte-Carlo iterations.
-        constraint_tube : List of spaces or constraint functions. Must be the same
+        num_iterations: Number of Monte-Carlo iterations.
+        constraint_tube: List of spaces or constraint functions. Must be the same
             length as `num_steps`.
-        target_tube : List of spaces or target functions. Must be the same length as
+        target_tube: List of spaces or target functions. Must be the same length as
             `num_steps`.
-        problem : One of `{"THT", "FHT"}`. `"THT"` specifies the terminal-hitting time
+        problem: One of `{"THT", "FHT"}`. `"THT"` specifies the terminal-hitting time
             problem and `"FHT"` specifies the first-hitting time problem.
-        verbose : Boolean flag to indicate verbose output.
+        verbose: Boolean flag to indicate verbose output.
 
     """
 
     alg = MonteCarloSR(
         num_iterations=num_iterations,
+        time_horizon=time_horizon,
         constraint_tube=constraint_tube,
         target_tube=target_tube,
         problem=problem,
@@ -122,20 +125,22 @@ class MonteCarloSR(AlgorithmInterface):
     problem using Monte-Carlo methods.
 
     Args:
-        num_iterations : Number of Monte-Carlo iterations.
-        constraint_tube : List of spaces or constraint functions. Must be the same
+        num_iterations: Number of Monte-Carlo iterations.
+        time_horizon: Time horizon of the algorithm.
+        constraint_tube: List of spaces or constraint functions. Must be the same
             length as `num_steps`.
-        target_tube : List of spaces or target functions. Must be the same length as
+        target_tube: List of spaces or target functions. Must be the same length as
             `num_steps`.
-        problem : One of `{"THT", "FHT"}`. `"THT"` specifies the terminal-hitting time
+        problem: One of `{"THT", "FHT"}`. `"THT"` specifies the terminal-hitting time
             problem and `"FHT"` specifies the first-hitting time problem.
-        verbose : Boolean flag to indicate verbose output.
+        verbose: Boolean flag to indicate verbose output.
 
     """
 
     def __init__(
         self,
         num_iterations: int = None,
+        time_horizon: int = None,
         constraint_tube: list = None,
         target_tube: list = None,
         problem: str = "THT",
@@ -146,6 +151,7 @@ class MonteCarloSR(AlgorithmInterface):
         super().__init__(*args, **kwargs)
 
         self.num_iterations = num_iterations
+        self.time_horizon = time_horizon
 
         self.constraint_tube = constraint_tube
         self.target_tube = target_tube
@@ -155,6 +161,13 @@ class MonteCarloSR(AlgorithmInterface):
         self.verbose = verbose
 
     def _validate_params(self, S):
+
+        assert self.num_iterations >= 0 and isinstance(
+            self.num_iterations, (int, np.integer)
+        )
+        assert self.time_horizon >= 0 and isinstance(
+            self.time_horizon, (int, np.integer)
+        )
 
         if self.constraint_tube is None:
             raise ValueError("Must supply constraint tube.")
@@ -216,7 +229,7 @@ class MonteCarloSR(AlgorithmInterface):
 
         # Initialize the safety probability matrix.
         safety_probabilities = np.empty(
-            (env.num_time_steps, num_test_points), dtype=np.float32
+            (self.time_horizon, num_test_points), dtype=np.float32
         )
 
         for i, state in enumerate(T):
@@ -224,7 +237,7 @@ class MonteCarloSR(AlgorithmInterface):
             # For each point, generate a collection of trajectories.
             S = sample(
                 sampler=_monte_carlo_trajectory_sampler(
-                    env=env, state=state, policy=policy
+                    time_horizon=self.time_horizon, env=env, state=state, policy=policy
                 ),
                 sample_size=self.num_iterations,
             )
@@ -232,11 +245,11 @@ class MonteCarloSR(AlgorithmInterface):
             # Working backwards in time, compute the "likelihood" that the trajectories
             # will satisfy the constraints set up by the constraint tube and target
             # tube.
-            for t in range(env.num_time_steps - 1, -1, -1):
+            for t in range(self.time_horizon - 1, -1, -1):
 
                 satisfies_constraints = _trajectory_indicator(
                     S,
-                    num_steps=t,
+                    time_horizon=t,
                     constraint_tube=self.constraint_tube,
                     target_tube=self.target_tube,
                     step_fn=self.step_fn,

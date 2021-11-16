@@ -26,7 +26,11 @@ def config():
 
 @simulation_ingredient.capture
 def simulate_system(
-    env: DynamicalSystem, policy: BasePolicy, initial_condition: list, _log
+    time_horizon: int,
+    env: DynamicalSystem,
+    policy: BasePolicy,
+    initial_condition: list,
+    _log,
 ) -> list:
     """Simulate the system from a given initial condition."""
 
@@ -43,10 +47,10 @@ def simulate_system(
     trajectory = [env.state]
 
     # Simulate the env using the computed policy.
-    for t in range(env.num_time_steps):
+    for t in range(time_horizon):
 
         action = np.array(policy(time=t, state=[env.state]), dtype=np.float32)
-        obs, cost, done, _ = env.step(action)
+        obs, cost, done, _ = env.step(time=t, action=action)
         next_state = env.state
 
         trajectory.append(list(next_state))

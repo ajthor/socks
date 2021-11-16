@@ -78,14 +78,14 @@ def sample_generator(fun):
 
 
 def step_sampler(
-    system: DynamicalSystem = None,
+    env: DynamicalSystem = None,
     policy: BasePolicy = None,
     sample_space: gym.Space = None,
 ):
     """Default sampler (one step).
 
     Args:
-        system: The system to sample from.
+        env: The system to sample from.
         policy: The policy applied to the system during sampling.
         sample_space: The space where initial conditions are drawn from.
 
@@ -99,8 +99,8 @@ def step_sampler(
         state = sample_space.sample()
         action = policy(state=state)
 
-        system.state = state
-        next_state, cost, done, _ = system.step(action)
+        env.state = state
+        next_state, cost, done, _ = env.step(action=action)
 
         yield (state, action, next_state)
 
@@ -129,7 +129,7 @@ def uniform_grid(xi):
 
 def uniform_grid_step_sampler(
     xi: list,
-    system: DynamicalSystem = None,
+    env: DynamicalSystem = None,
     policy: BasePolicy = None,
     sample_space: gym.Space = None,
 ):
@@ -137,7 +137,7 @@ def uniform_grid_step_sampler(
 
     Args:
         xi: List of ranges.
-        system: The system to sample from.
+        env: The system to sample from.
         policy: The policy applied to the system during sampling.
         sample_space: The space where initial conditions are drawn from.
 
@@ -154,8 +154,8 @@ def uniform_grid_step_sampler(
             state = point
             action = policy(state=state)
 
-            system.state = state
-            next_state, cost, done, _ = system.step(action)
+            env.state = state
+            next_state, cost, done, _ = env.step(action=action)
 
             yield (state, action, next_state)
 
@@ -177,7 +177,7 @@ def sequential_action_sampler(
             _policy = ConstantPolicy(env, constant=action)
 
             sampler_instance = sampler(
-                system=env,
+                env=env,
                 policy=_policy,
                 sample_space=sample_space,
             )
@@ -188,14 +188,15 @@ def sequential_action_sampler(
 
 
 def trajectory_sampler(
-    system: DynamicalSystem = None,
+    time_horizon: int,
+    env: DynamicalSystem = None,
     policy: BasePolicy = None,
     sample_space: gym.Space = None,
 ):
     """Default trajectory sampler.
 
     Args:
-        system: The system to sample from.
+        env: The system to sample from.
         policy: The policy applied to the system during sampling.
         sample_space: The space where initial conditions are drawn from.
 
@@ -211,12 +212,12 @@ def trajectory_sampler(
         state_sequence = []
         action_sequence = []
 
-        system.state = state
+        env.state = state
 
         time = 0
-        for t in range(system.num_time_steps):
-            action = policy(time=time, state=system.state)
-            next_state, cost, done, _ = system.step(action)
+        for t in range(time_horizon):
+            action = policy(time=time, state=env.state)
+            next_state, cost, done, _ = env.step(time=t, action=action)
 
             state_sequence.append(next_state)
             action_sequence.append(action)

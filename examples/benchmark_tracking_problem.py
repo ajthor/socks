@@ -2,9 +2,11 @@
 
 This example demonstrates the optimal controller synthesis algorithm.
 
-By default, it uses a nonlinear dynamical system with nonholonomic vehicle dynamics. Other dynamical systems can also be used, by modifying the configuration as needed.
+By default, it uses a nonlinear dynamical system with nonholonomic vehicle dynamics.
+Other dynamical systems can also be used, by modifying the configuration as needed.
 
-Several configuration files are included in the `examples/configs` folder, and can be used by running the example using the `with` syntax, e.g.
+Several configuration files are included in the `examples/configs` folder, and can be
+used by running the example using the `with` syntax, e.g.
 
     $ python -m <experiment> with examples/configs/<config_file>
 
@@ -65,7 +67,6 @@ def system_config():
     system_id = "NonholonomicVehicleEnv-v0"
 
     sampling_time = 0.1
-    time_horizon = 2
 
     action_space = {
         "lower_bound": [0.1, -10.1],
@@ -87,7 +88,7 @@ def sample_config():
         "sample_scheme": "grid",
         "lower_bound": [0.1, -10.1],
         "upper_bound": [1.1, 10.1],
-        "grid_resolution": [10, 20],
+        "grid_resolution": [10, 21],
     }
 
 
@@ -136,7 +137,9 @@ def config(sample):
 
     sigma = 3  # Kernel bandwidth parameter.
     # Regularization parameter.
-    regularization_param = 1 / (sample["sample_space"]["sample_size"] ** 2)
+    regularization_param = 1e-5
+
+    time_horizon = 20
 
     # Whether or not to use dynamic programming (backward in time) algorithm.
     dynamic_programming = False
@@ -154,6 +157,7 @@ def main(
     seed,
     sigma,
     regularization_param,
+    time_horizon,
     dynamic_programming,
     batch_size,
     heuristic,
@@ -177,7 +181,7 @@ def main(
     A = generate_admissible_actions(seed=seed, env=env)
 
     # Compute the target trajectory.
-    target_trajectory = compute_target_trajectory(num_steps=env.num_time_steps)
+    target_trajectory = compute_target_trajectory(time_horizon=time_horizon)
     tracking_cost = make_cost(target_trajectory=target_trajectory)
 
     if dynamic_programming is True:
@@ -189,7 +193,7 @@ def main(
 
         # Compute policy.
         policy = alg_class(
-            num_steps=env.num_time_steps,
+            time_horizon=time_horizon,
             cost_fn=tracking_cost,
             heuristic=heuristic,
             verbose=verbose,
@@ -200,7 +204,7 @@ def main(
 
         policy.train(S=S, A=A)
 
-    trajectory = simulate_system(env, policy)
+    trajectory = simulate_system(time_horizon, env, policy)
 
     with open(results_filename, "wb") as f:
         np.save(f, target_trajectory)
@@ -214,6 +218,7 @@ def main(
 def plot_config(config, command_name, logger):
     if command_name in {"main", "plot_results"}:
         return {
+            "plot_dims": [0, 1],
             "target_trajectory_style": {
                 "lines.marker": "x",
                 "lines.linestyle": "--",
@@ -271,8 +276,8 @@ def plot_results(
     with plt.style.context(plot_cfg["trajectory_style"]):
         trajectory = np.array(trajectory, dtype=np.float32)
         plt.plot(
-            trajectory[:, 0],
-            trajectory[:, 1],
+            trajectory[:, plot_cfg["plot_dims"][0]],
+            trajectory[:, plot_cfg["plot_dims"][1]],
             label="System Trajectory",
         )
 
