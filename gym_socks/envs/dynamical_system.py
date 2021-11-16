@@ -124,7 +124,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
         """
 
-        action = np.asarray(action)
+        action = np.asarray(action, dtype=np.float32)
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
