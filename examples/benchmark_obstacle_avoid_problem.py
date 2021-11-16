@@ -51,10 +51,6 @@ from examples.ingredients.sample_ingredient import sample_ingredient
 from examples.ingredients.sample_ingredient import generate_sample
 from examples.ingredients.sample_ingredient import generate_admissible_actions
 
-from examples.ingredients.tracking_ingredient import tracking_ingredient
-from examples.ingredients.tracking_ingredient import compute_target_trajectory
-from examples.ingredients.tracking_ingredient import make_cost
-
 from examples.ingredients.plotting_ingredient import plotting_ingredient
 from examples.ingredients.plotting_ingredient import update_rc_params
 
@@ -101,7 +97,6 @@ ex = Experiment(
         system_ingredient,
         simulation_ingredient,
         sample_ingredient,
-        tracking_ingredient,
         plotting_ingredient,
     ]
 )
@@ -178,14 +173,9 @@ def main(
     # Generate the set of admissible control actions.
     A = generate_admissible_actions(seed=seed, env=env)
 
-    # Compute the target trajectory.
-    # target_trajectory = compute_target_trajectory(time_horizon=time_horizon)
-
     def _cost(time: int = 0, state: np.ndarray = None) -> float:
 
         dist = state[:, [0, 1]] - [0, 0]
-        # dist = state[:, [0, 2]] - [0, 0]
-        # dist = state - [0, 0, 0, 0, 0, 0]
         result = np.linalg.norm(dist, ord=2, axis=1)
         result = np.power(result, 2)
         return result
@@ -223,7 +213,6 @@ def main(
     trajectory = simulate_system(time_horizon, env, policy)
 
     with open(results_filename, "wb") as f:
-        # np.save(f, target_trajectory)
         np.save(f, trajectory)
 
     if not no_plot:
@@ -234,6 +223,8 @@ def main(
 def plot_config(config, command_name, logger):
     if command_name in {"main", "plot_results"}:
         return {
+            "plot_dims": [0, 1],
+            "plot_filename": "results/plot.gif",
             "target_trajectory_style": {
                 "lines.marker": "x",
                 "lines.linestyle": "--",
@@ -275,7 +266,6 @@ def plot_results(
     import matplotlib.pyplot as plt
 
     with open("results/data.npy", "rb") as f:
-        # target_trajectory = np.load(f)
         trajectory = np.load(f)
 
     fig = plt.figure()
@@ -290,21 +280,12 @@ def plot_results(
         ax.set_ylim(plot_cfg["axes"]["ylim"])
         ax.grid(True)
 
-        # # Plot target trajectory.
-        # with plt.style.context(plot_cfg["target_trajectory_style"]):
-        #     target_trajectory = np.array(target_trajectory, dtype=np.float32)
-        #     plt.plot(
-        #         target_trajectory[:, 0],
-        #         target_trajectory[:, 1],
-        #         label="Target Trajectory",
-        #     )
-
         # Plot generated trajectory.
         with plt.style.context(plot_cfg["trajectory_style"]):
             # trajectory = np.array(trajectory, dtype=np.float32)
             line = plt.plot(
-                trajectory[0:t, 0],
-                trajectory[0:t, 1],
+                trajectory[0:t, plot_cfg["plot_dims"][0]],
+                trajectory[0:t, plot_cfg["plot_dims"][1]],
                 alpha=0.1,
                 marker="None",
                 label="System Trajectory",
@@ -319,28 +300,21 @@ def plot_results(
             ms._transform = ms.get_transform().rotate_deg(angle)
 
             marker = plt.plot(
-                trajectory[t, 0],
-                trajectory[t, 1],
+                trajectory[t, plot_cfg["plot_dims"][0]],
+                trajectory[t, plot_cfg["plot_dims"][1]],
                 marker=ms,
                 markersize=4,
                 linestyle="None",
                 color="C0",
             )
-            # for x in trajectory:
-            #     angle = -np.rad2deg(x[2])
 
-            #     ms = matplotlib.markers.MarkerStyle(marker=paper_airplane)
-            #     ms._transform = ms.get_transform().rotate_deg(angle)
-
-            #     marker = plt.plot(
-            #         x[0], x[1], marker=ms, markersize=4, linestyle="None", color="C0"
-            #     )
         else:
             marker = plt.plot(
-                trajectory[t, 0], trajectory[t, 1], marker="o", color="C0"
+                trajectory[t, plot_cfg["plot_dims"][0]],
+                trajectory[t, plot_cfg["plot_dims"][1]],
+                marker="o",
+                color="C0",
             )
-
-        # plt.legend()
 
         patch = ax.add_patch(plt.Circle((1 - 0.02 * t, 0), 0.2, fc="none", ec="red"))
 
@@ -353,19 +327,7 @@ def plot_results(
         interval=system["sampling_time"],
     )
 
-    animation.save("results/plot.gif", dpi=300, fps=30)
-
-    # # Plot the markers as arrows, showing vehicle heading.
-    # paper_airplane = [(0, -0.25), (0.5, -0.5), (0, 1), (-0.5, -0.5), (0, -0.25)]
-
-    # if system["system_id"] == "NonholonomicVehicleEnv-v0":
-    #     for x in trajectory:
-    #         angle = -np.rad2deg(x[2])
-
-    #         t = matplotlib.markers.MarkerStyle(marker=paper_airplane)
-    #         t._transform = t.get_transform().rotate_deg(angle)
-
-    #         plt.plot(x[0], x[1], marker=t, markersize=4, linestyle="None", color="C1")
+    animation.save(plot_cfg["plot_filename"], dpi=300, fps=30)
 
     # plt.savefig(plot_cfg["plot_filename"])
 

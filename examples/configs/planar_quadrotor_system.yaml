@@ -1,3 +1,6 @@
+sigma: 0.35
+regularization_param: 0.0004
+
 system:
   system_id: "PlanarQuadrotorEnv-v0"
 
@@ -10,8 +13,8 @@ system:
 sample:
   sample_space:
     sample_scheme: "uniform"
-    lower_bound: [-1.2, -1, -2.5, -5, -2 * np.pi, -5]
-    upper_bound: [1.2, 1, 2.5, 5, 2 * np.pi, 5]
+    lower_bound: [-1.2, -1, -2.5, -5, -6.283185307179586, -5]
+    upper_bound: [1.2, 1, 2.5, 5, 6.283185307179586, 5]
     sample_size: 2500
 
   action_space:
@@ -21,4 +24,7 @@ sample:
     grid_resolution: [20, 20]
 
 simulation:
-  initial_condition: [0, 0, 0, 0, 0, 0]
+  initial_condition: [0, 0, 0.5, 0, 0, 0]
+
+plot_cfg:
+  plot_dims: [0, 2]

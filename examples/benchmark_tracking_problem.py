@@ -86,7 +86,7 @@ def sample_config():
         "sample_scheme": "grid",
         "lower_bound": [0.1, -10.1],
         "upper_bound": [1.1, 10.1],
-        "grid_resolution": [10, 20],
+        "grid_resolution": [10, 21],
     }
 
 
@@ -191,7 +191,7 @@ def main(
 
         # Compute policy.
         policy = alg_class(
-            num_steps=time_horizon,
+            time_horizon=time_horizon,
             cost_fn=tracking_cost,
             heuristic=heuristic,
             verbose=verbose,
@@ -216,6 +216,7 @@ def main(
 def plot_config(config, command_name, logger):
     if command_name in {"main", "plot_results"}:
         return {
+            "plot_dims": [0, 1],
             "target_trajectory_style": {
                 "lines.marker": "x",
                 "lines.linestyle": "--",
@@ -273,8 +274,8 @@ def plot_results(
     with plt.style.context(plot_cfg["trajectory_style"]):
         trajectory = np.array(trajectory, dtype=np.float32)
         plt.plot(
-            trajectory[:, 0],
-            trajectory[:, 1],
+            trajectory[:, plot_cfg["plot_dims"][0]],
+            trajectory[:, plot_cfg["plot_dims"][1]],
             label="System Trajectory",
         )
 
