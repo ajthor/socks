@@ -1,22 +1,25 @@
 import unittest
 from unittest.mock import patch
 
-import itertools
-
 import gym
 
-import gym_socks.envs
+from gym_socks.envs import NDIntegratorEnv
+from gym_socks.envs.policy import ConstantPolicy
+from gym_socks.envs.policy import RandomizedPolicy
 
-from gym_socks.sample.sample import sample
-from gym_socks.sample.sample import step_sampler
-from gym_socks.sample.sample import uniform_grid_step_sampler
-from gym_socks.sample.sample import trajectory_sampler
 from gym_socks.sample.sample import sample_generator
+from gym_socks.sample.sample import sample
+from gym_socks.sample.sample import default_sampler
+from gym_socks.sample.sample import default_trajectory_sampler
+from gym_socks.sample.sample import random_sampler
+from gym_socks.sample.sample import grid_sampler
+from gym_socks.sample.sample import repeat
 
 from gym_socks.sample.transform import transpose_sample
+from gym_socks.sample.transform import flatten_sample
 
-from gym_socks.utils.grid import make_grid
-from gym_socks.utils.grid import grid_size
+from gym_socks.utils.grid import make_grid_from_ranges
+from gym_socks.utils.grid import make_grid_from_space
 
 import numpy as np
 
@@ -24,103 +27,201 @@ import numpy as np
 class TestSample(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = gym_socks.envs.NDIntegratorEnv(2)
-        cls.policy = gym_socks.envs.policy.RandomizedPolicy(
-            action_space=cls.env.action_space
-        )
+        cls.env = NDIntegratorEnv(2)
+        cls.policy = RandomizedPolicy(action_space=cls.env.action_space)
 
         cls.sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         cls.sample_space.seed(1)
 
-    def test_step_sampler(cls):
+    def test_random_sampler(cls):
+        """Random sampler should output correct sample size."""
+
+        sample_size = 10
+
+        state_sampler = random_sampler(sample_space=cls.env.state_space)
+        action_sampler = random_sampler(sample_space=cls.env.action_space)
 
         S = sample(
-            sampler=step_sampler(
+            sampler=default_sampler(
+                state_sampler=state_sampler,
+                action_sampler=action_sampler,
                 env=cls.env,
-                policy=cls.policy,
-                sample_space=cls.sample_space,
             ),
-            sample_size=10,
+            sample_size=sample_size,
         )
 
         X, U, Y = transpose_sample(S)
 
-        cls.assertEqual(np.array(X).shape, (10, 2))
-        cls.assertEqual(np.array(U).shape, (10, 1))
-        cls.assertEqual(np.array(Y).shape, (10, 2))
+        cls.assertEqual(np.shape(X), (sample_size, 2))
+        cls.assertEqual(np.shape(U), (sample_size, 1))
+        cls.assertEqual(np.shape(Y), (sample_size, 2))
 
-    def test_uniform_step_sampler(cls):
+    def test_grid_sampler(cls):
+        """Grid sampler should output items on a grid of the correct size."""
 
-        ranges = [np.linspace(-1, 1, 5), np.linspace(-1, 1, 5)]
+        # print(np.repeat(np.linspace(-1, 1, 5), 2, axis=0))
+
+        sample_size = 27
+
+        state_sampler = repeat(
+            grid_sampler(
+                make_grid_from_space(
+                    sample_space=gym.spaces.Box(
+                        low=-1,
+                        high=1,
+                        shape=cls.env.state_space.shape,
+                        dtype=cls.env.state_space.dtype,
+                    ),
+                    resolution=3,
+                )
+            ),
+            num=3,
+        )
+
+        action_sampler = grid_sampler(make_grid_from_ranges([np.linspace(-1, 1, 3)]))
 
         S = sample(
-            sampler=uniform_grid_step_sampler(
-                ranges,
+            sampler=default_sampler(
+                state_sampler=state_sampler,
+                action_sampler=action_sampler,
                 env=cls.env,
-                policy=cls.policy,
-                sample_space=cls.sample_space,
             ),
-            sample_size=25,
+            sample_size=sample_size,
         )
 
         X, U, Y = transpose_sample(S)
 
-        cls.assertEqual(np.array(X).shape, (25, 2))
-        cls.assertEqual(np.array(U).shape, (25, 1))
-        cls.assertEqual(np.array(Y).shape, (25, 2))
+        groundTruth = [
+            [-1.0, -1.0],
+            [-1.0, -1.0],
+            [-1.0, -1.0],
+            [-1.0, 0.0],
+            [-1.0, 0.0],
+            [-1.0, 0.0],
+            [-1.0, 1.0],
+            [-1.0, 1.0],
+            [-1.0, 1.0],
+            [0.0, -1.0],
+            [0.0, -1.0],
+            [0.0, -1.0],
+            [0.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [1.0, -1.0],
+            [1.0, -1.0],
+            [1.0, -1.0],
+            [1.0, 0.0],
+            [1.0, 0.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 1.0],
+            [1.0, 1.0],
+        ]
 
-        groundTruth = list(itertools.product(*ranges))
-        cls.assertTrue(np.all(np.equal(np.array(X), groundTruth)))
+        cls.assertTrue(np.array_equiv(X, groundTruth))
 
-        # Sample more than ranges.
+        groundTruth = [
+            [-1.0],
+            [0.0],
+            [1.0],
+            [-1.0],
+            [0.0],
+            [1.0],
+            [-1.0],
+            [0.0],
+            [1.0],
+            [-1.0],
+            [0.0],
+            [1.0],
+            [-1.0],
+            [0.0],
+            [1.0],
+            [-1.0],
+            [0.0],
+            [1.0],
+            [-1.0],
+            [0.0],
+            [1.0],
+            [-1.0],
+            [0.0],
+            [1.0],
+            [-1.0],
+            [0.0],
+            [1.0],
+        ]
+
+        cls.assertTrue(np.array_equiv(U, groundTruth))
+
+        cls.assertEqual(np.shape(X), (sample_size, 2))
+        cls.assertEqual(np.shape(U), (sample_size, 1))
+        cls.assertEqual(np.shape(Y), (sample_size, 2))
+
+    def test_default_sampler(cls):
+        """Default sampler should output sample of the correct size."""
+
+        sample_size = 10
+
+        state_sampler = random_sampler(sample_space=cls.env.state_space)
+        action_sampler = random_sampler(sample_space=cls.env.action_space)
+
         S = sample(
-            sampler=uniform_grid_step_sampler(
-                ranges,
+            sampler=default_sampler(
+                state_sampler=state_sampler,
+                action_sampler=action_sampler,
                 env=cls.env,
-                policy=cls.policy,
-                sample_space=cls.sample_space,
             ),
-            sample_size=50,
+            sample_size=sample_size,
         )
 
         X, U, Y = transpose_sample(S)
 
-        cls.assertEqual(np.array(X).shape, (50, 2))
-        cls.assertEqual(np.array(U).shape, (50, 1))
-        cls.assertEqual(np.array(Y).shape, (50, 2))
-
-        cls.assertTrue(np.all(np.equal(np.array(X[:25]), np.array(X[25:]))))
+        cls.assertEqual(np.array(X).shape, (sample_size, 2))
+        cls.assertEqual(np.array(U).shape, (sample_size, 1))
+        cls.assertEqual(np.array(Y).shape, (sample_size, 2))
 
     def test_trajectory_sampler(cls):
+        """Default trajectory sampler should output sample of the correct size."""
+
+        sample_size = 10
+        time_horizon = 5
+
+        state_sampler = random_sampler(sample_space=cls.env.state_space)
+        action_sampler = random_sampler(sample_space=cls.env.action_space)
 
         S = sample(
-            sampler=trajectory_sampler(
-                time_horizon=16,
+            sampler=default_trajectory_sampler(
+                state_sampler=state_sampler,
+                action_sampler=action_sampler,
                 env=cls.env,
-                policy=cls.policy,
-                sample_space=cls.sample_space,
+                time_horizon=5,
             ),
-            sample_size=10,
+            sample_size=sample_size,
         )
 
         cls.assertEqual(np.array(S[0][0]).shape, (2,))
-        cls.assertEqual(np.array(S[0][1]).shape, (16, 1))
-        cls.assertEqual(np.array(S[0][2]).shape, (16, 2))
+        cls.assertEqual(np.array(S[0][1]).shape, (5, 1))
+        cls.assertEqual(np.array(S[0][2]).shape, (5, 2))
 
         X, U, Y = transpose_sample(S)
 
-        cls.assertEqual(np.array(X).shape, (10, 2))
-        cls.assertEqual(np.array(U).shape, (10, 16, 1))
-        cls.assertEqual(np.array(Y).shape, (10, 16, 2))
+        cls.assertEqual(np.array(X).shape, (sample_size, 2))
+        cls.assertEqual(np.array(U).shape, (sample_size, 5, 1))
+        cls.assertEqual(np.array(Y).shape, (sample_size, 5, 2))
 
-        ST = gym_socks.envs.sample.reshape_trajectory_sample(S)
+        ST = flatten_sample(S)
         X, U, Y = transpose_sample(ST)
 
-        cls.assertEqual(np.array(X).shape, (10, 2))
-        cls.assertEqual(np.array(U).shape, (10, 16))
-        cls.assertEqual(np.array(Y).shape, (10, 32))
+        cls.assertEqual(np.array(X).shape, (sample_size, 2))
+        cls.assertEqual(np.array(U).shape, (sample_size, 5))
+        cls.assertEqual(np.array(Y).shape, (sample_size, 10))
 
     def test_custom_sampler_as_function(cls):
+
+        sample_size = 10
+
         @sample_generator
         def custom_sampler():
             state = cls.sample_space.sample()
@@ -135,16 +236,19 @@ class TestSample(unittest.TestCase):
 
         S = sample(
             sampler=custom_sampler,
-            sample_size=10,
+            sample_size=sample_size,
         )
 
         X, U, Y = transpose_sample(S)
 
-        cls.assertEqual(np.array(X).shape, (10, 2))
-        cls.assertEqual(np.array(U).shape, (10, 1))
-        cls.assertEqual(np.array(Y).shape, (10, 2))
+        cls.assertEqual(np.array(X).shape, (sample_size, 2))
+        cls.assertEqual(np.array(U).shape, (sample_size, 1))
+        cls.assertEqual(np.array(Y).shape, (sample_size, 2))
 
     def test_custom_sampler_as_generator(cls):
+
+        sample_size = 10
+
         @sample_generator
         def custom_sampler():
             state = cls.sample_space.sample()
@@ -159,103 +263,41 @@ class TestSample(unittest.TestCase):
 
         S = sample(
             sampler=custom_sampler,
-            sample_size=10,
+            sample_size=sample_size,
         )
 
         X, U, Y = transpose_sample(S)
 
-        cls.assertEqual(np.array(X).shape, (10, 2))
-        cls.assertEqual(np.array(U).shape, (10, 1))
-        cls.assertEqual(np.array(Y).shape, (10, 2))
+        cls.assertEqual(np.array(X).shape, (sample_size, 2))
+        cls.assertEqual(np.array(U).shape, (sample_size, 1))
+        cls.assertEqual(np.array(Y).shape, (sample_size, 2))
 
-    def test_custom_generator_sampler(cls):
-        @sample_generator
-        def random_sampler(sample_space: gym.Space):
-            yield sample_space.sample()
+    def test_custom_policy_sampler(cls):
 
-        @sample_generator
-        def grid_sampler(sample_space: gym.spaces.Box, resolution):
-            if not sample_space.is_bounded():
-                raise ValueError("space must be bounded.")
+        sample_size = 10
 
-            low = sample_space.low
-            high = sample_space.high
-
-            if np.isscalar(resolution):
-                xi = np.linspace(low, high, resolution, axis=-1)
-                grid = make_grid(xi)
-
-            else:
-                assert (
-                    np.shape(resolution) == sample_space.shape
-                ), "resolution.shape doesn't match provided shape"
-                xi = []
-                for i, value in enumerate(resolution):
-                    xi.append(np.linspace(low[i], high[i], value))
-
-                grid = make_grid(xi)
-
-            for item in grid:
-                yield item
-
-        @sample_generator
-        def repeat(_sample_generator, num: int):
-            for item in _sample_generator:
-                for i in range(num):
-                    yield item
-
-        # print(np.repeat(np.linspace(-1, 1, 5), 2, axis=0))
-
-        state_sampler = repeat(
-            grid_sampler(
-                sample_space=gym.spaces.Box(
-                    low=-1,
-                    high=1,
-                    shape=cls.env.state_space.shape,
-                    dtype=cls.env.state_space.dtype,
-                ),
-                resolution=3,
-            ),
-            num=3,
-        )
-
-        action_sampler = grid_sampler(
-            sample_space=gym.spaces.Box(
-                low=-1,
-                high=1,
-                shape=cls.env.action_space.shape,
-                dtype=cls.env.action_space.dtype,
-            ),
-            resolution=3,
-        )
-        # action_sampler = repeat_sampler(grid=np.linspace(-1, 1, 3), num=3)
-
-        # state_sampler.send(None)
-        # action_sampler.send(None)
+        state_sampler = random_sampler(sample_space=cls.env.state_space)
+        policy = ConstantPolicy(action_space=cls.env.action_space, constant=-1.0)
 
         @sample_generator
         def custom_sampler():
             state = next(state_sampler)
-            action = next(action_sampler)
-
-            # print(state)
-            # print(action)
+            action = policy()
 
             cls.env.state = state
-            next_state, *_ = cls.env.step(action=np.asarray(action, dtype=np.float32))
+            next_state, *_ = cls.env.step(action=action)
 
             yield (state, action, next_state)
 
         S = sample(
             sampler=custom_sampler,
-            sample_size=25,
+            sample_size=sample_size,
         )
 
         X, U, Y = transpose_sample(S)
 
-        print(np.array(X))
-        print(np.array(U))
+        cls.assertTrue(np.array_equiv(U, [-1.0] * sample_size))
 
-        # cls.assertEqual(np.array(X).shape, (10, 2))
-        # cls.assertEqual(np.array(U).shape, (10, 1))
-        # cls.assertEqual(np.array(Y).shape, (10, 2))
+        cls.assertEqual(np.array(X).shape, (sample_size, 2))
+        cls.assertEqual(np.array(U).shape, (sample_size, 1))
+        cls.assertEqual(np.array(Y).shape, (sample_size, 2))

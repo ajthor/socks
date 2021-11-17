@@ -76,37 +76,3 @@ class TestIndicatorFunction(unittest.TestCase):
         groundTruth = np.array([True, False], dtype=bool)
         indicator_result = gym_socks.utils.indicator_fn(points=points, set=interval)
         cls.assertTrue(np.all(np.equal(indicator_result, groundTruth)))
-
-
-class TestGenerateBatches(unittest.TestCase):
-    """Test generate_batches."""
-
-    def test_generate_batches(cls):
-        """Test generate batches."""
-        idx = np.arange(10)
-
-        batches = gym_socks.utils.generate_batches(num_elements=10, batch_size=2)
-        for i, batch in enumerate(batches):
-            cls.assertTrue(len(idx[batch]) == 2)
-            cls.assertTrue(np.all(np.equal(idx[batch], idx[i * 2 : i * 2 + 2])))
-
-        batches = gym_socks.utils.generate_batches(num_elements=10, batch_size=5)
-        for i, batch in enumerate(batches):
-            cls.assertTrue(len(idx[batch]) == 5)
-            cls.assertTrue(np.all(np.equal(idx[batch], idx[i * 5 : i * 5 + 5])))
-
-    def test_batch_larger_than_set(cls):
-        """Ensure batches past the maximum size work properly."""
-
-        idx = np.arange(10)
-
-        batches = gym_socks.utils.generate_batches(num_elements=14, batch_size=7)
-        batches.send(None)
-        batch = batches.send(None)
-        cls.assertTrue(len(idx[batch]) == 3)
-        cls.assertTrue(np.all(np.equal(idx[batch], idx[-3:])))
-
-        batches = gym_socks.utils.generate_batches(num_elements=10, batch_size=14)
-        batch = batches.send(None)
-        cls.assertTrue(len(idx[batch]) == 10)
-        cls.assertTrue(np.all(np.equal(idx[batch], idx[:])))

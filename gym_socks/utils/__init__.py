@@ -1,6 +1,5 @@
-__all__ = ["logging"]
+__all__ = ["batch", "grid", "logging"]
 
-from typing import Generator
 import gym
 
 import numpy as np
@@ -23,7 +22,7 @@ def normalize(v: np.ndarray) -> np.ndarray:
     return v / np.sum(v, axis=0)
 
 
-def _gym_space_contains(points: np.ndarray, set: gym.spaces.Box) -> np.ndarray:
+def _box_contains(points: np.ndarray, set: gym.spaces.Box) -> np.ndarray:
     """Lightweight indicator for gym.spaces.Box sets.
 
     Provides a lightweight proxy for the `contains` function in `gym.spaces.Box`. The
@@ -67,39 +66,9 @@ def indicator_fn(points: np.ndarray, set: any) -> np.ndarray:
     """
 
     if isinstance(set, gym.spaces.Box):
-        return _gym_space_contains(points, set)
+        return _box_contains(points, set)
 
     return np.array(set(points), dtype=bool)
-
-
-def generate_batches(num_elements, batch_size) -> Generator[slice, None, None]:
-    """Generate batches.
-
-    Batch generation function to split a list into smaller batches (slices). Generates
-    `slice` objects, which can be iterated over in a for loop.
-
-    Args:
-        num_elements: Length of the list.
-        batch_size: Maximum size of the batches. If the last batch is smaller than
-            `batch_size`, then the final batch will be the length of the remaining
-            elements.
-
-    Yields:
-        A slice object.
-
-    """
-
-    start = 0
-
-    for _ in range(num_elements // batch_size):
-        end = start + batch_size
-
-        yield slice(start, end)
-
-        start = end
-
-    if start < num_elements:
-        yield slice(start, num_elements)
 
 
 def save_mat_file(filename: str, data: dict):

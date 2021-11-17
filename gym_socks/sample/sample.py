@@ -77,17 +77,74 @@ def sample_generator(fun):
     return _wrapper
 
 
-def step_sampler(
-    env: DynamicalSystem = None,
-    policy: BasePolicy = None,
-    sample_space: gym.Space = None,
-):
-    """Default sampler (one step).
+@sample_generator
+def random_sampler(sample_space: gym.Space):
+    """Random sampler.
+
+    Returns a random sample taken from the space. See `gym.spaces.Box` for more
+    information on the distributions used for sampling.
 
     Args:
+        sample_space: The space to sample from.
+
+    Yields:
+        A sample from the `sample_space`.
+
+    """
+
+    yield sample_space.sample()
+
+
+@sample_generator
+def grid_sampler(grid: list):
+    """Grid sampler.
+
+    Returns a sample arranged on a uniformly-spaced grid. Use `make_grid_from_ranges` or
+    `make_grid_from_space` from `gym_socks.utils.grid` to generate a grid of points.
+
+    Args:
+        grid: The grid of points.
+
+    Yields:
+        A sample from the `sample_space`.
+
+    """
+
+    for item in grid:
+        yield item
+
+
+@sample_generator
+def repeat(sampler, num: int):
+    """Repeat sampler.
+
+    Repeats the output of a sample generator `num` times.
+
+    Args:
+        sampler: The sample generator function.
+        num: The number of times to repeat a sample.
+
+    Yields:
+        A repeated sample.
+
+    """
+
+    for item in sampler:
+        for i in range(num):
+            yield item
+
+
+def default_sampler(
+    state_sampler=None,
+    action_sampler=None,
+    env: DynamicalSystem = None,
+):
+    """Default trajectory sampler.
+
+    Args:
+        state_sampler: The state space sampler.
+        action_sampler: The action space sampler.
         env: The system to sample from.
-        policy: The policy applied to the system during sampling.
-        sample_space: The space where initial conditions are drawn from.
 
     Returns:
         A generator function that yields system observations as tuples.
@@ -96,89 +153,30 @@ def step_sampler(
 
     @sample_generator
     def _sample_generator():
-        state = sample_space.sample()
-        action = policy(state=state)
+        state = next(state_sampler)
+        action = next(action_sampler)
 
         env.state = state
-        next_state, cost, done, _ = env.step(action=action)
+        next_state, *_ = env.step(action=action)
 
         yield (state, action, next_state)
 
     return _sample_generator
 
 
-def uniform_grid_step_sampler(
-    xi: list,
+def default_trajectory_sampler(
+    state_sampler=None,
+    action_sampler=None,
     env: DynamicalSystem = None,
-    policy: BasePolicy = None,
-    sample_space: gym.Space = None,
-):
-    """Uniform sampler (one step).
-
-    Args:
-        xi: List of ranges.
-        env: The system to sample from.
-        policy: The policy applied to the system during sampling.
-        sample_space: The space where initial conditions are drawn from.
-
-    Returns:
-        A generator function that yields system observations as tuples.
-
-    """
-
-    xc = uniform_grid(xi)
-
-    @sample_generator
-    def _sample_generator():
-        for point in xc:
-            state = point
-            action = policy(state=state)
-
-            env.state = state
-            next_state, cost, done, _ = env.step(action=action)
-
-            yield (state, action, next_state)
-
-    return _sample_generator
-
-
-def sequential_action_sampler(
-    ui: list,
-    env: DynamicalSystem,
-    sample_space: gym.Space,
-    sampler,
-):
-
-    uc = uniform_grid(ui)
-
-    @sample_generator
-    def _wrapper(*args, **kwargs):
-        for action in uc:
-            _policy = ConstantPolicy(env, constant=action)
-
-            sampler_instance = sampler(
-                env=env,
-                policy=_policy,
-                sample_space=sample_space,
-            )
-
-            yield sampler_instance(*args, **kwargs)
-
-    return _wrapper
-
-
-def trajectory_sampler(
-    time_horizon: int,
-    env: DynamicalSystem = None,
-    policy: BasePolicy = None,
-    sample_space: gym.Space = None,
+    time_horizon: int = 1,
 ):
     """Default trajectory sampler.
 
     Args:
+        state_sampler: The state space sampler.
+        action_sampler: The action space sampler.
         env: The system to sample from.
-        policy: The policy applied to the system during sampling.
-        sample_space: The space where initial conditions are drawn from.
+        time_horizon: The time horizon to simulate over.
 
     Returns:
         A generator function that yields system observations as tuples.
@@ -187,7 +185,7 @@ def trajectory_sampler(
 
     @sample_generator
     def _sample_generator():
-        state = sample_space.sample()
+        state = next(state_sampler)
 
         state_sequence = []
         action_sequence = []
@@ -196,8 +194,8 @@ def trajectory_sampler(
 
         time = 0
         for t in range(time_horizon):
-            action = policy(time=time, state=env.state)
-            next_state, cost, done, _ = env.step(time=t, action=action)
+            action = next(action_sampler)
+            next_state, *_ = env.step(time=t, action=action)
 
             state_sequence.append(next_state)
             action_sequence.append(action)
