@@ -5,6 +5,8 @@ from gym.utils import seeding
 
 import numpy as np
 
+from functools import wraps
+
 
 class BaseDynamicalObject(gym.Env, ABC):
     """Base dynamical object class.
@@ -67,3 +69,81 @@ class BaseDynamicalObject(gym.Env, ABC):
         """
 
         return
+
+
+def pre_hook_wrapper(pre_hook):
+    def _outer_wrapper(fun):
+        @wraps(fun)
+        def _wrapper(*args, **kwargs):
+            pre_hook()
+            result = fun(*args, **kwargs)
+            return result
+
+        return _wrapper
+
+    return _outer_wrapper
+
+
+def post_hook_wrapper(post_hook):
+    def _outer_wrapper(fun):
+        @wraps(fun)
+        def _wrapper(*args, **kwargs):
+            result = fun(*args, **kwargs)
+            post_hook()
+            return result
+
+        return _wrapper
+
+    return _outer_wrapper
+
+
+class BaseWrapper(object):
+    """Wrapper for BaseDynamicalObjects."""
+
+    def __init__(self, env):
+        self.__class__ = type(
+            env.__class__.__name__, (self.__class__, env.__class__), {}
+        )
+
+        self.__dict__ = env.__dict__
+
+        self.env = env
+
+
+# class HookWrapper(BaseWrapper):
+#     def __getattr__(self, attr):
+#         """Wrapped __getattr__."""
+#         _attr = self.env.__getattribute__(attr)
+
+#         if callable(_attr):
+
+#             @wraps(callable)
+#             def _wrapper(*args, **kwargs):
+#                 self.pre_hook()
+#                 result = _attr(*args, **kwargs)
+#                 self.post_hook()
+
+#                 # prevent unwrapping
+#                 if result is self.env:
+#                     return self
+
+#                 return result
+
+#             return _wrapper
+
+#         else:
+#             return _attr
+
+#     # @abstractmethod
+#     def pre_hook(self):
+#         raise NotImplementedError
+
+#     # @abstractmethod
+#     def post_hook(self):
+#         raise NotImplementedError
+
+#     # def reset(self):
+#     #     self.pre_hook()
+#     #     result = self.env.reset()
+#     #     self.post_hook()
+#     #     return result

@@ -57,11 +57,11 @@ def sample_generator(fun):
         >>> from itertools import islice
         >>> from gym_socks.envs.sample import sample_generator
         >>> @sample_generator
-        ... def custom_sampler(system, policy, sample_space):
-        ...     system.state = sample_space.sample()
+        ... def custom_sampler(env, policy, sample_space):
+        ...     env.state = sample_space.sample()
         ...     action = policy(state=state)
-        ...     next_state, *_ = system.step(action)
-        ...     yield (system.state, action, next_state)
+        ...     next_state, *_ = env.step(action)
+        ...     yield (env.state, action, next_state)
         >>> S = list(islice(custom_sampler(), 100))
 
     """
