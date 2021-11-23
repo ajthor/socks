@@ -14,10 +14,16 @@ from functools import partial
 import gym_socks
 
 from gym_socks.envs.policy import BasePolicy
+
 from gym_socks.algorithms.control.control_common import compute_solution
+
 from gym_socks.kernel.metrics import rbf_kernel, regularized_inverse
+
 from gym_socks.envs.sample import transpose_sample
+
+from gym_socks.utils import normalize
 from gym_socks.utils import generate_batches
+
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
@@ -72,12 +78,6 @@ def _compute_backward_recursion(
 
         else:
             V = np.min(C, axis=1)
-
-        # for i in range(len(Y)):
-        #     sol = compute_solution(C[i], D[i])
-        #     # idx = np.argmax(sol)
-        #     # V =
-        #     V[i] = sol
 
         out[t, :] = cost_fn(time=t) + V
 
@@ -401,5 +401,6 @@ class KernelControlBwd(BasePolicy):
         # Compute the solution to the LP.
         gym_socks.logger.debug("Computing solution to the LP.")
         sol = compute_solution(C, D, heuristic=self.heuristic)
+        sol = normalize(sol)  # Normalize the vector.
         idx = np.random.choice(self.CUA.shape[1], size=None, p=sol)
         return np.array(self.A[idx], dtype=np.float32)

@@ -13,8 +13,12 @@ from functools import partial
 import gym_socks
 
 from gym_socks.envs.policy import BasePolicy
+
 from gym_socks.algorithms.control.control_common import compute_solution
+
 from gym_socks.kernel.metrics import rbf_kernel, regularized_inverse
+
+from gym_socks.utils import normalize
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
@@ -208,5 +212,6 @@ class KernelControlFwd(BasePolicy):
         # Compute the solution to the LP.
         gym_socks.logger.debug("Computing solution to the LP.")
         sol = compute_solution(C, D, heuristic=self.heuristic)
+        sol = normalize(sol)  # Normalize the vector.
         idx = np.random.choice(self.CUA.shape[1], size=None, p=sol)
         return np.array(self.A[idx], dtype=np.float32)
