@@ -208,5 +208,5 @@ class KernelControlFwd(BasePolicy):
         # Compute the solution to the LP.
         gym_socks.logger.debug("Computing solution to the LP.")
         sol = compute_solution(C, D, heuristic=self.heuristic)
-        idx = np.argmax(sol)
+        idx = np.random.choice(self.CUA.shape[1], size=None, p=sol)
         return np.array(self.A[idx], dtype=np.float32)
