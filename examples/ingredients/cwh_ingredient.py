@@ -44,7 +44,7 @@ def make_cost(env: DynamicalSystem, target_state, norm_order, squared):
 
 
 @cwh_ingredient.capture
-def make_constraint(env: DynamicalSystem):
+def make_constraint(time_horizon: int, env: DynamicalSystem):
     def _constraint_fn(time: int = 0, state: np.ndarray = None) -> float:
         """CWH constraint function.
 
@@ -65,7 +65,7 @@ def make_constraint(env: DynamicalSystem):
         """
 
         # Terminal constraint.
-        if time < env.num_time_steps - 1:
+        if time < time_horizon - 1:
             satisfies_constraints = (
                 -np.array(
                     (np.abs(state[:, 0]) < np.abs(state[:, 1]))

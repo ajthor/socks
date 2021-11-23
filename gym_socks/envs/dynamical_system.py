@@ -3,13 +3,13 @@ from abc import ABC, abstractmethod
 import gym
 from gym.utils import seeding
 
-import gym_socks
-
 import numpy as np
 from scipy.integrate import solve_ivp
 
+from gym_socks.envs.core import BaseDynamicalObject
 
-class DynamicalSystem(gym.Env, ABC):
+
+class DynamicalSystem(BaseDynamicalObject, ABC):
     """Base class for dynamical system models.
 
     This class is ABSTRACT, meaning it is not meant to be instantiated directly.
@@ -25,12 +25,6 @@ class DynamicalSystem(gym.Env, ABC):
         ...
         ...     def dynamics(self, t, x, u, w):
         ...         return u
-        ...
-        ...     def reset(self):
-        ...         self.state = self.np_random.uniform(
-        ...             low=-1, high=1, size=self.observation_space.shape
-        ...         )
-        ...         return np.array(self.state)
 
     Note:
         * The state space and input space are assumed to be R^n and R^m, where n and m
@@ -64,124 +58,58 @@ class DynamicalSystem(gym.Env, ABC):
 
     """
 
-    metadata = {"render.modes": ["human"]}
+    observation_space = None
+    action_space = None
+    state_space = None
 
-    def __init__(
-        self,
-        observation_space: gym.Space = None,
-        state_space: gym.Space = None,
-        action_space: gym.Space = None,
-        seed: int = None,
-        euler: bool = False,
-        *args,
-        **kwargs,
-    ):
+    _euler = False
 
-        if observation_space is None:
-            raise ValueError("Must supply an observation_space.")
-
-        self.observation_space = observation_space
-
-        if state_space is None:
-            state_space = observation_space
-
-        self.state_space = state_space
-
-        if action_space is None:
-            raise ValueError("Must supply an action_space.")
-
-        self.action_space = action_space
-
-        # Time parameters.
-        self._time_horizon = 1
-        self._sampling_time = 0.1
-
-        self.state = None
-
-        self._seed = None
-        self._np_random = None
-        if seed is not None:
-            self._seed = self.seed(seed)
-
-        self._euler = euler
-
-    @property
-    def np_random(self):
-        """Random number generator."""
-        if self._np_random is None:
-            self._seed = self.seed()
-
-        return self._np_random
-
-    def seed(self, seed=None):
-        """Sets the seed of the random number generator.
-
-        Args:
-            seed: Integer value representing the random seed.
-
-        Returns:
-            The seed of the RNG.
-
-        """
-        self._np_random, seed = seeding.np_random(seed)
-        return [seed]
+    _sampling_time = 0.1
 
     @property
     def sampling_time(self):
-        """Sampling time of the system."""
+        """Sampling time."""
         return self._sampling_time
 
     @sampling_time.setter
     def sampling_time(self, value):
-        # msg = f"Sampling time {value} is less than time horizon {self._time_horizon}."
-        # if value > self._time_horizon:
-        #     gym_socks.logging.warn(msg)
         self._sampling_time = value
 
-    @property
-    def time_horizon(self):
-        """Time horizon of the system."""
-        return self._time_horizon
+    def generate_disturbance(self, time, state, action):
+        """Generate disturbance."""
+        return self._np_random.standard_normal(size=self.state_space.shape)
 
-    @time_horizon.setter
-    def time_horizon(self, value):
-        # msg = f"Sampling time {value} is less than time horizon {self._time_horizon}."
-        # if value < self._sampling_time:
-        #     gym_socks.logging.warn(msg)
-        self._time_horizon = value
+    @abstractmethod
+    def dynamics(self, time, state, action, disturbance):
+        """Dynamics for the system.
 
-    @property
-    def num_time_steps(self):
-        """Number of time steps.
-
-        Defined as the `time_horizon // sampling_time`.
+        The dynamics are typically specified by a function::
+            y = f(t, x, u, w)
+                  ┬  ┬  ┬  ┬
+                  │  │  │  └┤ w : Disturbance
+                  │  │  └───┤ u : Control action
+                  │  └──────┤ x : System state
+                  └─────────┤ t : Time variable
 
         """
-        return int(self._time_horizon // self._sampling_time)
+        raise NotImplementedError
 
-    @property
-    def observation_dim(self):
-        """Dimensionality of the observation space."""
-        return self.observation_space.shape
+    def generate_observation(self, time, state, action):
+        """Generate observation."""
+        return np.array(state, dtype=np.float32)
 
-    @property
-    def state_dim(self):
-        """Dimensionality of the state space."""
-        return self.state_space.shape
+    def cost(self, time, state, action):
+        """Cost function for the system."""
+        return 0.0
 
-    @property
-    def action_dim(self):
-        """Dimensionality of the action space."""
-        return self.action_space.shape
-
-    def step(self, action, time=0):
+    def step(self, time=0, action=None):
         """Step function defined by OpenAI Gym.
 
         Advances the system forward one time step.
 
         Args:
-            action: Action (input) applied to the system at the current time step.
             time: Time of the simulation. Used primarily for time-varying systems.
+            action: Action (input) applied to the system at the current time step.
 
         Returns:
             obs: The observation vector. Generally, it is the state of the system
@@ -195,6 +123,8 @@ class DynamicalSystem(gym.Env, ABC):
             info: Extra information.
 
         """
+
+        action = np.asarray(action)
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
@@ -233,36 +163,31 @@ class DynamicalSystem(gym.Env, ABC):
     def reset(self):
         """Reset the system to a random initial condition."""
         self.state = self.state_space.sample()
+        return np.array(self.state, dtype=np.float32)
 
     def render(self, mode="human"):
         raise NotImplementedError
 
     def close(self):
-        raise NotImplementedError
+        pass
 
-    def generate_disturbance(self, time, state, action):
-        """Generate disturbance."""
-        return self._np_random.standard_normal(size=self.state_space.shape)
+    @property
+    def np_random(self):
+        """Random number generator."""
+        if self._np_random is None:
+            self.seed()
 
-    @abstractmethod
-    def dynamics(self, time, state, action, disturbance):
-        """Dynamics for the system.
+        return self._np_random
 
-        The dynamics are typically specified by a function::
-            y = f(t, x, u, w)
-                  ┬  ┬  ┬  ┬
-                  │  │  │  └┤ w : Disturbance
-                  │  │  └───┤ u : Control action
-                  │  └──────┤ x : System state
-                  └─────────┤ t : Time variable
+    def seed(self, seed=None):
+        """Sets the seed of the random number generator.
+
+        Args:
+            seed: Integer value representing the random seed.
+
+        Returns:
+            The seed of the RNG.
 
         """
-        raise NotImplementedError
-
-    def generate_observation(self, time, state, action):
-        """Generate observation."""
-        return state
-
-    def cost(self, time, state, action):
-        """Cost function for the system."""
-        return 0.0
+        self._np_random, seed = seeding.np_random(seed)
+        return [seed]

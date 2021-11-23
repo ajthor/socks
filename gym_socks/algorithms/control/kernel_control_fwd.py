@@ -106,7 +106,6 @@ class KernelControlFwd(BasePolicy):
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
 
         self.cost_fn = cost_fn
         self.constraint_fn = constraint_fn

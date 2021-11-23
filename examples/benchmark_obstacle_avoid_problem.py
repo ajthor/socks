@@ -1,11 +1,20 @@
-"""Satellite rendezvous and docking.
+"""Stochastic optimal control (obstacle avoid).
 
-This example demonstrates the optimal controller synthesis algorithm on a satellite rendezvous and docking problem with CWH dynamics.
+This example demonstrates the optimal controller synthesis algorithm on an obstacle
+avoidance problemlem.
+
+By default, it uses a nonlinear dynamical system with nonholonomic vehicle dynamics.
+Other dynamical systems can also be used, by modifying the configuration as needed.
+
+Several configuration files are included in the `examples/configs` folder, and can be
+used by running the example using the `with` syntax, e.g.
+
+    $ python -m <experiment> with examples/configs/<config_file>
 
 Example:
     To run the example, use the following command:
 
-        $ python -m examples.benchmark_cwh_problem
+        $ python -m examples.benchmark_tracking_problem
 
 .. [1] `Stochastic Optimal Control via
         Hilbert Space Embeddings of Distributions, 2021
@@ -32,8 +41,6 @@ from sklearn.metrics.pairwise import rbf_kernel
 from gym_socks.algorithms.control import KernelControlFwd
 from gym_socks.algorithms.control import KernelControlBwd
 
-from gym_socks.envs.sample import transpose_sample
-
 from examples._computation_timer import ComputationTimer
 
 from examples.ingredients.system_ingredient import system_ingredient
@@ -47,23 +54,20 @@ from examples.ingredients.sample_ingredient import sample_ingredient
 from examples.ingredients.sample_ingredient import generate_sample
 from examples.ingredients.sample_ingredient import generate_admissible_actions
 
-from examples.ingredients.cwh_ingredient import cwh_ingredient
-from examples.ingredients.cwh_ingredient import make_cost
-from examples.ingredients.cwh_ingredient import make_constraint
-
 from examples.ingredients.plotting_ingredient import plotting_ingredient
 from examples.ingredients.plotting_ingredient import update_rc_params
 
 
 @system_ingredient.config
 def system_config():
-    system_id = "CWH4DEnv-v0"
 
-    sampling_time = 20
+    system_id = "NonholonomicVehicleEnv-v0"
+
+    sampling_time = 0.1
 
     action_space = {
-        "lower_bound": -0.1,
-        "upper_bound": 0.1,
+        "lower_bound": [0.1, -10.1],
+        "upper_bound": [1.1, 10.1],
     }
 
 
@@ -71,28 +75,24 @@ def system_config():
 def sample_config():
 
     sample_space = {
-        "sample_scheme": "grid",
-        "lower_bound": [-1.1, -1.1, -0.06, -0.06],
-        "upper_bound": [1.1, 0.1, 0.06, 0.06],
-        "grid_resolution": [10, 10, 5, 5],
-    }
-
-    sample_policy = {
-        "sample_scheme": "random",
+        "sample_scheme": "uniform",
+        "lower_bound": [-1.2, -1.2, -2 * np.pi],
+        "upper_bound": [1.2, 1.2, 2 * np.pi],
+        "sample_size": 1500,
     }
 
     action_space = {
-        "sample_scheme": "uniform",
-        "lower_bound": -0.05,
-        "upper_bound": 0.05,
-        "sample_size": 500,
+        "sample_scheme": "grid",
+        "lower_bound": [0.1, -10.1],
+        "upper_bound": [1.1, 10.1],
+        "grid_resolution": [10, 21],
     }
 
 
 @simulation_ingredient.config
 def simulation_config():
 
-    initial_condition = [-0.75, -0.75, 0, 0]
+    initial_condition = [-0.8, 0, np.pi / 2]
 
 
 ex = Experiment(
@@ -100,7 +100,6 @@ ex = Experiment(
         system_ingredient,
         simulation_ingredient,
         sample_ingredient,
-        cwh_ingredient,
         plotting_ingredient,
     ]
 )
@@ -132,12 +131,11 @@ def config(sample):
 
     """
 
-    sigma = 0.35  # Kernel bandwidth parameter.
+    sigma = 3  # Kernel bandwidth parameter.
     # Regularization parameter.
-    # regularization_param = 1 / (sample["sample_space"]["sample_size"] ** 2)
     regularization_param = 1e-5
 
-    time_horizon = 5
+    time_horizon = 100
 
     # Whether or not to use dynamic programming (backward in time) algorithm.
     dynamic_programming = False
@@ -162,7 +160,6 @@ def main(
     verbose,
     results_filename,
     no_plot,
-    simulation,
     _log,
 ):
     """Main experiment."""
@@ -179,9 +176,21 @@ def main(
     # Generate the set of admissible control actions.
     A = generate_admissible_actions(seed=seed, env=env)
 
-    # Compute the target trajectory.
-    cost_fn = make_cost(env=env)
-    constraint_fn = make_constraint(time_horizon=time_horizon, env=env)
+    def _cost(time: int = 0, state: np.ndarray = None) -> float:
+
+        dist = state[:, [0, 1]] - [0, 0]
+        result = np.linalg.norm(dist, ord=2, axis=1)
+        result = np.power(result, 2)
+        return result
+
+    def _constraint(time: int = 0, state: np.ndarray = None) -> float:
+
+        initial_obstacle_state = np.array([1, 0], dtype=np.float32)
+        actual_obstacle_state = initial_obstacle_state - [0.02 * time, 0]
+        dist = np.linalg.norm(state[:, [0, 1]] - actual_obstacle_state, ord=2, axis=1)
+        # 0.2 <= dist
+        # 0.2 - dist <= 0
+        return 0.25 - dist
 
     if dynamic_programming is True:
         alg_class = KernelControlBwd
@@ -193,8 +202,8 @@ def main(
         # Compute policy.
         policy = alg_class(
             time_horizon=time_horizon,
-            cost_fn=cost_fn,
-            constraint_fn=constraint_fn,
+            cost_fn=_cost,
+            constraint_fn=_constraint,
             heuristic=heuristic,
             verbose=verbose,
             kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
@@ -215,8 +224,10 @@ def main(
 
 @plotting_ingredient.config_hook
 def plot_config(config, command_name, logger):
-    if command_name in {"main", "plot_results", "plot_sample"}:
+    if command_name in {"main", "plot_results"}:
         return {
+            "plot_dims": [0, 1],
+            "plot_filename": "results/plot.gif",
             "target_trajectory_style": {
                 "lines.marker": "x",
                 "lines.linestyle": "--",
@@ -231,13 +242,17 @@ def plot_config(config, command_name, logger):
                 "xlabel": r"$x_1$",
                 "ylabel": r"$x_2$",
                 "xlim": (-1.1, 1.1),
-                "ylim": (-1.1, 0.1),
+                "ylim": (-1.1, 1.1),
             },
         }
 
 
 @ex.command(unobserved=True)
-def plot_results(plot_cfg, _log):
+def plot_results(
+    system,
+    time_horizon,
+    plot_cfg,
+):
     """Plot the results of the experiement."""
 
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -245,6 +260,8 @@ def plot_results(plot_cfg, _log):
 
     # Dynamically load for speed.
     import matplotlib
+    from matplotlib.animation import FuncAnimation
+    from matplotlib.animation import PillowWriter
 
     matplotlib.use("Agg")
     update_rc_params(matplotlib, plot_cfg["rc_params"])
@@ -255,84 +272,67 @@ def plot_results(plot_cfg, _log):
         trajectory = np.load(f)
 
     fig = plt.figure()
-    ax = fig.add_subplot(111, **plot_cfg["axes"])
+    ax = plt.axes(**plot_cfg["axes"])
 
-    # plot constraint box
-    verts = [(-1, -1), (1, -1), (0, 0), (-1, -1)]
-    codes = [
-        matplotlib.path.Path.MOVETO,
-        matplotlib.path.Path.LINETO,
-        matplotlib.path.Path.LINETO,
-        matplotlib.path.Path.CLOSEPOLY,
-    ]
+    trajectory = np.array(trajectory, dtype=np.float32)
 
-    path = matplotlib.path.Path(verts, codes)
-    plt.gca().add_patch(matplotlib.patches.PathPatch(path, fc="none", ec="blue"))
+    def plot_frame(t):
 
-    plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.2, fc="none", ec="green"))
+        ax.clear()
+        ax.set_xlim(plot_cfg["axes"]["xlim"])
+        ax.set_ylim(plot_cfg["axes"]["ylim"])
+        ax.grid(True)
 
-    # Plot generated trajectory.
-    with plt.style.context(plot_cfg["trajectory_style"]):
-        trajectory = np.array(trajectory, dtype=np.float32)
-        plt.plot(
-            trajectory[:, 0],
-            trajectory[:, 1],
-            label="System Trajectory",
-        )
+        # Plot generated trajectory.
+        with plt.style.context(plot_cfg["trajectory_style"]):
+            # trajectory = np.array(trajectory, dtype=np.float32)
+            line = plt.plot(
+                trajectory[0:t, plot_cfg["plot_dims"][0]],
+                trajectory[0:t, plot_cfg["plot_dims"][1]],
+                alpha=0.1,
+                marker="None",
+                label="System Trajectory",
+            )
 
-    plt.legend()
+        # Plot the markers as arrows, showing vehicle heading.
+        paper_airplane = [(0, -0.25), (0.5, -0.5), (0, 1), (-0.5, -0.5), (0, -0.25)]
 
-    plt.savefig(plot_cfg["plot_filename"])
+        if system["system_id"] == "NonholonomicVehicleEnv-v0":
+            angle = -np.rad2deg(trajectory[t, 2])
+            ms = matplotlib.markers.MarkerStyle(marker=paper_airplane)
+            ms._transform = ms.get_transform().rotate_deg(angle)
 
+            marker = plt.plot(
+                trajectory[t, plot_cfg["plot_dims"][0]],
+                trajectory[t, plot_cfg["plot_dims"][1]],
+                marker=ms,
+                markersize=4,
+                linestyle="None",
+                color="C0",
+            )
 
-@ex.command(unobserved=True)
-def plot_sample(seed, plot_cfg):
-    """Plot a sample taken from the system."""
+        else:
+            marker = plt.plot(
+                trajectory[t, plot_cfg["plot_dims"][0]],
+                trajectory[t, plot_cfg["plot_dims"][1]],
+                marker="o",
+                color="C0",
+            )
 
-    import matplotlib
+        patch = ax.add_patch(plt.Circle((1 - 0.02 * t, 0), 0.2, fc="none", ec="red"))
 
-    matplotlib.use("Agg")
-    update_rc_params(matplotlib, plot_cfg["rc_params"])
+        return line, marker, patch
 
-    import matplotlib.pyplot as plt
+    animation = FuncAnimation(
+        fig,
+        plot_frame,
+        frames=time_horizon,
+        interval=system["sampling_time"],
+    )
 
-    matplotlib.set_loglevel("notset")
-    plt.set_loglevel("notset")
+    animation.save(plot_cfg["plot_filename"], dpi=300, fps=30)
 
-    # Make the system.
-    env = make_system()
-
-    # Set the random seed.
-    set_system_seed(seed=seed, env=env)
-
-    # # Generate the sample.
-    S = generate_sample(seed=seed, env=env)
-    X, U, Y = transpose_sample(S)
-    X = np.array(X)
-    U = np.array(U)
-    Y = np.array(Y)
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, **plot_cfg["axes"])
-
-    # plot constraint box
-    verts = [(-1, -1), (1, -1), (0, 0), (-1, -1)]
-    codes = [
-        matplotlib.path.Path.MOVETO,
-        matplotlib.path.Path.LINETO,
-        matplotlib.path.Path.LINETO,
-        matplotlib.path.Path.CLOSEPOLY,
-    ]
-
-    path = matplotlib.path.Path(verts, codes)
-    plt.gca().add_patch(matplotlib.patches.PathPatch(path, fc="none", ec="blue"))
-
-    plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.2, fc="none", ec="green"))
-
-    plt.scatter(X[:, 0], X[:, 1], marker=".")
-    plt.scatter(Y[:, 0], Y[:, 1], marker=".")
-
-    plt.savefig("results/plot_sample.png")
+    # plt.savefig(plot_cfg["plot_filename"])
 
 
 if __name__ == "__main__":

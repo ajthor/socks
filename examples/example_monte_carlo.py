@@ -1,19 +1,13 @@
-"""Stochastic reachability.
+"""Stochastic reachability using Monte-Carlo.
 
-This example shows the stochastic reachability algorithm.
+This example shows the Monte-Carlo stochastic reachability algorithm.
 
 By default, the system is a double integrator (2D stochastic chain of integrators).
 
 Example:
     To run the example, use the following command:
 
-        $ python -m examples.benchmark_stochastic_reachability
-
-.. [1] `Model-Free Stochastic Reachability
-        Using Kernel Distribution Embeddings, 2019
-        Adam J. Thorpe, Meeko M. K. Oishi
-        IEEE Control Systems Letters,
-        <https://arxiv.org/abs/1908.00697>`_
+        $ python -m examples.example_monte_carlo
 
 """
 
@@ -27,18 +21,14 @@ import numpy as np
 from sacred import Experiment
 
 from functools import partial
-from sklearn.metrics.pairwise import rbf_kernel
 
-from gym_socks.algorithms.reach.kernel_sr import kernel_sr
+from gym_socks.algorithms.reach.monte_carlo import monte_carlo_sr
 
 from examples._computation_timer import ComputationTimer
 
 from examples.ingredients.system_ingredient import system_ingredient
 from examples.ingredients.system_ingredient import set_system_seed
 from examples.ingredients.system_ingredient import make_system
-
-from examples.ingredients.sample_ingredient import sample_ingredient
-from examples.ingredients.sample_ingredient import generate_sample
 
 from examples.ingredients.backward_reach_ingredient import backward_reach_ingredient
 from examples.ingredients.backward_reach_ingredient import generate_test_points
@@ -47,28 +37,15 @@ from examples.ingredients.backward_reach_ingredient import generate_tube
 
 from examples.ingredients.plotting_ingredient import plotting_ingredient
 from examples.ingredients.plotting_ingredient import update_rc_params
+from gym_socks.envs.policy import RandomizedPolicy
 
 
 @system_ingredient.config
 def system_config():
     system_id = "2DIntegratorEnv-v0"
 
+    time_horizon = 4
     sampling_time = 0.25
-
-
-@sample_ingredient.config
-def sample_config():
-
-    sample_space = {
-        "sample_scheme": "grid",
-        "lower_bound": -1.1,
-        "upper_bound": 1.1,
-        "grid_resolution": 50,
-    }
-
-    sample_policy = {"sample_scheme": "zero"}
-
-    action_space = {"sample_scheme": "grid"}
 
 
 @backward_reach_ingredient.config
@@ -82,14 +59,13 @@ def backward_reach_config():
     test_points = {
         "lower_bound": -1,
         "upper_bound": 1,
-        "grid_resolution": 50,
+        "grid_resolution": 10,
     }
 
 
 ex = Experiment(
     ingredients=[
         system_ingredient,
-        sample_ingredient,
         backward_reach_ingredient,
         plotting_ingredient,
     ]
@@ -122,12 +98,10 @@ def config():
 
     """
 
-    sigma = 0.1
-    regularization_param = 1
+    # Number of Monte-Carlo iterations to run at each test point.
+    num_iterations = 100
 
-    time_horizon = 12
-
-    batch_size = None
+    time_horizon = 5
 
     verbose = True
 
@@ -138,15 +112,13 @@ def config():
 @ex.main
 def main(
     seed,
-    _log,
-    sigma,
-    regularization_param,
+    num_iterations,
     time_horizon,
     backward_reach,
-    batch_size,
     verbose,
     results_filename,
     no_plot,
+    _log,
 ):
     """Main experiment."""
 
@@ -167,24 +139,20 @@ def main(
         bounds=backward_reach["constraint_tube_bounds"],
     )
 
-    # Generate the sample.
-    S = generate_sample(seed=seed, env=env)
-
     # Generate the test points.
     T = generate_test_points(env=env)
 
     with ComputationTimer():
 
-        safety_probabilities = kernel_sr(
-            S=S,
+        safety_probabilities = monte_carlo_sr(
+            env=env,
+            policy=RandomizedPolicy(action_space=env.action_space),
             T=T,
+            num_iterations=num_iterations,
             time_horizon=time_horizon,
             constraint_tube=constraint_tube,
             target_tube=target_tube,
             problem=backward_reach["problem"],
-            regularization_param=regularization_param,
-            kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
-            batch_size=batch_size,
             verbose=verbose,
         )
 

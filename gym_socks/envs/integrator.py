@@ -34,23 +34,22 @@ class NDIntegratorEnv(DynamicalSystem):
 
     """
 
-    def __init__(self, dim: int = 1, *args, **kwargs):
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-            ),
-            *args,
-            **kwargs,
+    def __init__(self, dim: int = 1, seed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+        )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
         )
 
-        self.time_horizon = 4
-        self.sampling_time = 0.25
+        self.state = None
+
+        self.seed(seed=seed)
 
     def generate_disturbance(self, time, state, action):
         w = self.np_random.standard_normal(size=self.state_space.shape)
@@ -74,23 +73,25 @@ class RepeatedIntegratorEnv(DynamicalSystem):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, seed=None, *args, **kwargs):
         super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-            ),
             *args,
             **kwargs,
         )
 
-        self.time_horizon = 4
-        self.sampling_time = 0.25
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+        )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+        )
+
+        self.state = None
+
+        self.seed(seed=seed)
 
     def generate_disturbance(self, time, state, action):
         w = self.np_random.standard_normal(size=self.state_space.shape)

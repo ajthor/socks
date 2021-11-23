@@ -18,7 +18,7 @@ def _config():
 
 
 @tracking_ingredient.capture
-def compute_target_trajectory(num_steps, path_amplitude, path_period):
+def compute_target_trajectory(time_horizon, path_amplitude, path_period):
     """Computes the target trajectory to follow.
 
     The default trajectory is a V-shaped path based on a triangle function. The amplitude and period are set by the config.
@@ -46,7 +46,7 @@ def compute_target_trajectory(num_steps, path_amplitude, path_period):
             (x * 0.1) - 1.0,
             4 * a / p * np.abs((((((x * 0.1) - 1.0) - p / 2) % p) + p) % p - p / 2) - a,
         ]
-        for x in range(num_steps)
+        for x in range(time_horizon)
     ]
 
     return target_trajectory

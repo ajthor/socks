@@ -48,8 +48,6 @@ def system_config():
 
     system_id = "CWH4DEnv-v0"
 
-    time_horizon = 1000
-
 
 @sample_ingredient.config
 def sample_config():
@@ -105,18 +103,21 @@ def config():
     # The regularization parameter.
     regularization_param = 1e-9
 
+    time_horizon = 1000
+
     results_filename = "results/data.npy"
     no_plot = False
 
 
 @ex.main
 def main(
-    _log,
     simulation,
     seed,
     regularization_param,
+    time_horizon,
     results_filename,
     no_plot,
+    _log,
 ):
     """Main experiment."""
 
@@ -135,12 +136,12 @@ def main(
         alg = kernel_linear_id(S=S, regularization_param=regularization_param)
 
     # Simulate the system using the actual dynamics.
-    policy = ConstantPolicy(system=env, constant=[0.01, 0.01])
-    actual_trajectory = simulate_system(env, policy)
+    policy = ConstantPolicy(action_space=env.action_space, constant=[0.01, 0.01])
+    actual_trajectory = simulate_system(time_horizon, env, policy)
 
     # Simulate the system using the approximated dynamics.
     estimated_trajectory = [simulation["initial_condition"]]
-    for t in range(env.num_time_steps):
+    for t in range(time_horizon):
         action = policy(time=t, state=[env.state])
         state = alg.predict(T=estimated_trajectory[t], U=action)
 

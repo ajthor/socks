@@ -24,8 +24,8 @@ class TestKernelLinearIdentificationAlgorithm(unittest.TestCase):
 
         S = sample(
             sampler=step_sampler(
-                system=env,
-                policy=RandomizedPolicy(system=env),
+                env=env,
+                policy=RandomizedPolicy(action_space=env.action_space),
                 sample_space=env.state_space,
             ),
             sample_size=1000,
@@ -47,8 +47,8 @@ class TestKernelLinearIdentificationAlgorithm(unittest.TestCase):
 
         S = sample(
             sampler=step_sampler(
-                system=env,
-                policy=RandomizedPolicy(system=env),
+                env=env,
+                policy=RandomizedPolicy(action_space=env.action_space),
                 sample_space=env.state_space,
             ),
             sample_size=1000,
