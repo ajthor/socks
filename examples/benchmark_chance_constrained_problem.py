@@ -68,7 +68,6 @@ def system_config():
     system_id = "RepeatedIntegratorEnv-v0"
 
     sampling_time = 0.1
-    time_horizon = 2
 
     action_space = {
         "lower_bound": [-1.1, -1.1],
@@ -154,6 +153,8 @@ def config(sample):
     # Regularization parameter.
     regularization_param = 1e-5
 
+    time_horizon = 2
+
     verbose = True
 
     results_filename = "results/data.npy"
@@ -165,6 +166,7 @@ def main(
     seed,
     sigma,
     regularization_param,
+    time_horizon,
     verbose,
     results_filename,
     no_plot,
@@ -191,8 +193,9 @@ def main(
 
     S = _sample(
         sampler=trajectory_sampler(
-            system=env,
-            policy=RandomizedPolicy(system=env),
+            time_horizon=time_horizon,
+            env=env,
+            policy=RandomizedPolicy(action_space=env.action_space),
             sample_space=sample_space,
         ),
         sample_size=sample["sample_space"]["sample_size"],
@@ -203,8 +206,9 @@ def main(
     # Generate the set of admissible control actions.
     _S = _sample(
         sampler=trajectory_sampler(
-            system=env,
-            policy=RandomizedPolicy(system=env),
+            time_horizon=time_horizon,
+            env=env,
+            policy=RandomizedPolicy(action_space=env.action_space),
             sample_space=sample_space,
         ),
         sample_size=_get_sample_size(env.action_space, sample["action_space"]),
@@ -217,7 +221,6 @@ def main(
 
         # Compute policy.
         policy = KernelControlFwd(
-            num_steps=env.num_time_steps,
             cost_fn=_cost_fn,
             constraint_fn=_constraint_fn,
             verbose=verbose,
@@ -236,9 +239,9 @@ def main(
     action_sequence = np.reshape(action_sequence, (-1, 2))
 
     # Simulate the env using the computed policy.
-    for t in range(env.num_time_steps):
+    for t in range(time_horizon):
 
-        obs, *_ = env.step(action_sequence[t])
+        obs, *_ = env.step(time=t, action=action_sequence[t])
         next_state = env.state
 
         trajectory.append(list(next_state))
