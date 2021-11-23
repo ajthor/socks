@@ -187,6 +187,7 @@ def main(
         shape=env.state_space.shape,
         dtype=np.float32,
     )
+    sample_space.seed(seed=seed)
 
     S = _sample(
         sampler=trajectory_sampler(
@@ -222,6 +223,7 @@ def main(
             verbose=verbose,
             kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
             regularization_param=regularization_param,
+            seed=seed,
         )
 
         policy.train(S=T, A=A)
