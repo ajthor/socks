@@ -74,10 +74,7 @@ class RepeatedIntegratorEnv(DynamicalSystem):
     """
 
     def __init__(self, seed=None, *args, **kwargs):
-        super().__init__(
-            *args,
-            **kwargs,
-        )
+        super().__init__(*args, **kwargs)
 
         self.observation_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32

@@ -5,6 +5,7 @@ FROM python:$PYTHON_VERSION
 RUN apt-get -y update && \
   apt-get install -y --no-install-recommends \
   build-essential \
+  cmake \
   git \
   wget \
   ca-certificates \
@@ -25,6 +26,8 @@ RUN pip install -U \
   black \
   gym \
   numpy \
+  cvxpy \
+  cvxopt \
   pyglet \
   pytest \
   sacred \

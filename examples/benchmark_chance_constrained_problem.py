@@ -80,8 +80,8 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [-1.2, -1.2, -1.2, -1.2],
-        "upper_bound": [1.2, 1.2, 1.2, 1.2],
+        "lower_bound": [-0.6, 0.1, -0.6, 0.1],
+        "upper_bound": [-0.4, 0.1, -0.4, 0.1],
         "sample_size": 500,
     }
 
@@ -99,18 +99,46 @@ def simulation_config():
     initial_condition = [-0.5, 0.1, -0.5, 0.1]
 
 
-def _cost_fn(time, state):
-    dist = state[:, [0, 2]] - np.array([[0.5, 0.5]])
-    result = np.linalg.norm(dist, ord=2, axis=1)
-    return np.power(result, 2)
+def cc_trajectory_sampler(
+    time_horizon: int,
+    env: DynamicalSystem = None,
+    policy: BasePolicy = None,
+    sample_space: gym.Space = None,
+):
+    """Default trajectory sampler.
 
+    Args:
+        env: The system to sample from.
+        policy: The policy applied to the system during sampling.
+        sample_space: The space where initial conditions are drawn from.
 
-def _constraint_fn(time, state):
-    dist = state[:, [0, 2]] - np.array([[0, 0]])
-    result = np.linalg.norm(dist, ord=2, axis=1)
-    return 0.2 - np.power(result, 2)
-    # dist >= 0.2
-    # 0 >= 0.2 - dist
+    Returns:
+        A generator function that yields system observations as tuples.
+
+    """
+
+    @sample_generator
+    def _sample_generator():
+        state = sample_space.sample()
+
+        state_sequence = []
+        action_sequence = []
+
+        env.state = state
+
+        time = 0
+        for t in range(time_horizon):
+            action = policy(time=time, state=env.state)
+            next_state, cost, done, _ = env.step(time=t, action=action)
+
+            state_sequence.append(next_state)
+            action_sequence.append(action)
+
+            time += 1
+
+        yield (state, action_sequence, state_sequence)
+
+    return _sample_generator
 
 
 ex = Experiment(
@@ -153,9 +181,14 @@ def config(sample):
     # Regularization parameter.
     regularization_param = 1e-5
 
-    time_horizon = 2
+    # Probability of violation.
+    delta = 0.1
+
+    time_horizon = 25
 
     verbose = True
+
+    gen_sample = True
 
     results_filename = "results/data.npy"
     no_plot = False
@@ -166,8 +199,10 @@ def main(
     seed,
     sigma,
     regularization_param,
+    delta,
     time_horizon,
     verbose,
+    gen_sample,
     results_filename,
     no_plot,
     sample,
@@ -182,40 +217,101 @@ def main(
     # Set the random seed.
     set_system_seed(seed=seed, env=env)
 
-    # Generate the sample.
-    sample_space = gym.spaces.Box(
-        low=np.array(sample["sample_space"]["lower_bound"], dtype=np.float32),
-        high=np.array(sample["sample_space"]["upper_bound"], dtype=np.float32),
-        shape=env.state_space.shape,
-        dtype=np.float32,
-    )
-    sample_space.seed(seed=seed)
+    if gen_sample is True:
+        # Generate the sample.
+        _log.debug("Generating sample.")
+        sample_space = gym.spaces.Box(
+            low=np.array(sample["sample_space"]["lower_bound"], dtype=np.float32),
+            high=np.array(sample["sample_space"]["upper_bound"], dtype=np.float32),
+            shape=env.state_space.shape,
+            dtype=np.float32,
+        )
+        sample_space.seed(seed=seed)
 
-    S = _sample(
-        sampler=trajectory_sampler(
-            time_horizon=time_horizon,
-            env=env,
-            policy=RandomizedPolicy(action_space=env.action_space),
-            sample_space=sample_space,
-        ),
-        sample_size=sample["sample_space"]["sample_size"],
-    )
+        S = _sample(
+            sampler=trajectory_sampler(
+                time_horizon=time_horizon,
+                env=env,
+                policy=RandomizedPolicy(action_space=env.action_space),
+                sample_space=sample_space,
+            ),
+            sample_size=sample["sample_space"]["sample_size"],
+        )
+
+        # S is a list of tuples
+        # S = [(x_0, u, x),
+        #      (x_0, u, x),
+        #      (x_0, u, x),]
+        #   x_0 - np.array (x_dim,)  # vector
+        #    u  - np.array (N,u_dim) # matrix (N is time_horizon)
+        #    x  - np.array (N,x_dim) # matrix (N is time_horizon)
+        # where x[k,:] = f(u[:k,:], x_0, uncertainty) + noise
+
+        # T is a list of tuples
+        # T = [(x_0, u, x),
+        #      (x_0, u, x),
+        #      (x_0, u, x),
+        #      (x_0, u, x),]
+        #   x_0 - np.array (x_dim,)  # vector
+        #    u  - np.array (N*u_dim) # vector (N is time_horizon)
+        #    x  - np.array (N*x_dim) # vector (N is time_horizon)
+
+        X, U, Y = transpose_sample(S)
+        # print(np.array(X[0]))
+        # print(np.array(Y[0]))
+
+        # Generate the set of admissible control actions.
+        _log.debug("Generating admissible control actions.")
+        _S = _sample(
+            sampler=trajectory_sampler(
+                time_horizon=time_horizon,
+                env=env,
+                policy=RandomizedPolicy(action_space=env.action_space),
+                sample_space=sample_space,
+            ),
+            sample_size=_get_sample_size(env.action_space, sample["action_space"]),
+        )
+
+        _T = reshape_trajectory_sample(_S)
+        _, A, _ = transpose_sample(_T)
+
+        with open("results/sample.npy", "wb") as f:
+            np.save(f, np.array(X))
+            np.save(f, np.array(U))
+            np.save(f, np.array(Y))
+            np.save(f, np.array(A))
+
+    with open("results/sample.npy", "rb") as f:
+        X = np.load(f).tolist()
+        U = np.load(f).tolist()
+        Y = np.load(f).tolist()
+        A = np.load(f).tolist()
+
+    S = list(zip(X, U, Y))
 
     T = reshape_trajectory_sample(S)
+    # Define the cost and constraint functions.
 
-    # Generate the set of admissible control actions.
-    _S = _sample(
-        sampler=trajectory_sampler(
-            time_horizon=time_horizon,
-            env=env,
-            policy=RandomizedPolicy(action_space=env.action_space),
-            sample_space=sample_space,
-        ),
-        sample_size=_get_sample_size(env.action_space, sample["action_space"]),
-    )
+    def _cost_fn(time, state):
+        state = np.reshape(state, (-1, time_horizon, 4))
+        # print(np.shape(state))
+        # print(np.shape(state[:, -1, [0, 2]]))
+        dist = state[:, -1, [0, 2]] - np.array([[0.5, 0.5]])
+        result = np.linalg.norm(dist, ord=2, axis=1)
+        return np.power(result, 2)
 
-    _T = reshape_trajectory_sample(_S)
-    _, A, _ = transpose_sample(_T)
+    def _constraint_fn(time, state):
+        state = np.reshape(state, (-1, time_horizon, 4))
+        # print(state[0][0])
+        dist = state[:, :, [0, 2]] - np.array([[0, 0]])
+        result = np.linalg.norm(dist, ord=2, axis=2)
+        indicator = np.any(np.power(result, 2) <= 0.2, axis=1)
+        return 1 - delta - indicator
+        # return 0.2 - np.power(result, 2) - 1 + delta
+        # dist >= 0.2
+        # 0 >= 0.2 - dist
+
+        # E[f(X, U)] >= 1 - delta
 
     with ComputationTimer():
 
@@ -307,18 +403,6 @@ def plot_results(
     plt.gca().add_patch(plt.Circle((0, 0), 0.2, fc="none", ec="red"))
 
     plt.legend()
-
-    # # Plot the markers as arrows, showing vehicle heading.
-    # paper_airplane = [(0, -0.25), (0.5, -0.5), (0, 1), (-0.5, -0.5), (0, -0.25)]
-
-    # if system["system_id"] == "NonholonomicVehicleEnv-v0":
-    #     for x in trajectory:
-    #         angle = -np.rad2deg(x[2])
-
-    #         t = matplotlib.markers.MarkerStyle(marker=paper_airplane)
-    #         t._transform = t.get_transform().rotate_deg(angle)
-
-    #         plt.plot(x[0], x[1], marker=t, markersize=4, linestyle="None", color="C1")
 
     plt.savefig(plot_cfg["plot_filename"])
 

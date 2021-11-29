@@ -115,3 +115,28 @@ class ZeroPolicy(ConstantPolicy):
             raise ValueError("action space must be provided")
 
         self._constant = 0
+
+
+class PDController(ConstantPolicy):
+    """PD controller.
+
+    Args:
+        system : The system the policy is defined on. Needed to specify the shape of
+            the inputs and outputs.
+
+    """
+
+    def __init__(self, action_space: gym.Space = None):
+        if action_space is not None:
+            self.action_space = action_space
+        else:
+            raise ValueError("action space must be provided")
+
+        self._constant = 0
+
+    def __call__(self, *args, **kwargs):
+        return np.full(
+            self.action_space.shape,
+            self._constant,
+            dtype=self.action_space.dtype,
+        )
