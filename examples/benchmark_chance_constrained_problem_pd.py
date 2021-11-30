@@ -35,12 +35,13 @@ from numpy.linalg import norm
 from sacred import Experiment
 
 from functools import partial
-from sklearn.metrics.pairwise import rbf_kernel
+from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
+from gym_socks.kernel.metrics import abel_kernel
 
-from gym_socks.algorithms.control import KernelControlFwd
-from gym_socks.algorithms.control import KernelControlBwd
+from gym_socks.algorithms.control import KernelControlCC
 
 from gym_socks.envs.sample import sample as _sample, transpose_sample
+
 # from gym_socks.envs.sample import trajectory_sampler
 from gym_socks.envs.sample import reshape_trajectory_sample, sample_generator
 
@@ -64,6 +65,9 @@ from examples.ingredients.sample_ingredient import _get_sample_size
 
 from examples.ingredients.plotting_ingredient import plotting_ingredient
 from examples.ingredients.plotting_ingredient import update_rc_params
+
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
+logging.getLogger("PIL").setLevel(logging.WARNING)
 
 
 @system_ingredient.config
@@ -152,6 +156,11 @@ def cc_trajectory_sampler(
     return _sample_generator
 
 
+# def normalize_trajectory_sample(sample):
+#     _S = transpose_sample(sample)
+#     return zip(*[item / np.sum(np.abs(item)) for item in _S])
+
+
 ex = Experiment(
     ingredients=[
         system_ingredient,
@@ -195,7 +204,7 @@ def config(sample):
     # Probability of violation.
     delta = 0.1
 
-    time_horizon = 25
+    time_horizon = 15
 
     verbose = True
 
@@ -240,8 +249,7 @@ def main(
         sample_space.seed(seed=seed)
 
         # TODO define goal state and pass through
-        PD_gains = -1*np.array([[3,0.5,0,0],
-                                [0,0,3,0.5]])
+        PD_gains = -1 * np.array([[3, 0.5, 0, 0], [0, 0, 3, 0.5]])
         # ---------------------------------------------------------
         # DEBUGGING CODE
         # dt = 0.1
@@ -249,10 +257,12 @@ def main(
         # B = np.array([[dt**2/2,0],[dt,0],[0,dt**2/2],[0,dt]])
         # np.linalg.eig(A+B@K)[0]
         # ---------------------------------------------------------
-        ClosedLoopPDPolicy = PDController(action_space=env.action_space,
-                                          state_space=env.state_space,
-                                          goal_state=np.array([0.5,0.,0.5,0]),
-                                          PD_gains=PD_gains)
+        ClosedLoopPDPolicy = PDController(
+            action_space=env.action_space,
+            state_space=env.state_space,
+            goal_state=np.array([0.5, 0.0, 0.5, 0]),
+            PD_gains=PD_gains,
+        )
         S = _sample(
             sampler=cc_trajectory_sampler(
                 time_horizon=time_horizon,
@@ -286,11 +296,11 @@ def main(
         # -------------------------------------------------
         # DEBUG
         X, U, Y = transpose_sample(S)
-        trajs = np.array(Y)
-        plt.figure(0)
-        for i in range(trajs.shape[0]):
-            plt.plot(trajs[i,:,0],trajs[i,:,2], alpha=0.2)
-        plt.show()
+        # trajs = np.array(Y)
+        # plt.figure(0)
+        # for i in range(trajs.shape[0]):
+        #     plt.plot(trajs[i, :, 0], trajs[i, :, 2], alpha=0.2)
+        # plt.show()
         # -------------------------------------------------
 
         # Generate the set of admissible control actions.
@@ -323,23 +333,22 @@ def main(
     S = list(zip(X, U, Y))
 
     T = reshape_trajectory_sample(S)
+    # T = normalize_trajectory_sample(T)
     # Define the cost and constraint functions.
 
     def _cost_fn(time, state):
         state = np.reshape(state, (-1, time_horizon, 4))
-        # print(np.shape(state))
-        # print(np.shape(state[:, -1, [0, 2]]))
-        dist = state[:, -1, [0, 2]] - np.array([[0.5, 0.5]])
+        dist = np.abs(state[:, -1, [0, 2]] - np.array([[0.5, 0.5]]))
         result = np.linalg.norm(dist, ord=2, axis=1)
-        return np.power(result, 2)
+        return result
+        # return np.power(result, 2)
 
     def _constraint_fn(time, state):
         state = np.reshape(state, (-1, time_horizon, 4))
-        # print(state[0][0])
         dist = state[:, :, [0, 2]] - np.array([[0, 0]])
         result = np.linalg.norm(dist, ord=2, axis=2)
-        indicator = np.any(np.power(result, 2) <= 0.2, axis=1)
-        return 1 - delta - indicator
+        indicator = np.all(result >= 0.2, axis=1)
+        return indicator
         # return 0.2 - np.power(result, 2) - 1 + delta
         # dist >= 0.2
         # 0 >= 0.2 - dist
@@ -349,11 +358,15 @@ def main(
     with ComputationTimer():
 
         # Compute policy.
-        policy = KernelControlFwd(
+        policy = KernelControlCC(
             cost_fn=_cost_fn,
             constraint_fn=_constraint_fn,
+            delta=delta,
             verbose=verbose,
             kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+            # kernel_fn=partial(
+            #     abel_kernel, sigma=sigma, distance_fn=euclidean_distances
+            # ),
             regularization_param=regularization_param,
             seed=seed,
         )
@@ -384,10 +397,10 @@ def main(
 
 @plotting_ingredient.config_hook
 def plot_config(config, command_name, logger):
-    if command_name in {"main", "plot_results"}:
+    if command_name in {"main", "plot_results", "plot_sample"}:
         return {
             "trajectory_style": {
-                "lines.linewidth": 1,
+                "lines.linewidth": 0.5,
                 "lines.linestyle": "-",
                 "lines.color": "C1",
             },
@@ -401,10 +414,7 @@ def plot_config(config, command_name, logger):
 
 
 @ex.command(unobserved=True)
-def plot_results(
-    system,
-    plot_cfg,
-):
+def plot_results(system, plot_cfg):
     """Plot the results of the experiement."""
 
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -436,6 +446,53 @@ def plot_results(
     plt.gca().add_patch(plt.Circle((0, 0), 0.2, fc="none", ec="red"))
 
     plt.legend()
+
+    plt.savefig(plot_cfg["plot_filename"])
+
+
+@ex.command(unobserved=True)
+def plot_sample(time_horizon, plot_cfg):
+
+    # Dynamically load for speed.
+    import matplotlib
+
+    matplotlib.use("Agg")
+    update_rc_params(matplotlib, plot_cfg["rc_params"])
+
+    import matplotlib.pyplot as plt
+
+    with open("results/sample.npy", "rb") as f:
+        X = np.load(f).tolist()
+        U = np.load(f).tolist()
+        Y = np.load(f).tolist()
+        A = np.load(f).tolist()
+
+    def _constraint_fn(time, state):
+        state = np.reshape(state, (-1, time_horizon, 4))
+        dist = state[:, :, [0, 2]]
+        result = np.linalg.norm(dist, ord=2, axis=2)
+        indicator = np.all(result >= 0.2, axis=1)
+        return indicator
+
+    satisfies_constraints = _constraint_fn(time=0, state=Y)
+
+    fig = plt.figure()
+    ax = plt.axes(**plot_cfg["axes"])
+
+    for i, trajectory in enumerate(Y):
+
+        trajectory = np.array(trajectory, dtype=np.float32)
+        if satisfies_constraints[i] == True:
+            plt_color = "C0"
+        else:
+            plt_color = "C1"
+
+        with plt.style.context(plot_cfg["trajectory_style"]):
+            plt.plot(trajectory[:, 0], trajectory[:, 2], color=plt_color, marker="")
+
+    plt.gca().add_patch(plt.Circle((0, 0), 0.2, fc="none", ec="red"))
+
+    plt.scatter(0.5, 0.5, s=2.5, c="C2")
 
     plt.savefig(plot_cfg["plot_filename"])
 

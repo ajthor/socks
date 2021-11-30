@@ -128,31 +128,38 @@ class PDController(ConstantPolicy):
 
     """
 
-    def __init__(self, action_space: gym.Space = None, 
-                       state_space: gym.Space = None, 
-                       goal_state = np.zeros(4),
-                       PD_gains = np.zeros(4)):
+    def __init__(
+        self,
+        action_space: gym.Space = None,
+        state_space: gym.Space = None,
+        goal_state=np.zeros(4),
+        PD_gains=np.zeros(4),
+    ):
         if goal_state.shape != state_space.shape:
-            raise ValueError("goal_state should have same shape " +
-                             "as environment state")
+            raise ValueError(
+                "goal_state should have same shape " + "as environment state"
+            )
         if PD_gains.shape[0] != action_space.shape[0]:
-            raise ValueError("PD_gains[:,0] should have same shape " +
-                             "as environment action")
+            raise ValueError(
+                "PD_gains[:,0] should have same shape " + "as environment action"
+            )
         if PD_gains.shape[1] != state_space.shape[0]:
-            raise ValueError("PD_gains[0,:] should have same shape " +
-                             "as environment state")
+            raise ValueError(
+                "PD_gains[0,:] should have same shape " + "as environment state"
+            )
 
-        self.state_space  = state_space
+        self.state_space = state_space
         self.action_space = action_space
-        self.goal_state   = goal_state
-        self.PD_gains     = PD_gains
+        self.goal_state = goal_state
+        self.PD_gains = PD_gains
 
-    def __call__(self, state=np.zeros(4), 
-                        *args, **kwargs):
+    def __call__(self, state=np.zeros(4), *args, **kwargs):
         # PD regulation to goal
-        control = self.PD_gains @ (state-self.goal_state)
+        control = self.PD_gains @ (state - self.goal_state)
         # add exploratory noise
-        control = control + 5*self.action_space.sample()
+        control = control + 5 * self.action_space.sample()
         # input saturation
         control = np.clip(control, self.action_space.low, self.action_space.high)
-        return control.astype(self.action_space.dtype,)
+        return control.astype(
+            self.action_space.dtype,
+        )
