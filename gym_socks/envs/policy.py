@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 import gym
 
+from gym_socks.envs.dynamical_system import DynamicalSystem
+
 import numpy as np
 
 
@@ -126,17 +128,31 @@ class PDController(ConstantPolicy):
 
     """
 
-    def __init__(self, action_space: gym.Space = None):
-        if action_space is not None:
-            self.action_space = action_space
-        else:
-            raise ValueError("action space must be provided")
+    def __init__(self, action_space: gym.Space = None, 
+                       state_space: gym.Space = None, 
+                       goal_state = np.zeros(4),
+                       PD_gains = np.zeros(4)):
+        if goal_state.shape != state_space.shape:
+            raise ValueError("goal_state should have same shape " +
+                             "as environment state")
+        if PD_gains.shape[0] != action_space.shape[0]:
+            raise ValueError("PD_gains[:,0] should have same shape " +
+                             "as environment action")
+        if PD_gains.shape[1] != state_space.shape[0]:
+            raise ValueError("PD_gains[0,:] should have same shape " +
+                             "as environment state")
 
-        self._constant = 0
+        self.state_space  = state_space
+        self.action_space = action_space
+        self.goal_state   = goal_state
+        self.PD_gains     = PD_gains
 
-    def __call__(self, *args, **kwargs):
-        return np.full(
-            self.action_space.shape,
-            self._constant,
-            dtype=self.action_space.dtype,
-        )
+    def __call__(self, state=np.zeros(4), 
+                        *args, **kwargs):
+        # PD regulation to goal
+        control = self.PD_gains @ (state-self.goal_state)
+        # add exploratory noise
+        control = control + 5*self.action_space.sample()
+        # input saturation
+        control = np.clip(control, self.action_space.low, self.action_space.high)
+        return control.astype(self.action_space.dtype,)

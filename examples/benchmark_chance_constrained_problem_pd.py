@@ -25,6 +25,8 @@ Example:
 import gym
 import gym_socks
 
+import matplotlib.pyplot as plt
+
 import logging
 
 import numpy as np
@@ -39,10 +41,10 @@ from gym_socks.algorithms.control import KernelControlFwd
 from gym_socks.algorithms.control import KernelControlBwd
 
 from gym_socks.envs.sample import sample as _sample, transpose_sample
-from gym_socks.envs.sample import trajectory_sampler
-from gym_socks.envs.sample import reshape_trajectory_sample
+# from gym_socks.envs.sample import trajectory_sampler
+from gym_socks.envs.sample import reshape_trajectory_sample, sample_generator
 
-from gym_socks.envs.policy import RandomizedPolicy, BasePolicy
+from gym_socks.envs.policy import RandomizedPolicy, BasePolicy, PDController
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
@@ -106,6 +108,8 @@ def cc_trajectory_sampler(
     env: DynamicalSystem = None,
     policy: BasePolicy = None,
     sample_space: gym.Space = None,
+    # init_state = np.array(4),
+    # B_initialize_from_init_state = False
 ):
     """Default trajectory sampler.
 
@@ -121,7 +125,12 @@ def cc_trajectory_sampler(
 
     @sample_generator
     def _sample_generator():
-        state = sample_space.sample()
+        # if not(B_initialize_from_init_state):
+        #     state = sample_space.sample()
+        # else:
+        #     state = init_state.copy()
+        # print("sample_space.sample()=",sample_space.sample().shape)
+        state = np.array([-0.5, 0.1, -0.5, 0.1])
 
         state_sequence = []
         action_sequence = []
@@ -230,12 +239,28 @@ def main(
         )
         sample_space.seed(seed=seed)
 
+        # TODO define goal state and pass through
+        PD_gains = -1*np.array([[3,0.5,0,0],
+                                [0,0,3,0.5]])
+        # ---------------------------------------------------------
+        # DEBUGGING CODE
+        # dt = 0.1
+        # A = np.array([[1,dt,0,0],[0,1,0,0],[0,0,1,dt],[0,0,0,1]])
+        # B = np.array([[dt**2/2,0],[dt,0],[0,dt**2/2],[0,dt]])
+        # np.linalg.eig(A+B@K)[0]
+        # ---------------------------------------------------------
+        ClosedLoopPDPolicy = PDController(action_space=env.action_space,
+                                          state_space=env.state_space,
+                                          goal_state=np.array([0.5,0.,0.5,0]),
+                                          PD_gains=PD_gains)
         S = _sample(
-            sampler=trajectory_sampler(
+            sampler=cc_trajectory_sampler(
                 time_horizon=time_horizon,
                 env=env,
-                policy=RandomizedPolicy(action_space=env.action_space),
+                policy=ClosedLoopPDPolicy,
                 sample_space=sample_space,
+                # init_state = simulation["initial_condition"],
+                # B_initialize_from_init_state=True
             ),
             sample_size=sample["sample_space"]["sample_size"],
         )
@@ -258,17 +283,23 @@ def main(
         #    u  - np.array (N*u_dim) # vector (N is time_horizon)
         #    x  - np.array (N*x_dim) # vector (N is time_horizon)
 
+        # -------------------------------------------------
+        # DEBUG
         X, U, Y = transpose_sample(S)
-        # print(np.array(X[0]))
-        # print(np.array(Y[0]))
+        trajs = np.array(Y)
+        plt.figure(0)
+        for i in range(trajs.shape[0]):
+            plt.plot(trajs[i,:,0],trajs[i,:,2], alpha=0.2)
+        plt.show()
+        # -------------------------------------------------
 
         # Generate the set of admissible control actions.
         _log.debug("Generating admissible control actions.")
         _S = _sample(
-            sampler=trajectory_sampler(
+            sampler=cc_trajectory_sampler(
                 time_horizon=time_horizon,
                 env=env,
-                policy=RandomizedPolicy(action_space=env.action_space),
+                policy=ClosedLoopPDPolicy,
                 sample_space=sample_space,
             ),
             sample_size=_get_sample_size(env.action_space, sample["action_space"]),
