@@ -123,8 +123,10 @@ class PDController(ConstantPolicy):
     """PD controller.
 
     Args:
-        system : The system the policy is defined on. Needed to specify the shape of
-            the inputs and outputs.
+        action_space : The action space of the policy.
+        state_space : The state space of the system.
+        goal_state : The goal state of the system.
+        pd_gains : The gains of the controller.
 
     """
 
@@ -151,7 +153,7 @@ class PDController(ConstantPolicy):
         self.state_space = state_space
         self.action_space = action_space
         self.goal_state = goal_state
-        self.PD_gains = PD_gains
+        self.PD_gains = -1 * PD_gains
 
     def __call__(self, state=np.zeros(4), *args, **kwargs):
         # PD regulation to goal

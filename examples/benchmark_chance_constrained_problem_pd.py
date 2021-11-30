@@ -134,7 +134,8 @@ def cc_trajectory_sampler(
         # else:
         #     state = init_state.copy()
         # print("sample_space.sample()=",sample_space.sample().shape)
-        state = np.array([-0.5, 0.1, -0.5, 0.1])
+        # state = np.array([-0.5, 0.1, -0.5, 0.1])
+        state = sample_space.sample()
 
         state_sequence = []
         action_sequence = []
@@ -190,16 +191,16 @@ def config(sample):
 
         To specify configuration variables, use `with variable=value`, e.g.
 
-            $ python -m <experiment> with seed=123 system.time_horizon=5
+            $ python -m <experiment> with seed=123 time_horizon=5
 
     .. _sacred:
         https://sacred.readthedocs.io/en/stable/index.html
 
     """
 
-    sigma = 3  # Kernel bandwidth parameter.
+    sigma = 5  # Kernel bandwidth parameter.
     # Regularization parameter.
-    regularization_param = 1e-5
+    regularization_param = 1e-7
 
     # Probability of violation.
     delta = 0.1
@@ -209,6 +210,8 @@ def config(sample):
     verbose = True
 
     gen_sample = True
+    goal_state = [0.5, 0, 0.5, 0]
+    pd_gains = [[3, 0.5, 0, 0], [0, 0, 3, 0.5]]
 
     results_filename = "results/data.npy"
     no_plot = False
@@ -223,6 +226,8 @@ def main(
     time_horizon,
     verbose,
     gen_sample,
+    goal_state,
+    pd_gains,
     results_filename,
     no_plot,
     sample,
@@ -249,7 +254,7 @@ def main(
         sample_space.seed(seed=seed)
 
         # TODO define goal state and pass through
-        PD_gains = -1 * np.array([[3, 0.5, 0, 0], [0, 0, 3, 0.5]])
+        PD_gains = np.array(pd_gains)
         # ---------------------------------------------------------
         # DEBUGGING CODE
         # dt = 0.1
@@ -260,7 +265,7 @@ def main(
         ClosedLoopPDPolicy = PDController(
             action_space=env.action_space,
             state_space=env.state_space,
-            goal_state=np.array([0.5, 0.0, 0.5, 0]),
+            goal_state=np.array(goal_state),
             PD_gains=PD_gains,
         )
         S = _sample(
@@ -482,6 +487,7 @@ def plot_sample(time_horizon, plot_cfg):
     for i, trajectory in enumerate(Y):
 
         trajectory = np.array(trajectory, dtype=np.float32)
+
         if satisfies_constraints[i] == True:
             plt_color = "C0"
         else:

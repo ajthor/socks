@@ -227,12 +227,17 @@ class KernelControlCC(BasePolicy):
         C = np.matmul(np.array(self.cost_fn(time=time), dtype=np.float32), betaXT)
 
         # Compute constraint vector.
-        DY = np.array(self.constraint_fn(time=time), dtype=np.float32)
-        print(np.count_nonzero(DY))
-        D = 1 - self.delta - np.matmul(DY, betaXT)
+        D = (
+            1
+            - self.delta
+            - np.matmul(
+                np.array(self.constraint_fn(time=time), dtype=np.float32), betaXT
+            )
+        )
 
-        print(f"C max: {C.max()}, min: {C.min()}")
-        print(f"D max: {D.max()}, min: {D.min()}")
+        # print(np.count_nonzero(DY))
+        # print(f"C max: {C.max()}, min: {C.min()}")
+        # print(f"D max: {D.max()}, min: {D.min()}")
 
         # Compute the solution to the LP.
         gym_socks.logger.debug("Computing solution to the LP.")
