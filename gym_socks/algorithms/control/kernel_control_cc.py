@@ -235,10 +235,6 @@ class KernelControlCC(BasePolicy):
             )
         )
 
-        # print(np.count_nonzero(DY))
-        # print(f"C max: {C.max()}, min: {C.min()}")
-        # print(f"D max: {D.max()}, min: {D.min()}")
-
         # Compute the solution to the LP.
         gym_socks.logger.debug("Computing solution to the LP.")
         sol = compute_solution(C, D, heuristic=self.heuristic)

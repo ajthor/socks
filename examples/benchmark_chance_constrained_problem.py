@@ -101,55 +101,13 @@ def simulation_config():
     initial_condition = [-0.5, 0.1, -0.5, 0.1]
 
 
-def cc_trajectory_sampler(
-    time_horizon: int,
-    env: DynamicalSystem = None,
-    policy: BasePolicy = None,
-    sample_space: gym.Space = None,
-):
-    """Default trajectory sampler.
-
-    Args:
-        env: The system to sample from.
-        policy: The policy applied to the system during sampling.
-        sample_space: The space where initial conditions are drawn from.
-
-    Returns:
-        A generator function that yields system observations as tuples.
-
-    """
-
-    @sample_generator
-    def _sample_generator():
-        state = sample_space.sample()
-
-        state_sequence = []
-        action_sequence = []
-
-        env.state = state
-
-        time = 0
-        for t in range(time_horizon):
-            action = policy(time=time, state=env.state)
-            next_state, cost, done, _ = env.step(time=t, action=action)
-
-            state_sequence.append(next_state)
-            action_sequence.append(action)
-
-            time += 1
-
-        yield (state, action_sequence, state_sequence)
-
-    return _sample_generator
-
-
 ex = Experiment(
     ingredients=[
         system_ingredient,
         simulation_ingredient,
         sample_ingredient,
         plotting_ingredient,
-    ]
+    ],
 )
 
 
