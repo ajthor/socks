@@ -82,8 +82,8 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [-0.6, 0.1, -0.6, 0.1],
-        "upper_bound": [-0.4, 0.1, -0.4, 0.1],
+        "lower_bound": [-0.6, 0, -0.6, 0],
+        "upper_bound": [-0.4, 0, -0.4, 0],
         "sample_size": 500,
     }
 
@@ -98,7 +98,7 @@ def sample_config():
 @simulation_ingredient.config
 def simulation_config():
 
-    initial_condition = [-0.5, 0.1, -0.5, 0.1]
+    initial_condition = [-0.5, 0, -0.5, 0]
 
 
 ex = Experiment(

@@ -212,7 +212,7 @@ def config(sample):
     regularization_param = 1e-7
 
     # Probability of violation.
-    delta = 0.1
+    delta = 0.01
 
     time_horizon = 15
 
