@@ -207,6 +207,7 @@ def trajectory_sampler(
 
     @sample_generator
     def _sample_generator():
+        env.reset()
         state = sample_space.sample()
 
         state_sequence = []
