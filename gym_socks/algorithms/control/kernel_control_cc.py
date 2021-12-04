@@ -109,6 +109,8 @@ class KernelControlCC(BasePolicy):
 
         self.verbose = verbose
 
+        self.probability_vector = None
+
         self._seed = None
         self._np_random = None
         if seed is not None:
@@ -237,7 +239,8 @@ class KernelControlCC(BasePolicy):
 
         # Compute the solution to the LP.
         gym_socks.logger.debug("Computing solution to the LP.")
-        sol = compute_solution(C, D, heuristic=self.heuristic)
-        sol = normalize(sol)  # Normalize the vector.
-        idx = self.np_random.choice(self.CUA.shape[1], size=None, p=sol)
+        solution = compute_solution(C, D, heuristic=self.heuristic)
+        solution = normalize(solution)  # Normalize the vector.
+        self.probability_vector = solution
+        idx = self.np_random.choice(len(solution), size=None, p=solution)
         return np.array(self.A[idx], dtype=np.float32)

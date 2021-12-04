@@ -90,7 +90,7 @@ class NonMarkovIntegratorEnv(DynamicalSystem):
         self.state = (
             np.matmul(self.state_matrix, self.state)
             + np.matmul((1 / self.mass) * self.input_matrix, action)
-            # + drag_vector
+            + drag_vector
             + disturbance
         )
 
@@ -114,7 +114,9 @@ class NonMarkovIntegratorEnv(DynamicalSystem):
     def reset(self):
         # Mass is at least 0.1, with an additive squared exponential term.
         # self.mass = 0.1 + self.np_random.exponential(scale=0.1, size=(1,))
-        self.mass = self.np_random.beta(a=2, b=2)
+        # self.mass = 0.75 + (self.np_random.beta(a=2, b=2) / 2)
+        self.mass = 0.5 + self.np_random.beta(a=2, b=2)
+        # self.mass = self.np_random.beta(a=2, b=2)
         self.alpha = self.np_random.beta(a=2, b=3)
 
         # self.state = self.state_space.sample()

@@ -37,6 +37,9 @@ import logging
 import numpy as np
 from numpy.linalg import norm
 
+from shapely.geometry import Polygon
+from shapely.geometry import LineString
+
 from sacred import Experiment
 from sacred import Ingredient
 
@@ -78,13 +81,13 @@ from examples.ingredients.plotting_ingredient import update_rc_params
 @system_ingredient.config
 def system_config():
 
-    system_id = "NonMarkovIntegratorEnv-v0"
+    system_id = "RepeatedIntegratorEnv-v0"
 
-    sampling_time = 0.1
+    sampling_time = 1.0
 
     action_space = {
-        "lower_bound": [-1.1, -1.1],
-        "upper_bound": [1.1, 1.1],
+        "lower_bound": [-0.1, -0.1],
+        "upper_bound": [0.1, 0.1],
     }
 
 
@@ -93,23 +96,23 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [-0.6, 0, -0.6, 0],
-        "upper_bound": [-0.4, 0, -0.4, 0],
-        "sample_size": 2500,
+        "lower_bound": [0, 0, 3, 0],
+        "upper_bound": [0, 0, 3, 0],
+        "sample_size": 500,
     }
 
     action_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [-1.1, -1.1],
-        "upper_bound": [1.1, 1.1],
-        "sample_size": 1000,
+        "lower_bound": [-0.1, -0.1],
+        "upper_bound": [0.1, 0.1],
+        "sample_size": 500,
     }
 
 
 @simulation_ingredient.config
 def simulation_config():
 
-    initial_condition = [-0.5, 0.1, -0.5, 0.1]
+    initial_condition = [0, 0, 3, 0]
 
 
 cost_ingredient = Ingredient("cost")
@@ -118,7 +121,7 @@ cost_ingredient = Ingredient("cost")
 @cost_ingredient.config
 def cost_config():
 
-    goal = [0.5, 0, 0.5, 0]
+    goal = [10, 0, 10, 0]
 
 
 @cost_ingredient.capture
@@ -128,7 +131,8 @@ def make_cost(time_horizon, goal):
 
     def _cost_fn(time, state):
         state = np.reshape(state, (-1, time_horizon, 4))
-        dist = state[:, -1, [0, 2]] - np.array([goal[[0, 2]]])
+        # dist = state[:, -1, [0, 2]] - np.array([goal[[0, 2]]])
+        dist = state[:, -1, :] - np.array([goal])
         result = np.linalg.norm(dist, ord=2, axis=1)
         return result
         # return np.power(result, 2)
@@ -154,17 +158,78 @@ def make_constraint(time_horizon, obstacle):
 
     center = np.array(obstacle["center"])
 
+    # obstacle1 = Polygon([(3, 2), (8, 2), (8, 7)])
+    # obstacle2 = Polygon([(3, 4), (6, 7), (3, 7)])
+
+    O1A = np.array([[-1, 1], [1, 0], [0, -1]])
+    O2A = np.array([[0, 1], [-1, 0], [1, -1]])
+
+    O1b = np.array([-1, 8, -2])
+    O2b = np.array([7, -3, -1])
+
     def _constraint_fn(time, state):
         state = np.reshape(state, (-1, time_horizon, 4))
-        dist = state[:, :, [0, 2]] - np.array([obstacle["center"]])
-        result = np.linalg.norm(dist, ord=2, axis=2)
-        indicator = np.all(result >= obstacle["radius"], axis=1)
-        return indicator
-        # return 0.2 - np.power(result, 2) - 1 + delta
-        # dist >= 0.2
-        # 0 >= 0.2 - dist
 
-        # E[f(X, U)] >= 1 - delta
+        state_shape = np.shape(state)
+        indicator = np.zeros((state_shape[0],), dtype=bool)
+
+        # # dist = state[:, :, [0, 2]] - np.array([obstacle["center"]])
+        # # result = np.linalg.norm(dist, ord=2, axis=2)
+        # # indicator = np.all(result >= obstacle["radius"], axis=1)
+        # for i in range(state_shape[0]):
+        #     traj = state[i, :, [0, 2]].T
+        #     ls = LineString(traj)
+
+        #     # in_obstacle1 = ls.contains(obstacle1)
+        #     # in_obstacle2 = ls.contains(obstacle2)
+
+        #     in_obstacle1 = obstacle1.contains(ls)
+        #     in_obstacle2 = obstacle2.contains(ls)
+
+        #     # in_obstacle1 = ls.within(obstacle1)
+        #     # in_obstacle2 = ls.within(obstacle2)
+
+        #     indicator[i] = ~in_obstacle1 and ~in_obstacle2
+
+        #     print(in_obstacle1)
+        #     print(in_obstacle2)
+        #     print(~in_obstacle1 and ~in_obstacle2)
+
+        #     break
+
+        #     # indicator[i] = np.random.randint(2)
+
+        # return indicator
+
+        for i in range(state_shape[0]):
+
+            for j in range(time_horizon):
+
+                in_obstacle = True
+
+                for k in range(3):
+                    h_ij = -np.array([O1A[k, 0], 0, O1A[k, 1], 0])
+                    g_ij = -O1b[k]
+
+                    if h_ij @ state[i, j, :] <= g_ij:
+                        in_obstacle = False
+
+                indicator[i] = indicator[i] or in_obstacle
+
+                in_obstacle = True
+
+                for k in range(3):
+                    h_ij = -np.array([O2A[k, 0], 0, O2A[k, 1], 0])
+                    g_ij = -O2b[k]
+
+                    if h_ij @ state[i, j, :] <= g_ij:
+                        in_obstacle = False
+
+                indicator[i] = indicator[i] or in_obstacle
+
+            # break
+
+        return ~indicator
 
     return _constraint_fn
 
@@ -224,6 +289,7 @@ def config(sample):
     results_filename = "results/data.npy"
     no_plot = False
 
+    mc_validation = True
     num_monte_carlo = 1000
 
 
@@ -329,6 +395,7 @@ def main(
     pd_gains,
     results_filename,
     no_plot,
+    mc_validation,
     sample,
     simulation,
     _log,
@@ -392,17 +459,20 @@ def main(
     if not no_plot:
         plot_results()
 
-        plot_mc_validation(seed=seed, env=env, action_sequence=action_sequence)
+    if mc_validation:
+        probability_vector = policy.probability_vector
+        plot_mc_validation(seed=seed, env=env, probability_vector=probability_vector)
 
 
 @ex.capture
 def plot_mc_validation(
     seed,
     env,
-    action_sequence,
+    probability_vector,
     simulation,
     time_horizon,
     num_monte_carlo,
+    cost,
     obstacle,
     plot_cfg,
 ):
@@ -418,6 +488,12 @@ def plot_mc_validation(
 
     import matplotlib.pyplot as plt
 
+    with open("results/sample.npy", "rb") as f:
+        X = np.load(f)
+        U = np.load(f)
+        Y = np.load(f)
+        A = np.load(f)
+
     fig = plt.figure()
     ax = plt.axes(**plot_cfg["axes"])
 
@@ -432,6 +508,10 @@ def plot_mc_validation(
         env.state = simulation["initial_condition"]
         # trajectory = [env.state]
         trajectory = []
+
+        idx = np.random.choice(len(probability_vector), size=None, p=probability_vector)
+        action_sequence = np.array(A[idx], dtype=np.float32)
+        action_sequence = np.reshape(action_sequence, (-1, 2))
 
         # Simulate the env using the computed policy.
         for t in range(time_horizon):
@@ -461,17 +541,23 @@ def plot_mc_validation(
         f"% violation: {num_violations / num_monte_carlo} [{num_violations}/{num_monte_carlo}]"
     )
 
-    plt.gca().add_patch(
-        plt.Circle(
-            obstacle["center"],
-            obstacle["radius"],
-            fc="none",
-            ec="red",
-            label="Obstacle",
-        )
-    )
+    # plt.gca().add_patch(
+    #     plt.Circle(
+    #         obstacle["center"],
+    #         obstacle["radius"],
+    #         fc="none",
+    #         ec="red",
+    #         label="Obstacle",
+    #     )
+    # )
 
-    plt.scatter(0.5, 0.5, s=2.5, c="C2")
+    obstacles_vertices = [np.array([[3, 2], [8, 2], [8, 7]])]
+    obstacles_vertices.append(np.array([[3, 4], [6, 7], [3, 7]]))
+
+    for obs_verts in obstacles_vertices:
+        plt.gca().add_patch(plt.Polygon(obs_verts, fc="black", ec="none"))
+
+    plt.scatter(cost["goal"][0], cost["goal"][2], s=2.5, c="C2", label="Goal State")
 
     plt.savefig("results/plot_mc.png")
 
@@ -488,14 +574,14 @@ def plot_config(config, command_name, logger):
             "axes": {
                 "xlabel": r"$x_1$",
                 "ylabel": r"$x_2$",
-                "xlim": (-1.1, 1.1),
-                "ylim": (-1.1, 1.1),
+                "xlim": (-0.5, 10.5),
+                "ylim": (-0.5, 10.5),
             },
         }
 
 
 @ex.command(unobserved=True)
-def plot_results(system, obstacle, plot_cfg):
+def plot_results(system, cost, obstacle, plot_cfg):
     """Plot the results of the experiement."""
 
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -524,17 +610,23 @@ def plot_results(system, obstacle, plot_cfg):
             label="System Trajectory",
         )
 
-    plt.gca().add_patch(
-        plt.Circle(
-            obstacle["center"],
-            obstacle["radius"],
-            fc="none",
-            ec="red",
-            label="Obstacle",
-        )
-    )
+    # plt.gca().add_patch(
+    #     plt.Circle(
+    #         obstacle["center"],
+    #         obstacle["radius"],
+    #         fc="none",
+    #         ec="red",
+    #         label="Obstacle",
+    #     )
+    # )
 
-    plt.scatter(0.5, 0.5, s=2.5, c="C2", label="Goal State")
+    obstacles_vertices = [np.array([[3, 2], [8, 2], [8, 7]])]
+    obstacles_vertices.append(np.array([[3, 4], [6, 7], [3, 7]]))
+
+    for obs_verts in obstacles_vertices:
+        plt.gca().add_patch(plt.Polygon(obs_verts, fc="black", ec="none"))
+
+    plt.scatter(cost["goal"][0], cost["goal"][2], s=2.5, c="C2", label="Goal State")
 
     plt.legend()
 
@@ -542,7 +634,7 @@ def plot_results(system, obstacle, plot_cfg):
 
 
 @ex.command(unobserved=True)
-def plot_sample(time_horizon, obstacle, plot_cfg):
+def plot_sample(seed, time_horizon, cost, obstacle, plot_cfg):
 
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     logging.getLogger("PIL").setLevel(logging.WARNING)
@@ -554,6 +646,14 @@ def plot_sample(time_horizon, obstacle, plot_cfg):
     update_rc_params(matplotlib, plot_cfg["rc_params"])
 
     import matplotlib.pyplot as plt
+
+    # # Make the system.
+    # env = make_system()
+
+    # # Set the random seed.
+    # set_system_seed(seed=seed, env=env)
+
+    # S = generate_cc_sample(seed=seed, env=env)
 
     with open("results/sample.npy", "rb") as f:
         X = np.load(f).tolist()
@@ -579,17 +679,23 @@ def plot_sample(time_horizon, obstacle, plot_cfg):
         with plt.style.context(plot_cfg["trajectory_style"]):
             plt.plot(trajectory[:, 0], trajectory[:, 2], color=plt_color, marker="")
 
-    plt.gca().add_patch(
-        plt.Circle(
-            obstacle["center"],
-            obstacle["radius"],
-            fc="none",
-            ec="red",
-            label="Obstacle",
-        )
-    )
+    # plt.gca().add_patch(
+    #     plt.Circle(
+    #         obstacle["center"],
+    #         obstacle["radius"],
+    #         fc="none",
+    #         ec="red",
+    #         label="Obstacle",
+    #     )
+    # )
 
-    plt.scatter(0.5, 0.5, s=2.5, c="C2")
+    obstacles_vertices = [np.array([[3, 2], [8, 2], [8, 7]])]
+    obstacles_vertices.append(np.array([[3, 4], [6, 7], [3, 7]]))
+
+    for obs_verts in obstacles_vertices:
+        plt.gca().add_patch(plt.Polygon(obs_verts, fc="black", ec="none"))
+
+    plt.scatter(cost["goal"][0], cost["goal"][2], s=2.5, c="C2", label="Goal State")
 
     plt.savefig(plot_cfg["plot_filename"])
 
