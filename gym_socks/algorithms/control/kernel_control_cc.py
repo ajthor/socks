@@ -204,11 +204,11 @@ class KernelControlCC(BasePolicy):
         self.CUA = self.kernel_fn(U, A)
 
         gym_socks.logger.debug("Computing cost function.")
-        self.cost_fn = partial(self.cost_fn, state=Y)
+        self.cost_fn = partial(self.cost_fn, state=Y, action=U)
 
         gym_socks.logger.debug("Computing constraint function.")
         if self.constraint_fn is not None:
-            self.constraint_fn = partial(self.constraint_fn, state=Y)
+            self.constraint_fn = partial(self.constraint_fn, state=Y, action=U)
 
         return self
 

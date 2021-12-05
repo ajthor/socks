@@ -129,12 +129,16 @@ def make_cost(time_horizon, goal):
 
     goal = np.array(goal)
 
-    def _cost_fn(time, state):
-        state = np.reshape(state, (-1, time_horizon, 4))
-        # dist = state[:, -1, [0, 2]] - np.array([goal[[0, 2]]])
-        dist = state[:, -1, :] - np.array([goal])
-        result = np.linalg.norm(dist, ord=2, axis=1)
-        return result
+    def _cost_fn(time, state, action):
+        action = np.reshape(action, (-1, time_horizon, 2))
+        result = np.linalg.norm(action, ord=1, axis=2)
+        return np.sum(result, axis=1)
+
+        # state = np.reshape(state, (-1, time_horizon, 4))
+        # # dist = state[:, -1, [0, 2]] - np.array([goal[[0, 2]]])
+        # dist = state[:, -1, :] - np.array([goal])
+        # result = np.linalg.norm(dist, ord=2, axis=1)
+        # return result
         # return np.power(result, 2)
 
     return _cost_fn
@@ -167,7 +171,7 @@ def make_constraint(time_horizon, obstacle):
     O1b = np.array([-1, 8, -2])
     O2b = np.array([7, -3, -1])
 
-    def _constraint_fn(time, state):
+    def _constraint_fn(time, state, action):
         state = np.reshape(state, (-1, time_horizon, 4))
 
         state_shape = np.shape(state)
@@ -227,9 +231,11 @@ def make_constraint(time_horizon, obstacle):
 
                 indicator[i] = indicator[i] or in_obstacle
 
-            # break
+        dist = state[:, -1, [0, 2]] - np.array([10, 10])
+        result = np.linalg.norm(dist, ord=2, axis=1)
+        is_close = result <= 1.0
 
-        return ~indicator
+        return ~indicator & is_close
 
     return _constraint_fn
 
@@ -284,7 +290,7 @@ def config(sample):
     verbose = True
 
     gen_sample = True
-    pd_gains = [[3, 0.5, 0, 0], [0, 0, 3, 0.5]]
+    pd_gains = [[0.5, 2, 0, 0], [0, 0, 0.5, 2]]
 
     results_filename = "results/data.npy"
     no_plot = False
@@ -524,7 +530,11 @@ def plot_mc_validation(
             trajectory.append(list(next_state))
 
         # Compute whether the simulated trajectory satisfies constraints.
-        satisfies_constraints = constraint_fn(time=None, state=trajectory)
+        satisfies_constraints = constraint_fn(
+            time=None,
+            state=trajectory,
+            action=action_sequence,
+        )
 
         trajectory.insert(0, simulation["initial_condition"])
         trajectory = np.array(trajectory, dtype=np.float32)
@@ -664,7 +674,7 @@ def plot_sample(seed, time_horizon, cost, obstacle, plot_cfg):
         A = np.load(f).tolist()
 
     constraint_fn = make_constraint(time_horizon=time_horizon)
-    satisfies_constraints = constraint_fn(time=0, state=Y)
+    satisfies_constraints = constraint_fn(time=0, state=Y, action=U)
 
     fig = plt.figure()
     ax = plt.axes(**plot_cfg["axes"])
