@@ -22,7 +22,7 @@ class NonMarkovIntegratorEnv(DynamicalSystem):
 
     """
 
-    _sampling_time = 0.1
+    _sampling_time = 1.0
 
     def __init__(self, seed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -39,7 +39,8 @@ class NonMarkovIntegratorEnv(DynamicalSystem):
 
         self.state = None
 
-        self.mass = None
+        # self.mass = 1
+        # self.alpha = 1
 
         self.seed(seed=seed)
 
@@ -108,16 +109,17 @@ class NonMarkovIntegratorEnv(DynamicalSystem):
         return 1e-2 * np.array(w)
 
     def dynamics(self, time, state, action, disturbance):
-        _, *x = state
-        return np.array([*x, *action], dtype=np.float32) + disturbance
+        raise NotImplementedError
 
     def reset(self):
         # Mass is at least 0.1, with an additive squared exponential term.
         # self.mass = 0.1 + self.np_random.exponential(scale=0.1, size=(1,))
-        # self.mass = 0.75 + (self.np_random.beta(a=2, b=2) / 2)
-        self.mass = 0.5 + self.np_random.beta(a=2, b=2)
+        self.mass = 0.75 + (self.np_random.beta(a=2, b=2) / 2)
+        # self.mass = 0.5 + self.np_random.beta(a=2, b=2)
         # self.mass = self.np_random.beta(a=2, b=2)
-        self.alpha = self.np_random.beta(a=2, b=3)
+        self.alpha = self.np_random.beta(a=2, b=5) * 0.02
+        # self.mass = 0.5
+        # self.alpha = 0
 
         # self.state = self.state_space.sample()
         # return np.array(self.state, dtype=np.float32)

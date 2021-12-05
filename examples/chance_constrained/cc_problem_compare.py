@@ -81,13 +81,13 @@ from examples.ingredients.plotting_ingredient import update_rc_params
 @system_ingredient.config
 def system_config():
 
-    system_id = "RepeatedIntegratorEnv-v0"
+    system_id = "NonMarkovIntegratorEnv-v0"
 
     sampling_time = 1.0
 
     action_space = {
-        "lower_bound": [-0.1, -0.1],
-        "upper_bound": [0.1, 0.1],
+        "lower_bound": [-1.1, -1.1],
+        "upper_bound": [1.1, 1.1],
     }
 
 
@@ -96,15 +96,15 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [0, 0, 3, 0],
-        "upper_bound": [0, 0, 3, 0],
+        "lower_bound": [0, 0, 0, 0],
+        "upper_bound": [0, 0, 0, 0],
         "sample_size": 500,
     }
 
     action_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [-0.1, -0.1],
-        "upper_bound": [0.1, 0.1],
+        "lower_bound": [-1.1, -1.1],
+        "upper_bound": [1.1, 1.1],
         "sample_size": 500,
     }
 
@@ -112,7 +112,7 @@ def sample_config():
 @simulation_ingredient.config
 def simulation_config():
 
-    initial_condition = [0, 0, 3, 0]
+    initial_condition = [0, 0, 0, 0]
 
 
 cost_ingredient = Ingredient("cost")
@@ -505,6 +505,8 @@ def plot_mc_validation(
     for _ in range(num_monte_carlo):
 
         env.reset()
+        # env.mass = 1
+        # env.alpha = 0.05
         env.state = simulation["initial_condition"]
         # trajectory = [env.state]
         trajectory = []
@@ -647,13 +649,13 @@ def plot_sample(seed, time_horizon, cost, obstacle, plot_cfg):
 
     import matplotlib.pyplot as plt
 
-    # # Make the system.
-    # env = make_system()
+    # Make the system.
+    env = make_system()
 
-    # # Set the random seed.
-    # set_system_seed(seed=seed, env=env)
+    # Set the random seed.
+    set_system_seed(seed=seed, env=env)
 
-    # S = generate_cc_sample(seed=seed, env=env)
+    S = generate_cc_sample(seed=seed, env=env)
 
     with open("results/sample.npy", "rb") as f:
         X = np.load(f).tolist()
@@ -676,18 +678,23 @@ def plot_sample(seed, time_horizon, cost, obstacle, plot_cfg):
         else:
             plt_color = "C1"
 
+        # if i <= 10:
         with plt.style.context(plot_cfg["trajectory_style"]):
             plt.plot(trajectory[:, 0], trajectory[:, 2], color=plt_color, marker="")
 
-    # plt.gca().add_patch(
-    #     plt.Circle(
-    #         obstacle["center"],
-    #         obstacle["radius"],
-    #         fc="none",
-    #         ec="red",
-    #         label="Obstacle",
-    #     )
-    # )
+        # plt.gca().add_patch(
+        #     plt.Circle(
+        #         obstacle["center"],
+        #         obstacle["radius"],
+        #         fc="none",
+        #         ec="red",
+        #         label="Obstacle",
+        #     )
+        # )
+
+    for i, trajectory in enumerate(Y):
+        trajectory = np.array(trajectory)
+        plt.scatter(trajectory[-1, 0], trajectory[-1, 2], s=3, color="red")
 
     obstacles_vertices = [np.array([[3, 2], [8, 2], [8, 7]])]
     obstacles_vertices.append(np.array([[3, 4], [6, 7], [3, 7]]))
