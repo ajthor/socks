@@ -30,15 +30,10 @@ Todo:
 import gym
 import gym_socks
 
-import matplotlib.pyplot as plt
-
 import logging
 
 import numpy as np
 from numpy.linalg import norm
-
-from shapely.geometry import Polygon
-from shapely.geometry import LineString
 
 from sacred import Experiment
 from sacred import Ingredient
@@ -81,6 +76,7 @@ from examples.ingredients.plotting_ingredient import update_rc_params
 @system_ingredient.config
 def system_config():
 
+    # system_id = "RepeatedIntegratorEnv-v0"
     system_id = "NonMarkovIntegratorEnv-v0"
 
     sampling_time = 1.0
@@ -125,21 +121,19 @@ def cost_config():
 
 
 @cost_ingredient.capture
-def make_cost(time_horizon, goal):
+def make_cost_x(time_horizon):
+    def _cost_fn(time, state):
+        return np.zeros((np.shape(state)[0],))
 
-    goal = np.array(goal)
+    return _cost_fn
 
-    def _cost_fn(time, state, action):
+
+@cost_ingredient.capture
+def make_cost_u(time_horizon):
+    def _cost_fn(time, action):
         action = np.reshape(action, (-1, time_horizon, 2))
         result = np.linalg.norm(action, ord=1, axis=2)
         return np.sum(result, axis=1)
-
-        # state = np.reshape(state, (-1, time_horizon, 4))
-        # # dist = state[:, -1, [0, 2]] - np.array([goal[[0, 2]]])
-        # dist = state[:, -1, :] - np.array([goal])
-        # result = np.linalg.norm(dist, ord=2, axis=1)
-        # return result
-        # return np.power(result, 2)
 
     return _cost_fn
 
@@ -150,92 +144,65 @@ obstacle_ingredient = Ingredient("obstacle")
 @obstacle_ingredient.config
 def obstacle_config():
 
-    center = [0, 0]
-    radius = 0.2
+    obstacles = [
+        {"A": [[-1, 1], [1, 0], [0, -1]], "b": [-1, 8, -2]},
+        {"A": [[0, 1], [-1, 0], [1, -1]], "b": [7, -3, -1]},
+    ]
 
 
 constraint_ingredient = Ingredient("constraint", ingredients=[obstacle_ingredient])
 
 
+@constraint_ingredient.config
+def constraint_config():
+
+    # Epsilon distance around X_goal.
+    epsilon = 1.0
+
+
 @constraint_ingredient.capture
-def make_constraint(time_horizon, obstacle):
-
-    center = np.array(obstacle["center"])
-
-    # obstacle1 = Polygon([(3, 2), (8, 2), (8, 7)])
-    # obstacle2 = Polygon([(3, 4), (6, 7), (3, 7)])
-
-    O1A = np.array([[-1, 1], [1, 0], [0, -1]])
-    O2A = np.array([[0, 1], [-1, 0], [1, -1]])
-
-    O1b = np.array([-1, 8, -2])
-    O2b = np.array([7, -3, -1])
-
-    def _constraint_fn(time, state, action):
+def make_constraint_x(time_horizon, obstacle, epsilon):
+    def _constraint_fn(time, state):
         state = np.reshape(state, (-1, time_horizon, 4))
 
         state_shape = np.shape(state)
         indicator = np.zeros((state_shape[0],), dtype=bool)
 
-        # # dist = state[:, :, [0, 2]] - np.array([obstacle["center"]])
-        # # result = np.linalg.norm(dist, ord=2, axis=2)
-        # # indicator = np.all(result >= obstacle["radius"], axis=1)
-        # for i in range(state_shape[0]):
-        #     traj = state[i, :, [0, 2]].T
-        #     ls = LineString(traj)
+        # Obstacle constraints.
+        for obs in obstacle["obstacles"]:
 
-        #     # in_obstacle1 = ls.contains(obstacle1)
-        #     # in_obstacle2 = ls.contains(obstacle2)
+            Oi_A = np.array(obs["A"])
+            Oi_b = np.array(obs["b"])
 
-        #     in_obstacle1 = obstacle1.contains(ls)
-        #     in_obstacle2 = obstacle2.contains(ls)
+            for i in range(state_shape[0]):
 
-        #     # in_obstacle1 = ls.within(obstacle1)
-        #     # in_obstacle2 = ls.within(obstacle2)
+                for j in range(time_horizon):
 
-        #     indicator[i] = ~in_obstacle1 and ~in_obstacle2
+                    in_obstacle = True
 
-        #     print(in_obstacle1)
-        #     print(in_obstacle2)
-        #     print(~in_obstacle1 and ~in_obstacle2)
+                    for k in range(3):
+                        h_ij = -np.array([Oi_A[k, 0], 0, Oi_A[k, 1], 0])
+                        g_ij = -Oi_b[k]
 
-        #     break
+                        if h_ij @ state[i, j, :] <= g_ij:
+                            in_obstacle = False
 
-        #     # indicator[i] = np.random.randint(2)
+                    indicator[i] = indicator[i] or in_obstacle
 
-        # return indicator
-
-        for i in range(state_shape[0]):
-
-            for j in range(time_horizon):
-
-                in_obstacle = True
-
-                for k in range(3):
-                    h_ij = -np.array([O1A[k, 0], 0, O1A[k, 1], 0])
-                    g_ij = -O1b[k]
-
-                    if h_ij @ state[i, j, :] <= g_ij:
-                        in_obstacle = False
-
-                indicator[i] = indicator[i] or in_obstacle
-
-                in_obstacle = True
-
-                for k in range(3):
-                    h_ij = -np.array([O2A[k, 0], 0, O2A[k, 1], 0])
-                    g_ij = -O2b[k]
-
-                    if h_ij @ state[i, j, :] <= g_ij:
-                        in_obstacle = False
-
-                indicator[i] = indicator[i] or in_obstacle
-
+        # X_goal constraint
         dist = state[:, -1, [0, 2]] - np.array([10, 10])
         result = np.linalg.norm(dist, ord=2, axis=1)
-        is_close = result <= 1.0
+        in_goal = result <= epsilon
 
-        return ~indicator & is_close
+        return ~indicator & in_goal
+
+    return _constraint_fn
+
+
+@constraint_ingredient.capture
+def make_constraint_u(time_horizon):
+    def _constraint_fn(time, action):
+        return np.zeros((np.shape(action)[0],))
 
     return _constraint_fn
 
@@ -433,8 +400,10 @@ def main(
 
         # Compute policy.
         policy = KernelControlCC(
-            cost_fn=make_cost(time_horizon=time_horizon),
-            constraint_fn=make_constraint(time_horizon=time_horizon),
+            cost_fn_x=make_cost_x(time_horizon=time_horizon),
+            cost_fn_u=make_cost_u(time_horizon=time_horizon),
+            constraint_fn_x=make_constraint_x(time_horizon=time_horizon),
+            constraint_fn_u=make_constraint_u(time_horizon=time_horizon),
             delta=delta,
             verbose=verbose,
             kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
@@ -503,8 +472,8 @@ def plot_mc_validation(
     fig = plt.figure()
     ax = plt.axes(**plot_cfg["axes"])
 
-    cost_fn = make_cost(time_horizon=time_horizon)
-    constraint_fn = make_constraint(time_horizon=time_horizon)
+    # cost_fn = make_cost(time_horizon=time_horizon)
+    constraint_fn = make_constraint_x(time_horizon=time_horizon)
 
     num_violations = 0
 
@@ -530,11 +499,7 @@ def plot_mc_validation(
             trajectory.append(list(next_state))
 
         # Compute whether the simulated trajectory satisfies constraints.
-        satisfies_constraints = constraint_fn(
-            time=None,
-            state=trajectory,
-            action=action_sequence,
-        )
+        satisfies_constraints = constraint_fn(time=None, state=trajectory)
 
         trajectory.insert(0, simulation["initial_condition"])
         trajectory = np.array(trajectory, dtype=np.float32)
@@ -673,8 +638,8 @@ def plot_sample(seed, time_horizon, cost, obstacle, plot_cfg):
         Y = np.load(f).tolist()
         A = np.load(f).tolist()
 
-    constraint_fn = make_constraint(time_horizon=time_horizon)
-    satisfies_constraints = constraint_fn(time=0, state=Y, action=U)
+    constraint_fn = make_constraint_x(time_horizon=time_horizon)
+    satisfies_constraints = constraint_fn(time=0, state=Y)
 
     fig = plt.figure()
     ax = plt.axes(**plot_cfg["axes"])

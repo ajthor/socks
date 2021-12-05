@@ -25,8 +25,10 @@ from tqdm.auto import tqdm
 def kernel_control_cc(
     S: np.ndarray,
     A: np.ndarray,
-    cost_fn=None,
-    constraint_fn=None,
+    cost_fn_x=None,
+    cost_fn_u=None,
+    constraint_fn_x=None,
+    constraint_fn_u=None,
     delta: float = None,
     heuristic: bool = False,
     regularization_param: float = None,
@@ -53,8 +55,10 @@ def kernel_control_cc(
     """
 
     alg = KernelControlCC(
-        cost_fn=cost_fn,
-        constraint_fn=constraint_fn,
+        cost_fn_x=cost_fn_x,
+        cost_fn_u=cost_fn_u,
+        constraint_fn_x=constraint_fn_x,
+        constraint_fn_u=constraint_fn_u,
         delta=delta,
         heuristic=heuristic,
         regularization_param=regularization_param,
@@ -85,8 +89,10 @@ class KernelControlCC(BasePolicy):
 
     def __init__(
         self,
-        cost_fn=None,
-        constraint_fn=None,
+        cost_fn_x=None,
+        cost_fn_u=None,
+        constraint_fn_x=None,
+        constraint_fn_u=None,
         delta: float = None,
         heuristic: bool = False,
         regularization_param: float = None,
@@ -97,8 +103,10 @@ class KernelControlCC(BasePolicy):
         **kwargs,
     ):
 
-        self.cost_fn = cost_fn
-        self.constraint_fn = constraint_fn
+        self.cost_fn_x = cost_fn_x
+        self.cost_fn_u = cost_fn_u
+        self.constraint_fn_x = constraint_fn_x
+        self.constraint_fn_u = constraint_fn_u
 
         self.delta = delta
 
@@ -151,10 +159,16 @@ class KernelControlCC(BasePolicy):
         if self.regularization_param is None:
             self.regularization_param = 1
 
-        if self.cost_fn is None:
+        if self.cost_fn_x is None:
             raise ValueError("Must supply a cost function.")
 
-        if self.constraint_fn is None:
+        if self.cost_fn_u is None:
+            raise ValueError("Must supply a cost function.")
+
+        if self.constraint_fn_x is None:
+            raise ValueError("Must supply a constraint function.")
+
+        if self.constraint_fn_u is None:
             raise ValueError("Must supply a constraint function.")
 
         if self.delta is None:
@@ -204,11 +218,12 @@ class KernelControlCC(BasePolicy):
         self.CUA = self.kernel_fn(U, A)
 
         gym_socks.logger.debug("Computing cost function.")
-        self.cost_fn = partial(self.cost_fn, state=Y, action=U)
+        self.cost_fn_x = partial(self.cost_fn_x, state=Y)
+        self.cost_fn_u = partial(self.cost_fn_u, action=A)
 
         gym_socks.logger.debug("Computing constraint function.")
-        if self.constraint_fn is not None:
-            self.constraint_fn = partial(self.constraint_fn, state=Y, action=U)
+        self.constraint_fn_x = partial(self.constraint_fn_x, state=Y)
+        self.constraint_fn_u = partial(self.constraint_fn_u, action=A)
 
         return self
 
@@ -226,15 +241,18 @@ class KernelControlCC(BasePolicy):
         betaXT = self.W @ (CXT * self.CUA)
 
         # Compute cost vector.
-        C = np.matmul(np.array(self.cost_fn(time=time), dtype=np.float32), betaXT)
+        C = np.matmul(
+            np.array(self.cost_fn_x(time=time), dtype=np.float32), betaXT
+        ) + np.array(self.cost_fn_u(time=time), dtype=np.float32)
 
         # Compute constraint vector.
         D = (
             1
             - self.delta
             - np.matmul(
-                np.array(self.constraint_fn(time=time), dtype=np.float32), betaXT
+                np.array(self.constraint_fn_x(time=time), dtype=np.float32), betaXT
             )
+            + np.array(self.constraint_fn_u(time=time), dtype=np.float32)
         )
 
         # Compute the solution to the LP.
