@@ -106,21 +106,18 @@ class NonMarkovIntegratorEnv(DynamicalSystem):
 
     def generate_disturbance(self, time, state, action):
         w = self.np_random.standard_normal(size=self.state_space.shape)
-        return 1e-2 * np.array(w)
+        w = np.array(w)
+        w[[0,2]] = 0.1 * w[[0,2]]
+        w[[1,3]] = 0.
+        return w
 
     def dynamics(self, time, state, action, disturbance):
         raise NotImplementedError
 
     def reset(self):
         # Mass is at least 0.1, with an additive squared exponential term.
-        # self.mass = 0.1 + self.np_random.exponential(scale=0.1, size=(1,))
-        # self.mass = 0.75 + (self.np_random.beta(a=2, b=2) / 2)
-        # self.mass = 0.5 + self.np_random.beta(a=2, b=2)
         self.mass = 0.9 + (self.np_random.beta(a=2, b=2) / 5)
-        # self.mass = self.np_random.beta(a=2, b=2)
         self.alpha = self.np_random.beta(a=2, b=5) * 0.02
-        # self.mass = 0.5
-        # self.alpha = 0
 
-        # self.state = self.state_space.sample()
-        # return np.array(self.state, dtype=np.float32)
+        # self.mass = 1.
+        # self.alpha = 0
