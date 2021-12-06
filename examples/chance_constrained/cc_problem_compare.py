@@ -302,6 +302,7 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
     _, U, _ = transpose_sample(_T)
 
     # sample trajectories
+    print("U=",U[0].shape)
     _log.debug("Sampling trajectories for dataset to approximate Q.")
     S = _sample(
         sampler=trajectory_sampler(
@@ -318,22 +319,92 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
     )
     X, U, Y = transpose_sample(S)
 
-    # -------------------------------------------------
-    # DEBUG
-    trajs = np.array(Y)
-    plt.figure(0)
-    for i in range(trajs.shape[0]):
-        plt.plot(trajs[i, :, 0], trajs[i, :, 2], alpha=0.2)
-    plt.show()
+    # # -------------------------------------------------
+    # # DEBUG
+    # trajs = np.array(Y)
+    # plt.figure(0)
+    # for i in range(trajs.shape[0]):
+    #     plt.plot(trajs[i, :, 0], trajs[i, :, 2], alpha=0.2)
+    # plt.show()
     # -------------------------------------------------
 
+    # ---------------
+    def sample_controls(action_space,
+                        M, T, x0=np.zeros(4), xg=np.zeros(4), u_dim=2):
+        dt = 1.
+        A = np.array(
+            [
+                [1, dt, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 1, dt],
+                [0, 0, 0, 1],
+            ],
+            dtype=np.float32,
+        )
+        B = np.array(
+            [
+                [(dt ** 2) / 2, 0],
+                [dt, 0],
+                [0, (dt ** 2) / 2],
+                [0, dt],
+            ],
+            dtype=np.float32,
+        )
+
+        print("(M, u_dim, T)=",(M, u_dim, T))
+        us = np.zeros((M, u_dim, T))
+        xs = np.zeros((M, x0.shape[0], T+1))
+        xs[:,:,0] = np.repeat(x0[np.newaxis,:], M, axis=0)
+        for t in range(T):
+            if t <= 3:
+                M_us = int(np.sqrt(M))**2
+                ux = np.linspace(0, 1, int(np.sqrt(M)))
+                uy = np.linspace(0, 1, int(np.sqrt(M)))
+                usk = np.meshgrid(ux, uy)
+                usk = np.reshape(np.meshgrid(ux,uy),(2,-1)).T
+
+                xs[:M_us,:,t+1] = (A @ xs[:M_us,:,t].T + 
+                                 + B @ usk.T).T
+                us[:M_us,:,t] = usk
+            if t > 3:
+                dxk = xs[:,:,t]-np.repeat(xg[np.newaxis,:], M, axis=0)
+                usk = PD_gains @ dxk.T
+                xs[:,:,t+1] = (A @ xs[:,:,t].T + 
+                                 + B @ usk).T
+                us[:,:,t] = usk.T
+        us = np.full(
+            us.shape,
+            us,
+            dtype=action_space.dtype,
+        )
+        for t in range(T):
+            for i in range(M):
+                us[i,:,t] = np.clip(us[i,:,t], action_space.low, action_space.high)
+        us_list = []
+        for i in range(M):
+            us_list.append(np.reshape(us[i,:,:].T, u_dim*T))
+        return xs, us_list
+    x0 = np.array([10, 0, 10, 0])
+    _, us = sample_controls(env.action_space,
+                            _get_sample_size(env.action_space, sample["action_space"]), 
+                            time_horizon, 
+                            x0, #simulation["initial_condition"], 
+                            np.array(cost["goal"]), 
+                            env.action_space.shape[0])
+    print("us=",us[0].shape)
+
+    ###-------------
     # Generate the set of admissible control actions.
     _log.debug("Generating admissible control actions (dataset A).")
     _S = _sample(
         sampler=trajectory_sampler(
             time_horizon=time_horizon,
             env=env,
-            policy=ClosedLoopPDPolicy,
+            # policy=ClosedLoopPDPolicy,
+            policy=ConstantPresampledPolicy(
+                        controls=us, 
+                        action_space=env.action_space
+                        ),
             sample_space=sample_space,
         ),
         sample_size=_get_sample_size(env.action_space, sample["action_space"]),
