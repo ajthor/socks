@@ -46,12 +46,11 @@ from gym_socks.algorithms.control import KernelControlCC
 
 from gym_socks.envs.sample import sample as _sample, transpose_sample
 
-# from gym_socks.envs.sample import trajectory_sampler
 from gym_socks.envs.sample import sample_generator
 from gym_socks.envs.sample import trajectory_sampler
 from gym_socks.envs.sample import reshape_trajectory_sample
 
-from gym_socks.envs.policy import RandomizedPolicy, BasePolicy, PDController
+from gym_socks.envs.policy import RandomizedPolicy, BasePolicy, PDController, ConstantPresampledPolicy
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
@@ -93,8 +92,8 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [0, 0, 1, 0],
-        "upper_bound": [0, 0, 1, 0],
+        "lower_bound": [0, 0, 2, 0],
+        "upper_bound": [0, 0, 2, 0],
         "sample_size": 1000,
     }
 
@@ -109,7 +108,7 @@ def sample_config():
 @simulation_ingredient.config
 def simulation_config():
 
-    initial_condition = [0, 0, 1, 0]
+    initial_condition = [0, 0, 2, 0]
 
 
 cost_ingredient = Ingredient("cost")
@@ -258,7 +257,7 @@ def config(sample):
     verbose = True
 
     gen_sample = True
-    pd_gains = [[0.5, 2, 0, 0], [0, 0, 0.5, 2]]
+    pd_gains = [[1, 2, 0, 0], [0, 0, 1, 2]]
 
     results_filename = "results/data.npy"
     no_plot = False
@@ -279,63 +278,57 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
     )
     sample_space.seed(seed=seed)
 
-    # TODO define goal state and pass through
+    # PD controller
     PD_gains = np.array(pd_gains)
-    # ---------------------------------------------------------
-    # DEBUGGING CODE
-    # dt = 0.1
-    # A = np.array([[1,dt,0,0],[0,1,0,0],[0,0,1,dt],[0,0,0,1]])
-    # B = np.array([[dt**2/2,0],[dt,0],[0,dt**2/2],[0,dt]])
-    # np.linalg.eig(A+B@K)[0]
-    # ---------------------------------------------------------
     ClosedLoopPDPolicy = PDController(
         action_space=env.action_space,
         state_space=env.state_space,
         goal_state=np.array(cost["goal"]),
         PD_gains=PD_gains,
     )
-    S = _sample(
+
+    # Sample controls
+    _log.debug("Sampling controls for dataset to approximate Q.")
+    _S = _sample(
         sampler=trajectory_sampler(
             time_horizon=time_horizon,
             env=env,
             policy=ClosedLoopPDPolicy,
             sample_space=sample_space,
-            # init_state = simulation["initial_condition"],
-            # B_initialize_from_init_state=True
+        ),
+        sample_size=sample["sample_space"]["sample_size"],#_get_sample_size(env.action_space, sample["action_space"]),
+    )
+    _T = reshape_trajectory_sample(_S)
+    _, U, _ = transpose_sample(_T)
+
+    # sample trajectories
+    _log.debug("Sampling trajectories for dataset to approximate Q.")
+    S = _sample(
+        sampler=trajectory_sampler(
+            time_horizon=time_horizon,
+            env=env,
+            # policy=ClosedLoopPDPolicy,
+            policy=ConstantPresampledPolicy(
+                        controls=U, 
+                        action_space=env.action_space
+                        ),
+            sample_space=sample_space,
         ),
         sample_size=sample["sample_space"]["sample_size"],
     )
-
-    # S is a list of tuples
-    # S = [(x_0, u, x),
-    #      (x_0, u, x),
-    #      (x_0, u, x),]
-    #   x_0 - np.array (x_dim,)  # vector
-    #    u  - np.array (N,u_dim) # matrix (N is time_horizon)
-    #    x  - np.array (N,x_dim) # matrix (N is time_horizon)
-    # where x[k,:] = f(u[:k,:], x_0, uncertainty) + noise
-
-    # T is a list of tuples
-    # T = [(x_0, u, x),
-    #      (x_0, u, x),
-    #      (x_0, u, x),
-    #      (x_0, u, x),]
-    #   x_0 - np.array (x_dim,)  # vector
-    #    u  - np.array (N*u_dim) # vector (N is time_horizon)
-    #    x  - np.array (N*x_dim) # vector (N is time_horizon)
+    X, U, Y = transpose_sample(S)
 
     # -------------------------------------------------
     # DEBUG
-    X, U, Y = transpose_sample(S)
-    # trajs = np.array(Y)
-    # plt.figure(0)
-    # for i in range(trajs.shape[0]):
-    #     plt.plot(trajs[i, :, 0], trajs[i, :, 2], alpha=0.2)
-    # plt.show()
+    trajs = np.array(Y)
+    plt.figure(0)
+    for i in range(trajs.shape[0]):
+        plt.plot(trajs[i, :, 0], trajs[i, :, 2], alpha=0.2)
+    plt.show()
     # -------------------------------------------------
 
     # Generate the set of admissible control actions.
-    _log.debug("Generating admissible control actions.")
+    _log.debug("Generating admissible control actions (dataset A).")
     _S = _sample(
         sampler=trajectory_sampler(
             time_horizon=time_horizon,
@@ -535,7 +528,7 @@ def plot_mc_validation(
         plt.gca().add_patch(plt.Polygon(obs_verts, fc="red", ec="none", alpha=0.4))
     plt.text(6, 3, r"$\mathcal{O}$", color=(0.7,0,0))
 
-    x_init = (0, 1)
+    x_init = simulation["initial_condition"]
     plt.scatter(x_init[0], x_init[1], s=30, c="k", marker="+")
     plt.text(0.5, 0, r"$x_0$")
 

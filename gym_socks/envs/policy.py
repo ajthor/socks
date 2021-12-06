@@ -71,6 +71,47 @@ class RandomizedPolicy(BasePolicy):
         return self.action_space.sample()
 
 
+class ConstantPresampledPolicy(BasePolicy):
+    """Constant policy.
+
+    A policy which returns a constant control action.
+
+    Args:
+        system: The system the policy is defined on. Needed to specify the shape of
+            the inputs and outputs.
+        constant: The constant value returned by the policy.
+
+    """
+
+    def __init__(self, controls, action_space=None):
+        # controls is a list
+        print("[ConstantPresampledPolicy] len(controls) = ", 
+                len(controls))
+        print("[ConstantPresampledPolicy] controls[0].shape = ", 
+                controls[0].shape)
+        self.action_space = action_space
+        self._controls = controls
+        self._nb_controls = len(controls)
+        self._u_dim = self.action_space.shape[0]
+        self._time_max = int(len(controls[0])/self._u_dim)
+        self._id_sample = -1
+
+    def __call__(self, time=0, *args, **kwargs):
+        if time == 0:
+            self._id_sample += 1
+        if self._id_sample == self._nb_controls:
+            self._id_sample = 0
+        control_traj = self._controls[self._id_sample]
+        control_traj = np.reshape(control_traj,
+                                  (self._time_max, self._u_dim))
+        control = control_traj[time,:]
+        return np.full(
+            self.action_space.shape,
+            control,
+            dtype=self.action_space.dtype,
+        )
+
+
 class ConstantPolicy(BasePolicy):
     """Constant policy.
 
@@ -159,19 +200,16 @@ class PDController(ConstantPolicy):
         control = np.zeros(self.action_space.shape, dtype=np.float32)
 
         # PD regulation to goal
-        if time > 2:
+        if time > 3:
             control = self.PD_gains @ (state - self.goal_state)
 
         # add exploratory noise
         sampled_control = self.action_space.sample()
         if time <= 3:
             control = control + np.abs(sampled_control)
-        # else:
-        #     control = control + 0.1 * sampled_control
 
         # saturate control
         control = np.clip(control, self.action_space.low, self.action_space.high)
-
 
         return control.astype(
             self.action_space.dtype,
