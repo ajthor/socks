@@ -116,7 +116,7 @@ class NonMarkovIntegratorEnv(DynamicalSystem):
         # self.mass = 0.1 + self.np_random.exponential(scale=0.1, size=(1,))
         # self.mass = 0.75 + (self.np_random.beta(a=2, b=2) / 2)
         # self.mass = 0.5 + self.np_random.beta(a=2, b=2)
-        self.mass = 0.95 + (self.np_random.beta(a=2, b=2) / 10)
+        self.mass = 0.9 + (self.np_random.beta(a=2, b=2) / 5)
         # self.mass = self.np_random.beta(a=2, b=2)
         self.alpha = self.np_random.beta(a=2, b=5) * 0.02
         # self.mass = 0.5

@@ -241,13 +241,7 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
 
     # TODO define goal state and pass through
     PD_gains = np.array(pd_gains)
-    # ---------------------------------------------------------
-    # DEBUGGING CODE
-    # dt = 0.1
-    # A = np.array([[1,dt,0,0],[0,1,0,0],[0,0,1,dt],[0,0,0,1]])
-    # B = np.array([[dt**2/2,0],[dt,0],[0,dt**2/2],[0,dt]])
-    # np.linalg.eig(A+B@K)[0]
-    # ---------------------------------------------------------
+
     ClosedLoopPDPolicy = PDController(
         action_space=env.action_space,
         state_space=env.state_space,
@@ -260,8 +254,6 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
             env=env,
             policy=ClosedLoopPDPolicy,
             sample_space=sample_space,
-            # init_state = simulation["initial_condition"],
-            # B_initialize_from_init_state=True
         ),
         sample_size=sample["sample_space"]["sample_size"],
     )
@@ -391,7 +383,6 @@ def main(
 
     if not no_plot:
         plot_results()
-
         plot_mc_validation(seed=seed, env=env, action_sequence=action_sequence)
 
 
@@ -435,7 +426,6 @@ def plot_mc_validation(
 
         # Simulate the env using the computed policy.
         for t in range(time_horizon):
-
             obs, *_ = env.step(time=t, action=action_sequence[t])
             next_state = env.state
 

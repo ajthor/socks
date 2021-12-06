@@ -72,6 +72,7 @@ from examples.ingredients.sample_ingredient import _get_sample_size
 from examples.ingredients.plotting_ingredient import plotting_ingredient
 from examples.ingredients.plotting_ingredient import update_rc_params
 
+import matplotlib.pyplot as plt
 
 @system_ingredient.config
 def system_config():
@@ -92,23 +93,23 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [0, 0, 0, 0],
-        "upper_bound": [0, 0, 0, 0],
-        "sample_size": 500,
+        "lower_bound": [0, 0, 1, 0],
+        "upper_bound": [0, 0, 1, 0],
+        "sample_size": 1000,
     }
 
     action_space = {
         "sample_scheme": "uniform",
         "lower_bound": [-1.1, -1.1],
         "upper_bound": [1.1, 1.1],
-        "sample_size": 500,
+        "sample_size": 2000,
     }
 
 
 @simulation_ingredient.config
 def simulation_config():
 
-    initial_condition = [0, 0, 0, 0]
+    initial_condition = [0, 0, 1, 0]
 
 
 cost_ingredient = Ingredient("cost")
@@ -157,7 +158,7 @@ constraint_ingredient = Ingredient("constraint", ingredients=[obstacle_ingredien
 def constraint_config():
 
     # Epsilon distance around X_goal.
-    epsilon = 1.0
+    epsilon = 2
 
 
 @constraint_ingredient.capture
@@ -247,7 +248,7 @@ def config(sample):
 
     sigma = 5  # Kernel bandwidth parameter.
     # Regularization parameter.
-    regularization_param = 1e-7
+    regularization_param = 1e-5
 
     # Probability of violation.
     delta = 0.01
@@ -263,7 +264,7 @@ def config(sample):
     no_plot = False
 
     mc_validation = True
-    num_monte_carlo = 1000
+    num_monte_carlo = 5000
 
 
 @ex.capture
@@ -462,6 +463,12 @@ def plot_mc_validation(
     update_rc_params(matplotlib, plot_cfg["rc_params"])
 
     import matplotlib.pyplot as plt
+    from matplotlib import rc
+    from matplotlib import rcParams
+    # rc('text', usetex=True)
+    rcParams['font.family'] = 'serif'
+    rcParams['font.size'] = 16
+    rcParams['text.usetex'] = True
 
     with open("results/sample.npy", "rb") as f:
         X = np.load(f)
@@ -477,7 +484,7 @@ def plot_mc_validation(
 
     num_violations = 0
 
-    for _ in range(num_monte_carlo):
+    for _ in range(max(num_monte_carlo, 1000)):
 
         env.reset()
         # env.mass = 1
@@ -504,13 +511,16 @@ def plot_mc_validation(
         trajectory.insert(0, simulation["initial_condition"])
         trajectory = np.array(trajectory, dtype=np.float32)
         if satisfies_constraints[0] == True:
-            plt_color = "C0"
+            plt_color = (0,0.3,0.8)# "blue"
+            plt_alpha = 0.05
         else:
-            plt_color = "C1"
+            plt_color = (0.9,0,0)# "red"
+            plt_alpha = 0.2
 
         # Plot the trajectory.
         with plt.style.context(plot_cfg["trajectory_style"]):
-            plt.plot(trajectory[:, 0], trajectory[:, 2], color=plt_color, marker="")
+            plt.plot(trajectory[:, 0], trajectory[:, 2], 
+                     color=plt_color, marker="", alpha=plt_alpha)
 
         num_violations += ~satisfies_constraints[0]
 
@@ -518,23 +528,24 @@ def plot_mc_validation(
         f"% violation: {num_violations / num_monte_carlo} [{num_violations}/{num_monte_carlo}]"
     )
 
-    # plt.gca().add_patch(
-    #     plt.Circle(
-    #         obstacle["center"],
-    #         obstacle["radius"],
-    #         fc="none",
-    #         ec="red",
-    #         label="Obstacle",
-    #     )
-    # )
-
     obstacles_vertices = [np.array([[3, 2], [8, 2], [8, 7]])]
     obstacles_vertices.append(np.array([[3, 4], [6, 7], [3, 7]]))
 
     for obs_verts in obstacles_vertices:
-        plt.gca().add_patch(plt.Polygon(obs_verts, fc="black", ec="none"))
+        plt.gca().add_patch(plt.Polygon(obs_verts, fc="red", ec="none", alpha=0.4))
+    plt.text(6, 3, r"$\mathcal{O}$", color=(0.7,0,0))
 
-    plt.scatter(cost["goal"][0], cost["goal"][2], s=2.5, c="C2", label="Goal State")
+    x_init = (0, 1)
+    plt.scatter(x_init[0], x_init[1], s=30, c="k", marker="+")
+    plt.text(0.5, 0, r"$x_0$")
+
+    x_goal = (cost["goal"][0], cost["goal"][2])
+    eps_goal = 2 # todo make this a variable
+    plt.gca().add_patch(plt.Circle(x_goal,eps_goal, fc="black", ec="none", alpha=0.2))
+    plt.text(x_goal[0]-1, x_goal[1]-3.5, r"$\mathcal{X}_{goal}$")
+
+    plt.xlabel(r"$p_x$")
+    plt.ylabel(r"$p_y$").set_rotation(0)
 
     plt.savefig("results/plot_mc.png")
 
@@ -549,10 +560,10 @@ def plot_config(config, command_name, logger):
                 "lines.color": "C1",
             },
             "axes": {
-                "xlabel": r"$x_1$",
-                "ylabel": r"$x_2$",
-                "xlim": (-0.5, 10.5),
-                "ylim": (-0.5, 10.5),
+                "xlabel": r"$p_x$",
+                "ylabel": r"$p_y$",
+                "xlim": (-0.5, 12.5),
+                "ylim": (-0.5, 12.5),
             },
         }
 
@@ -602,6 +613,12 @@ def plot_results(system, cost, obstacle, plot_cfg):
 
     for obs_verts in obstacles_vertices:
         plt.gca().add_patch(plt.Polygon(obs_verts, fc="black", ec="none"))
+
+    x_goal = (10, 10)
+    eps_goal = 2 # todo make this a variable
+    # goal_vertices = np.array([[8.5,8.5],[8.5,11.5],[11.5,11.5],[11.5,8.5]])
+    # plt.gca().add_patch(plt.Polygon(goal_vertices, fc="black", ec="none"))
+    plt.gca().add_patch(plt.Circle(x_goal,eps_goal, fc="black", ec="none", alpha=0.2))
 
     plt.scatter(cost["goal"][0], cost["goal"][2], s=2.5, c="C2", label="Goal State")
 

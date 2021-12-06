@@ -156,23 +156,23 @@ class PDController(ConstantPolicy):
         self.PD_gains = -1 * PD_gains
 
     def __call__(self, time=0, state=np.zeros(4), *args, **kwargs):
+        control = np.zeros(self.action_space.shape, dtype=np.float32)
 
-        if time <= 3:
-            control = np.zeros(self.action_space.shape, dtype=np.float32)
-        else:
-            # PD regulation to goal
+        # PD regulation to goal
+        if time > 2:
             control = self.PD_gains @ (state - self.goal_state)
 
         # add exploratory noise
-        temp_control = self.action_space.sample()
-        if time <= 1:
-            temp_control = np.abs(temp_control)
+        sampled_control = self.action_space.sample()
+        if time <= 3:
+            control = control + np.abs(sampled_control)
+        # else:
+        #     control = control + 0.1 * sampled_control
 
-        if time <= 10:
-            control = control + 1 * temp_control
-
-        # input saturation
+        # saturate control
         control = np.clip(control, self.action_space.low, self.action_space.high)
+
+
         return control.astype(
             self.action_space.dtype,
         )
