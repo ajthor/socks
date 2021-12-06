@@ -116,7 +116,8 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
                 corrupted by some measurement noise. If the system is fully observable,
                 this is the state of the system at the next time step.
             cost: The cost (reward) obtained by the system for taking action u in state
-                x and transitioning to state y. In general, this is not typically used with `DynamicalSystem` models.
+                x and transitioning to state y. In general, this is not typically used
+                with `DynamicalSystem` models.
             done: Flag to indicate the simulation has terminated. Usually toggled by
                 guard conditions, which terminates the simulation if the system
                 violates certain operating constraints.
