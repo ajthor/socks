@@ -76,6 +76,16 @@ from examples.ingredients.sample_ingredient import _get_sample_size
 from examples.ingredients.plotting_ingredient import plotting_ingredient
 from examples.ingredients.plotting_ingredient import update_rc_params
 
+from examples.chance_constrained.cost_ingredient import cost_ingredient
+from examples.chance_constrained.cost_ingredient import make_cost_x
+from examples.chance_constrained.cost_ingredient import make_cost_u
+
+from examples.chance_constrained.constraint_ingredient import constraint_ingredient
+from examples.chance_constrained.constraint_ingredient import make_constraint_x
+from examples.chance_constrained.constraint_ingredient import make_constraint_u
+
+from examples.chance_constrained.cc_kernel import cc_kernel
+
 import matplotlib.pyplot as plt
 
 
@@ -115,102 +125,6 @@ def sample_config():
 def simulation_config():
 
     initial_condition = [0, 0, 0, 0]
-
-
-cost_ingredient = Ingredient("cost")
-
-
-@cost_ingredient.config
-def cost_config():
-
-    goal = [10, 0, 10, 0]
-
-
-@cost_ingredient.capture
-def make_cost_x(time_horizon):
-    def _cost_fn(time, state):
-        return np.zeros((np.shape(state)[0],))
-
-    return _cost_fn
-
-
-@cost_ingredient.capture
-def make_cost_u(time_horizon):
-    def _cost_fn(time, action):
-        action = np.reshape(action, (-1, time_horizon, 2))
-        result = np.linalg.norm(action, ord=1, axis=2)
-        return np.sum(result, axis=1)
-
-    return _cost_fn
-
-
-obstacle_ingredient = Ingredient("obstacle")
-
-
-@obstacle_ingredient.config
-def obstacle_config():
-
-    obstacles = [
-        {"A": [[-1, 1], [1, 0], [0, -1]], "b": [-1, 8, -2]},
-        {"A": [[0, 1], [-1, 0], [1, -1]], "b": [7, -3, -1]},
-    ]
-
-
-constraint_ingredient = Ingredient("constraint", ingredients=[obstacle_ingredient])
-
-
-@constraint_ingredient.config
-def constraint_config():
-
-    # Epsilon distance around X_goal.
-    epsilon = 2.5
-
-
-@constraint_ingredient.capture
-def make_constraint_x(time_horizon, obstacle, epsilon):
-    def _constraint_fn(time, state):
-        state = np.reshape(state, (-1, time_horizon, 4))
-
-        state_shape = np.shape(state)
-        indicator = np.zeros((state_shape[0],), dtype=bool)
-
-        # Obstacle constraints.
-        for obs in obstacle["obstacles"]:
-
-            Oi_A = np.array(obs["A"])
-            Oi_b = np.array(obs["b"])
-
-            for i in range(state_shape[0]):
-
-                for j in range(time_horizon):
-
-                    in_obstacle = True
-
-                    for k in range(3):
-                        h_ij = -np.array([Oi_A[k, 0], 0, Oi_A[k, 1], 0])
-                        g_ij = -Oi_b[k]
-
-                        if h_ij @ state[i, j, :] <= g_ij:
-                            in_obstacle = False
-
-                    indicator[i] = indicator[i] or in_obstacle
-
-        # X_goal constraint
-        dist = state[:, -1, [0, 2]] - np.array([10, 10])
-        result = np.linalg.norm(dist, ord=2, axis=1)
-        in_goal = result <= epsilon
-
-        return ~indicator & in_goal
-
-    return _constraint_fn
-
-
-@constraint_ingredient.capture
-def make_constraint_u(time_horizon):
-    def _constraint_fn(time, action):
-        return np.zeros((np.shape(action)[0],))
-
-    return _constraint_fn
 
 
 ex = Experiment(
@@ -310,7 +224,7 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
     _, U, _ = transpose_sample(_T)
 
     # sample trajectories
-    print("U=",U[0].shape)
+    print("U=", U[0].shape)
     _log.debug("Sampling trajectories for dataset to approximate Q.")
     S = _sample(
         sampler=trajectory_sampler(
@@ -334,9 +248,8 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
     # -------------------------------------------------
 
     # ---------------
-    def sample_controls(action_space,
-                        M, T, x0=np.zeros(4), xg=np.zeros(4), u_dim=2):
-        dt = 1.
+    def sample_controls(action_space, M, T, x0=np.zeros(4), xg=np.zeros(4), u_dim=2):
+        dt = 1.0
         A = np.array(
             [
                 [1, dt, 0, 0],
@@ -356,27 +269,25 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
             dtype=np.float32,
         )
 
-        print("(M, u_dim, T)=",(M, u_dim, T))
+        print("(M, u_dim, T)=", (M, u_dim, T))
         us = np.zeros((M, u_dim, T))
-        xs = np.zeros((M, x0.shape[0], T+1))
-        xs[:,:,0] = np.repeat(x0[np.newaxis,:], M, axis=0)
+        xs = np.zeros((M, x0.shape[0], T + 1))
+        xs[:, :, 0] = np.repeat(x0[np.newaxis, :], M, axis=0)
         for t in range(T):
             if t <= 3:
-                M_us = int(np.sqrt(M))**2
+                M_us = int(np.sqrt(M)) ** 2
                 ux = np.linspace(0, 1, int(np.sqrt(M)))
                 uy = np.linspace(0, 1, int(np.sqrt(M)))
                 usk = np.meshgrid(ux, uy)
-                usk = np.reshape(np.meshgrid(ux,uy),(2,-1)).T
+                usk = np.reshape(np.meshgrid(ux, uy), (2, -1)).T
 
-                xs[:M_us,:,t+1] = (A @ xs[:M_us,:,t].T + 
-                                 + B @ usk.T).T
-                us[:M_us,:,t] = usk
+                xs[:M_us, :, t + 1] = (A @ xs[:M_us, :, t].T + B @ usk.T).T
+                us[:M_us, :, t] = usk
             if t > 3:
-                dxk = xs[:,:,t]-np.repeat(xg[np.newaxis,:], M, axis=0)
+                dxk = xs[:, :, t] - np.repeat(xg[np.newaxis, :], M, axis=0)
                 usk = PD_gains @ dxk.T
-                xs[:,:,t+1] = (A @ xs[:,:,t].T + 
-                                 + B @ usk).T
-                us[:,:,t] = usk.T
+                xs[:, :, t + 1] = (A @ xs[:, :, t].T + B @ usk).T
+                us[:, :, t] = usk.T
         us = np.full(
             us.shape,
             us,
@@ -384,19 +295,22 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
         )
         for t in range(T):
             for i in range(M):
-                us[i,:,t] = np.clip(us[i,:,t], action_space.low, action_space.high)
+                us[i, :, t] = np.clip(us[i, :, t], action_space.low, action_space.high)
         us_list = []
         for i in range(M):
-            us_list.append(np.reshape(us[i,:,:].T, u_dim*T))
+            us_list.append(np.reshape(us[i, :, :].T, u_dim * T))
         return xs, us_list
+
     x0 = np.array([10, 0, 10, 0])
-    _, us = sample_controls(env.action_space,
-                            _get_sample_size(env.action_space, sample["action_space"]), 
-                            time_horizon, 
-                            x0, #simulation["initial_condition"], 
-                            np.array(cost["goal"]), 
-                            env.action_space.shape[0])
-    print("us=",us[0].shape)
+    _, us = sample_controls(
+        env.action_space,
+        _get_sample_size(env.action_space, sample["action_space"]),
+        time_horizon,
+        x0,  # simulation["initial_condition"],
+        np.array(cost["goal"]),
+        env.action_space.shape[0],
+    )
+    print("us=", us[0].shape)
 
     ###-------------
     # Generate the set of admissible control actions.
@@ -406,10 +320,7 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
             time_horizon=time_horizon,
             env=env,
             # policy=ClosedLoopPDPolicy,
-            policy=ConstantPresampledPolicy(
-                        controls=us, 
-                        action_space=env.action_space
-                        ),
+            policy=ConstantPresampledPolicy(controls=us, action_space=env.action_space),
             sample_space=sample_space,
         ),
         sample_size=_get_sample_size(env.action_space, sample["action_space"]),
@@ -483,6 +394,7 @@ def main(
             delta=delta,
             verbose=verbose,
             kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+            # kernel_fn=partial(cc_kernel, gamma=1 / (2 * (sigma ** 2))),
             regularization_param=regularization_param,
             seed=seed,
         )
