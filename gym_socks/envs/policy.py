@@ -206,7 +206,7 @@ class PDController(ConstantPolicy):
         # add exploratory noise
         sampled_control = self.action_space.sample()
         if time <= 3:
-            control = control + np.abs(sampled_control)
+            control = control + 0.5*np.abs(sampled_control)
 
         # saturate control
         control = np.clip(control, self.action_space.low, self.action_space.high)

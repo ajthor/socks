@@ -92,16 +92,16 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [0, 0, 2, 0],
-        "upper_bound": [0, 0, 2, 0],
-        "sample_size": 1000,
+        "lower_bound": [0, 0, 1, 0],
+        "upper_bound": [0, 0, 1, 0],
+        "sample_size": 2000,
     }
 
     action_space = {
         "sample_scheme": "uniform",
         "lower_bound": [-1.1, -1.1],
         "upper_bound": [1.1, 1.1],
-        "sample_size": 2000,
+        "sample_size": 3000,
     }
 
 
@@ -157,7 +157,7 @@ constraint_ingredient = Ingredient("constraint", ingredients=[obstacle_ingredien
 def constraint_config():
 
     # Epsilon distance around X_goal.
-    epsilon = 2
+    epsilon = 2.5
 
 
 @constraint_ingredient.capture
@@ -263,7 +263,7 @@ def config(sample):
     no_plot = False
 
     mc_validation = True
-    num_monte_carlo = 5000
+    num_monte_carlo = 1000
 
 
 @ex.capture
@@ -533,7 +533,7 @@ def plot_mc_validation(
     plt.text(0.5, 0, r"$x_0$")
 
     x_goal = (cost["goal"][0], cost["goal"][2])
-    eps_goal = 2 # todo make this a variable
+    eps_goal = 2.5 # todo make this a variable
     plt.gca().add_patch(plt.Circle(x_goal,eps_goal, fc="black", ec="none", alpha=0.2))
     plt.text(x_goal[0]-1, x_goal[1]-3.5, r"$\mathcal{X}_{goal}$")
 
@@ -608,7 +608,7 @@ def plot_results(system, cost, obstacle, plot_cfg):
         plt.gca().add_patch(plt.Polygon(obs_verts, fc="black", ec="none"))
 
     x_goal = (10, 10)
-    eps_goal = 2 # todo make this a variable
+    eps_goal = 2.5 # todo make this a variable
     # goal_vertices = np.array([[8.5,8.5],[8.5,11.5],[11.5,11.5],[11.5,8.5]])
     # plt.gca().add_patch(plt.Polygon(goal_vertices, fc="black", ec="none"))
     plt.gca().add_patch(plt.Circle(x_goal,eps_goal, fc="black", ec="none", alpha=0.2))
