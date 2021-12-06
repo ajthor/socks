@@ -1,11 +1,7 @@
 import numpy as np
 
-from examples.chance_constrained.benchmark_chance_constrained_problem import (
-    ex as cc_experiment,
-)
-from examples.chance_constrained.benchmark_chance_constrained_problem_pd import (
-    ex as cc_experiment_pd,
-)
+from examples.chance_constrained.cc_problem import ex as cc_experiment
+from examples.chance_constrained.cc_problem_pd import ex as cc_experiment_pd
 
 from examples.chance_constrained.cc_env import NonMarkovIntegratorEnv
 
@@ -111,7 +107,5 @@ def ex_pd_vs_non():
 
 
 if __name__ == "__main__":
-    # ex_matrix()
+    ex_matrix()
     # ex_pd_vs_non()
-
-    test_system()

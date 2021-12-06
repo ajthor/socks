@@ -14,12 +14,82 @@ from gym_socks.algorithms.control.control_common import compute_solution
 
 from gym_socks.kernel.metrics import rbf_kernel, regularized_inverse
 
+from scipy.optimize import linprog
+
 from gym_socks.utils import normalize
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
 
 from tqdm.auto import tqdm
+
+
+def _compute_chance_constrained_solution(
+    C: np.ndarray,
+    D: np.ndarray,
+    heuristic=False,
+    delta=None,
+) -> np.ndarray:
+    """Compute the chance-constrained solution to the LP.
+
+    Args:
+        C: Array holding values of the cost function evaluated at sample points.
+        D: Array holding values of the constraint function evaluated at sample points.
+        heuristic: Whether to compute the heuristic solution.
+
+    Returns:
+        gamma: Probability vector.
+
+    """
+    # C = (Cx @ K + Cu)
+    # D = (Dx @ K + Du)
+
+    if heuristic is False:
+
+        if len(D.shape) == 1:
+            D = D.reshape(-1, 1)
+
+        obj = C.T
+        A_ub = -D.T
+        b_ub = -1 + delta
+        A_eq = np.ones((1, len(C)))
+        b_eq = 1
+        # Bounds are automatically set so that decision variables are nonnegative.
+        # bounds = [(0, None)] * len(C)
+
+        gym_socks.logger.debug("Computing solution via scipy LP solver.")
+        sol = linprog(
+            obj,
+            A_ub=A_ub,
+            b_ub=b_ub,
+            A_eq=A_eq,
+            b_eq=b_eq,
+        )
+
+        gym_socks.logger.debug(f"Solver completed with status code: {sol.status}")
+        # 0 : Optimization terminated successfully.
+        # 1 : Iteration limit reached.
+        # 2 : Problem appears to be infeasible.
+        # 3 : Problem appears to be unbounded.
+        # 4 : Numerical difficulties encountered.
+
+        if sol.success is True:
+            return sol.x
+        else:
+            gym_socks.logger.debug("No solution found via scipy.optimize.linprog.")
+            gym_socks.logger.debug("Returning heuristic solution.")
+
+    heuristic_sol = np.zeros((len(C),))
+    satisfies_constraints = np.where(D <= 0)
+    if len(satisfies_constraints[0]) == 0:
+        gym_socks.logger.warn("No feasible solution found!")
+        gym_socks.logger.debug("Returning minimal unconstrained solution.")
+        idx = C.argmin()
+    else:
+        idx = satisfies_constraints[0][C[satisfies_constraints].argmin()]
+    heuristic_sol[idx] = 1
+
+    return heuristic_sol
 
 
 def kernel_control_cc(
@@ -246,18 +316,13 @@ class KernelControlCC(BasePolicy):
         ) + np.array(self.cost_fn_u(time=time), dtype=np.float32)
 
         # Compute constraint vector.
-        D = (
-            1
-            - self.delta
-            - np.matmul(
-                np.array(self.constraint_fn_x(time=time), dtype=np.float32), betaXT
-            )
-            + np.array(self.constraint_fn_u(time=time), dtype=np.float32)
-        )
+        D = np.matmul(
+            np.array(self.constraint_fn_x(time=time), dtype=np.float32), betaXT
+        ) + np.array(self.constraint_fn_u(time=time), dtype=np.float32)
 
         # Compute the solution to the LP.
         gym_socks.logger.debug("Computing solution to the LP.")
-        solution = compute_solution(C, D, heuristic=self.heuristic)
+        solution = _compute_chance_constrained_solution(C, D, delta=self.delta)
         solution = normalize(solution)  # Normalize the vector.
         self.probability_vector = solution
         idx = self.np_random.choice(len(solution), size=None, p=solution)

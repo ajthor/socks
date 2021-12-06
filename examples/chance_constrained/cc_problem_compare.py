@@ -50,7 +50,12 @@ from gym_socks.envs.sample import sample_generator
 from gym_socks.envs.sample import trajectory_sampler
 from gym_socks.envs.sample import reshape_trajectory_sample
 
-from gym_socks.envs.policy import RandomizedPolicy, BasePolicy, PDController, ConstantPresampledPolicy
+from gym_socks.envs.policy import (
+    RandomizedPolicy,
+    BasePolicy,
+    PDController,
+    ConstantPresampledPolicy,
+)
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
@@ -73,6 +78,7 @@ from examples.ingredients.plotting_ingredient import update_rc_params
 
 import matplotlib.pyplot as plt
 
+
 @system_ingredient.config
 def system_config():
 
@@ -92,23 +98,23 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [0, 0, 1, 0],
-        "upper_bound": [0, 0, 1, 0],
-        "sample_size": 2000,
+        "lower_bound": [0, 0, 0, 0],
+        "upper_bound": [0, 0, 0, 0],
+        "sample_size": 500,
     }
 
     action_space = {
         "sample_scheme": "uniform",
         "lower_bound": [-1.1, -1.1],
         "upper_bound": [1.1, 1.1],
-        "sample_size": 3000,
+        "sample_size": 500,
     }
 
 
 @simulation_ingredient.config
 def simulation_config():
 
-    initial_condition = [0, 0, 2, 0]
+    initial_condition = [0, 0, 0, 0]
 
 
 cost_ingredient = Ingredient("cost")
@@ -296,7 +302,9 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
             policy=ClosedLoopPDPolicy,
             sample_space=sample_space,
         ),
-        sample_size=sample["sample_space"]["sample_size"],#_get_sample_size(env.action_space, sample["action_space"]),
+        sample_size=sample["sample_space"][
+            "sample_size"
+        ],  # _get_sample_size(env.action_space, sample["action_space"]),
     )
     _T = reshape_trajectory_sample(_S)
     _, U, _ = transpose_sample(_T)
@@ -309,10 +317,7 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
             time_horizon=time_horizon,
             env=env,
             # policy=ClosedLoopPDPolicy,
-            policy=ConstantPresampledPolicy(
-                        controls=U, 
-                        action_space=env.action_space
-                        ),
+            policy=ConstantPresampledPolicy(controls=U, action_space=env.action_space),
             sample_space=sample_space,
         ),
         sample_size=sample["sample_space"]["sample_size"],
@@ -461,14 +466,20 @@ def main(
     # T = normalize_trajectory_sample(T)
     # Define the cost and constraint functions.
 
+    cost_x = make_cost_x(time_horizon=time_horizon)
+    cost_u = make_cost_u(time_horizon=time_horizon)
+
+    constraint_x = make_constraint_x(time_horizon=time_horizon)
+    constraint_u = make_constraint_u(time_horizon=time_horizon)
+
     with ComputationTimer():
 
         # Compute policy.
         policy = KernelControlCC(
-            cost_fn_x=make_cost_x(time_horizon=time_horizon),
-            cost_fn_u=make_cost_u(time_horizon=time_horizon),
-            constraint_fn_x=make_constraint_x(time_horizon=time_horizon),
-            constraint_fn_u=make_constraint_u(time_horizon=time_horizon),
+            cost_fn_x=cost_x,
+            cost_fn_u=cost_u,
+            constraint_fn_x=constraint_x,
+            constraint_fn_u=constraint_u,
             delta=delta,
             verbose=verbose,
             kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
@@ -529,10 +540,11 @@ def plot_mc_validation(
     import matplotlib.pyplot as plt
     from matplotlib import rc
     from matplotlib import rcParams
+
     # rc('text', usetex=True)
-    rcParams['font.family'] = 'serif'
-    rcParams['font.size'] = 16
-    rcParams['text.usetex'] = True
+    rcParams["font.family"] = "serif"
+    rcParams["font.size"] = 16
+    rcParams["text.usetex"] = True
 
     with open("results/sample.npy", "rb") as f:
         X = np.load(f)
@@ -575,16 +587,21 @@ def plot_mc_validation(
         trajectory.insert(0, simulation["initial_condition"])
         trajectory = np.array(trajectory, dtype=np.float32)
         if satisfies_constraints[0] == True:
-            plt_color = (0,0.3,0.8)# "blue"
+            plt_color = (0, 0.3, 0.8)  # "blue"
             plt_alpha = 0.05
         else:
-            plt_color = (0.9,0,0)# "red"
+            plt_color = (0.9, 0, 0)  # "red"
             plt_alpha = 0.2
 
         # Plot the trajectory.
         with plt.style.context(plot_cfg["trajectory_style"]):
-            plt.plot(trajectory[:, 0], trajectory[:, 2], 
-                     color=plt_color, marker="", alpha=plt_alpha)
+            plt.plot(
+                trajectory[:, 0],
+                trajectory[:, 2],
+                color=plt_color,
+                marker="",
+                alpha=plt_alpha,
+            )
 
         num_violations += ~satisfies_constraints[0]
 
@@ -597,16 +614,16 @@ def plot_mc_validation(
 
     for obs_verts in obstacles_vertices:
         plt.gca().add_patch(plt.Polygon(obs_verts, fc="red", ec="none", alpha=0.4))
-    plt.text(6, 3, r"$\mathcal{O}$", color=(0.7,0,0))
+    plt.text(6, 3, r"$\mathcal{O}$", color=(0.7, 0, 0))
 
     x_init = simulation["initial_condition"]
     plt.scatter(x_init[0], x_init[1], s=30, c="k", marker="+")
     plt.text(0.5, 0, r"$x_0$")
 
     x_goal = (cost["goal"][0], cost["goal"][2])
-    eps_goal = 2.5 # todo make this a variable
-    plt.gca().add_patch(plt.Circle(x_goal,eps_goal, fc="black", ec="none", alpha=0.2))
-    plt.text(x_goal[0]-1, x_goal[1]-3.5, r"$\mathcal{X}_{goal}$")
+    eps_goal = 2.5  # todo make this a variable
+    plt.gca().add_patch(plt.Circle(x_goal, eps_goal, fc="black", ec="none", alpha=0.2))
+    plt.text(x_goal[0] - 1, x_goal[1] - 3.5, r"$\mathcal{X}_{goal}$")
 
     plt.xlabel(r"$p_x$")
     plt.ylabel(r"$p_y$").set_rotation(0)
@@ -679,10 +696,10 @@ def plot_results(system, cost, obstacle, plot_cfg):
         plt.gca().add_patch(plt.Polygon(obs_verts, fc="black", ec="none"))
 
     x_goal = (10, 10)
-    eps_goal = 2.5 # todo make this a variable
+    eps_goal = 2.5  # todo make this a variable
     # goal_vertices = np.array([[8.5,8.5],[8.5,11.5],[11.5,11.5],[11.5,8.5]])
     # plt.gca().add_patch(plt.Polygon(goal_vertices, fc="black", ec="none"))
-    plt.gca().add_patch(plt.Circle(x_goal,eps_goal, fc="black", ec="none", alpha=0.2))
+    plt.gca().add_patch(plt.Circle(x_goal, eps_goal, fc="black", ec="none", alpha=0.2))
 
     plt.scatter(cost["goal"][0], cost["goal"][2], s=2.5, c="C2", label="Goal State")
 
