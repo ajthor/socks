@@ -106,7 +106,8 @@ def kernel_control_cc(
     delta: float = None,
     heuristic: bool = False,
     regularization_param: float = None,
-    kernel_fn=None,
+    kernel_fn_x=None,
+    kernel_fn_u=None,
     verbose: bool = True,
     seed=None,
 ):
@@ -136,7 +137,8 @@ def kernel_control_cc(
         delta=delta,
         heuristic=heuristic,
         regularization_param=regularization_param,
-        kernel_fn=kernel_fn,
+        kernel_fn_x=kernel_fn_x,
+        kernel_fn_u=kernel_fn_u,
         verbose=verbose,
         seed=seed,
     )
@@ -170,7 +172,8 @@ class KernelControlCC(BasePolicy):
         delta: float = None,
         heuristic: bool = False,
         regularization_param: float = None,
-        kernel_fn=None,
+        kernel_fn_x=None,
+        kernel_fn_u=None,
         verbose: bool = True,
         seed=None,
         *args,
@@ -186,7 +189,8 @@ class KernelControlCC(BasePolicy):
 
         self.heuristic = heuristic
 
-        self.kernel_fn = kernel_fn
+        self.kernel_fn_x = kernel_fn_x
+        self.kernel_fn_u = kernel_fn_u
         self.regularization_param = regularization_param
 
         self.verbose = verbose
@@ -227,8 +231,11 @@ class KernelControlCC(BasePolicy):
         if A is None:
             raise ValueError("Must supply a sample.")
 
-        if self.kernel_fn is None:
-            self.kernel_fn = partial(rbf_kernel, sigma=0.1)
+        if self.kernel_fn_x is None:
+            self.kernel_fn_x = partial(rbf_kernel, sigma=0.1)
+
+        if self.kernel_fn_u is None:
+            self.kernel_fn_u = partial(rbf_kernel, sigma=0.1)
 
         if self.regularization_param is None:
             self.regularization_param = 1
@@ -281,15 +288,19 @@ class KernelControlCC(BasePolicy):
         self.A = A
 
         gym_socks.logger.debug("Computing matrix inverse.")
-        self.W = regularized_inverse(
-            X,
-            U=U,
-            kernel_fn=self.kernel_fn,
-            regularization_param=self.regularization_param,
+        # self.W = regularized_inverse(
+        #     X,
+        #     U=U,
+        #     kernel_fn=self.kernel_fn,
+        #     regularization_param=self.regularization_param,
+        # )
+        K = self.kernel_fn_x(X) * self.kernel_fn_u(U)
+        self.W = np.linalg.inv(
+            K + self.regularization_param * len(X) * np.identity(len(X))
         )
 
         gym_socks.logger.debug("Computing covariance matrix.")
-        self.CUA = self.kernel_fn(U, A)
+        self.CUA = self.kernel_fn_u(U, A)
 
         gym_socks.logger.debug("Computing cost function.")
         self.cost_fn_x = partial(self.cost_fn_x, state=Y)
@@ -319,7 +330,7 @@ class KernelControlCC(BasePolicy):
         T = np.array(state)
 
         # Compute covariance matrix.
-        CXT = self.kernel_fn(self.X, T)
+        CXT = self.kernel_fn_x(self.X, T)
         # Compute beta.
         betaXT = self.W @ (CXT * self.CUA)
 

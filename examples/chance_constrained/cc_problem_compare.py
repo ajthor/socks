@@ -108,8 +108,10 @@ def sample_config():
 
     sample_space = {
         "sample_scheme": "uniform",
-        "lower_bound": [0, 0, 0, 0],
-        "upper_bound": [0, 0, 0, 0],
+        # "lower_bound": [-0, -0, -0, -0],
+        # # "upper_bound": [0, 0, 0, 0],
+        "lower_bound": [-0.5, -0.05, -0.5, -0.05],
+        "upper_bound": [0.5, 0.05, 0.5, 0.05],
         "sample_size": 500,
     }
 
@@ -344,6 +346,7 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
         us = np.zeros((M, u_dim, T))
         xs = np.zeros((M, x0.shape[0], T + 1))
         xs[:, :, 0] = np.repeat(x0[np.newaxis, :], M, axis=0)
+        # print(f"xs shape: {np.shape(xs)}")
         for t in range(T):
             if t <= 2:
                 M_us = int(np.sqrt(M)) ** 2
@@ -509,6 +512,10 @@ def main(
         Y = np.load(f).tolist()
         A = np.load(f).tolist()
 
+    Y = np.array(Y)
+    print(f"max v {Y[:, :, [1, 3]].max()}")
+    print(f"min v {Y[:, :, [1, 3]].min()}")
+
     S = list(zip(X, U, Y))
 
     T = reshape_trajectory_sample(S)
@@ -532,7 +539,9 @@ def main(
             delta=delta,
             verbose=verbose,
             # kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (0.01 ** 2))),
-            kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+            kernel_fn_x=rbf_kernel,
+            kernel_fn_u=rbf_kernel,
+            # kernel_fn_u=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
             # kernel_fn=partial(cc_kernel, gamma=1 / (2 * (sigma ** 2))),
             # kernel_fn=partial(abel_kernel, sigma=1 / (2 * (sigma ** 2))),
             # kernel_fn=partial(laplacian_kernel, gamma=1 / (2 * (sigma ** 2))),
