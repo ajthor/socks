@@ -59,6 +59,7 @@ def make_constraint_x(time_horizon, obstacle, epsilon):
         in_goal = result <= epsilon
 
         return ~indicator & in_goal
+        # return ~indicator
 
     return _constraint_fn
 

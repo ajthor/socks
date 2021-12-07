@@ -44,6 +44,9 @@ def _compute_chance_constrained_solution(
     # C = (Cx @ K + Cu)
     # D = (Dx @ K + Du)
 
+    print(f"min C: {C.min()}, max C: {C.max()}")
+    print(f"min D: {D.min()}, max D: {D.max()}")
+
     if heuristic is False:
 
         if len(D.shape) == 1:
@@ -74,6 +77,7 @@ def _compute_chance_constrained_solution(
         # 4 : Numerical difficulties encountered.
 
         if sol.success is True:
+            print(f"cost: {np.dot(C, sol.x)}")
             return sol.x
         else:
             gym_socks.logger.debug("No solution found via scipy.optimize.linprog.")
@@ -295,6 +299,15 @@ class KernelControlCC(BasePolicy):
         self.constraint_fn_x = partial(self.constraint_fn_x, state=Y)
         self.constraint_fn_u = partial(self.constraint_fn_u, action=A)
 
+        # self._nkernel_fn = partial(rbf_kernel, sigma=0.1)
+        # self._nW = regularized_inverse(
+        #     U,
+        #     kernel_fn=self._nkernel_fn,
+        #     regularization_param=1,
+        # )
+
+        # self._nCUA = self._nkernel_fn(U, A)
+
         return self
 
     def __call__(self, time=0, state=None, *args, **kwargs):
@@ -310,15 +323,37 @@ class KernelControlCC(BasePolicy):
         # Compute beta.
         betaXT = self.W @ (CXT * self.CUA)
 
+        CU = np.array(self.cost_fn_u(time=time), dtype=np.float32)
+        print(f"min CU: {CU.min()}, max CU: {CU.max()}")
+
+        print(f"min self.W: {self.W.min()}, max self.W: {self.W.max()}")
+        print(f"min CXT: {CXT.min()}, max CXT: {CXT.max()}")
+        print(f"min self.CUA: {self.CUA.min()}, max self.CUA: {self.CUA.max()}")
+
         # Compute cost vector.
         C = np.matmul(
             np.array(self.cost_fn_x(time=time), dtype=np.float32), betaXT
         ) + np.array(self.cost_fn_u(time=time), dtype=np.float32)
 
         # Compute constraint vector.
+        DY = np.array(self.constraint_fn_x(time=time), dtype=np.float32)
+        print(f"nnz DY: {np.count_nonzero(DY)}")
+        print(f"min DY: {DY.min()}, max DY: {DY.max()}")
+        print(f"min betaXT: {betaXT.min()}, max betaXT: {betaXT.max()}")
+
+        # print(f"min nW: {self._nW.min()}, max nW: {self._nW.max()}")
+        # print(f"min nCUA: {self._nCUA.min()}, max nCUA: {self._nCUA.max()}")
+        # beta = normalize(self._nW @ self._nCUA)
+        # print(f"min beta: {beta.min()}, max beta: {beta.max()}")
+
         D = np.matmul(
             np.array(self.constraint_fn_x(time=time), dtype=np.float32), betaXT
         ) + np.array(self.constraint_fn_u(time=time), dtype=np.float32)
+
+        # D = normalize(D + D.min())
+        D = np.clip(D, 0, 1)
+
+        print(f"D shape: {np.shape(D)}")
 
         # Compute the solution to the LP.
         gym_socks.logger.debug("Computing solution to the LP.")
