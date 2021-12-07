@@ -107,8 +107,8 @@ class NonMarkovIntegratorEnv(DynamicalSystem):
     def generate_disturbance(self, time, state, action):
         w = self.np_random.standard_normal(size=self.state_space.shape)
         w = np.array(w)
-        w[[0,2]] = 0.1 * w[[0,2]]
-        w[[1,3]] = 0.
+        w[[0, 2]] = 0.1 * w[[0, 2]]
+        w[[1, 3]] = 0.0
         return w
 
     def dynamics(self, time, state, action, disturbance):

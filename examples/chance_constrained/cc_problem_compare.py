@@ -177,7 +177,7 @@ def config(sample):
     verbose = True
 
     gen_sample = True
-    pd_gains = [[1, 2, 0, 0], [0, 0, 1, 2]]
+    pd_gains = [[1, 2.25, 0, 0], [0, 0, 1, 2.25]]
 
     results_filename = "results/data.npy"
     no_plot = False
@@ -186,74 +186,74 @@ def config(sample):
     num_monte_carlo = 1000
 
 
-def _admissible_sampler(env, time_horizon, sample_space, sample, pd_gains, goal_state):
+# def _admissible_sampler(env, time_horizon, sample_space, sample, pd_gains, goal_state):
 
-    A = env.state_matrix
-    B = env.input_matrix
+#     A = env.state_matrix
+#     B = env.input_matrix
 
-    ux = np.linspace(0, 1, 10)  # sample["action_space"]["grid_resolution"][0])
-    uy = np.linspace(0, 1, 10)  # sample["action_space"]["grid_resolution"][1])
+#     ux = np.linspace(0, 1, 10)  # sample["action_space"]["grid_resolution"][0])
+#     uy = np.linspace(0, 1, 10)  # sample["action_space"]["grid_resolution"][1])
 
-    ui = uniform_grid([ux, uy])
+#     ui = uniform_grid([ux, uy])
 
-    # def get_next_action():
-    #     for i in range(len(ui)):
-    #         yield ui[i]
+#     # def get_next_action():
+#     #     for i in range(len(ui)):
+#     #         yield ui[i]
 
-    # def action_generator():
-    #     while True:
-    #         yield from get_next_action()
+#     # def action_generator():
+#     #     while True:
+#     #         yield from get_next_action()
 
-    def policy(time, state, *args, **kwargs):
-        if time == 0:
-            action = env.action_space.sample()
-        else:
-            action = -pd_gains @ (state - goal_state)
-            action = np.clip(action, -1, 1)
+#     def policy(time, state, *args, **kwargs):
+#         if time == 0:
+#             action = env.action_space.sample()
+#         else:
+#             action = -pd_gains @ (state - goal_state)
+#             action = np.clip(action, -1, 1)
 
-        return action
+#         return action
 
-    @sample_generator
-    def _sample_generator():
-        # env.reset()
-        initial_state = sample_space.sample()
+#     @sample_generator
+#     def _sample_generator():
+#         # env.reset()
+#         initial_state = sample_space.sample()
 
-        state = initial_state
+#         state = initial_state
 
-        state_sequence = []
-        action_sequence = []
+#         state_sequence = []
+#         action_sequence = []
 
-        # env.state = state
+#         # env.state = state
 
-        # for item in ui:
+#         # for item in ui:
 
-        time = 0
-        for t in range(time_horizon):
+#         time = 0
+#         for t in range(time_horizon):
 
-            # if t == 0:
-            #     action = list(item)
-            # else:
-            # action = -pd_gains @ (state - goal_state)
-            # action = np.clip(action, -1, 1)
-            action = policy(time=t, state=state)
+#             # if t == 0:
+#             #     action = list(item)
+#             # else:
+#             # action = -pd_gains @ (state - goal_state)
+#             # action = np.clip(action, -1, 1)
+#             action = policy(time=t, state=state)
 
-            next_state = np.matmul(A, state) + np.matmul(B, action)
+#             next_state = np.matmul(A, state) + np.matmul(B, action)
 
-            state_sequence.append(next_state)
-            action_sequence.append(action)
+#             state_sequence.append(next_state)
+#             action_sequence.append(action)
 
-            state = next_state
+#             state = next_state
 
-            time += 1
+#             time += 1
 
-        yield (initial_state, action_sequence, state_sequence)
+#         yield (initial_state, action_sequence, state_sequence)
 
-    return _sample_generator
+#     return _sample_generator
 
 
-@ex.capture
-def gen_admissible_control_sequences(seed, env, time_horizon, sample):
-    pass
+# @ex.capture
+# def gen_admissible_control_sequences(seed, env, time_horizon, sample):
+#     pass
 
 
 @ex.capture
@@ -268,7 +268,7 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
     )
     sample_space.seed(seed=seed)
 
-    # PD controller
+    # # PD controller
     PD_gains = np.array(pd_gains)
     ClosedLoopPDPolicy = PDController(
         action_space=env.action_space,
@@ -286,9 +286,8 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
             policy=ClosedLoopPDPolicy,
             sample_space=sample_space,
         ),
-        sample_size=sample["sample_space"][
-            "sample_size"
-        ],  # _get_sample_size(env.action_space, sample["action_space"]),
+        sample_size=sample["sample_space"]["sample_size"],
+        # _get_sample_size(env.action_space, sample["action_space"]),
     )
     _T = reshape_trajectory_sample(_S)
     _, U, _ = transpose_sample(_T)
@@ -358,10 +357,26 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
             if t > 2:
                 dxk = xs[:, :, t] - np.repeat(xg[np.newaxis, :], M, axis=0)
                 usk = -PD_gains @ dxk.T
+
                 for i in range(M):
                     usk[:, i] = np.clip(usk[:, i], action_space.low, action_space.high)
+
                 xs[:, :, t + 1] = (A @ xs[:, :, t].T + B @ usk).T
                 us[:, :, t] = usk.T
+
+            for i in range(M):
+                alpha = 0.005
+                drag_vector = -alpha * np.array(
+                    [
+                        (dt ** 2) * np.abs(xs[i, :, t][1]) * xs[i, :, t][1] / 2,
+                        dt * np.abs(xs[i, :, t][1]) * xs[i, :, t][1],
+                        (dt ** 2) * np.abs(xs[i, :, t][3]) * xs[i, :, t][3] / 2,
+                        dt * np.abs(xs[i, :, t][3]) * xs[i, :, t][3],
+                    ],
+                    dtype=np.float32,
+                )
+                xs[i, :, t + 1] += drag_vector
+
         us = np.full(
             us.shape,
             us,
@@ -397,6 +412,21 @@ def generate_cc_sample(seed, env, time_horizon, cost, pd_gains, sample, _log):
 
     plt.savefig("results/plot_sample.png")
     # -------------------------------------------------
+
+    # # sample trajectories
+    # # print("U=", U[0].shape)
+    # _log.debug("Sampling trajectories for dataset to approximate Q.")
+    # S = _sample(
+    #     sampler=trajectory_sampler(
+    #         time_horizon=time_horizon,
+    #         env=env,
+    #         # policy=ClosedLoopPDPolicy,
+    #         policy=ConstantPresampledPolicy(controls=us, action_space=env.action_space),
+    #         sample_space=sample_space,
+    #     ),
+    #     sample_size=sample["sample_space"]["sample_size"],
+    # )
+    # X, U, Y = transpose_sample(S)
 
     ###-------------
     # Generate the set of admissible control actions.
@@ -597,8 +627,8 @@ def plot_results(system, cost, obstacle, plot_cfg):
     #     )
     # )
 
-    obstacles_vertices = [np.array([[3, 2], [8, 2], [8, 7]])]
-    obstacles_vertices.append(np.array([[3, 4], [6, 7], [3, 7]]))
+    obstacles_vertices = [np.array([[2.7, 2], [8, 2], [8, 7.3]])]
+    obstacles_vertices.append(np.array([[3, 3.7], [6.3, 7], [3, 7]]))
 
     for obs_verts in obstacles_vertices:
         plt.gca().add_patch(plt.Polygon(obs_verts, fc="black", ec="none"))
@@ -689,8 +719,8 @@ def plot_sample(seed, time_horizon, cost, obstacle, plot_cfg):
         trajectory = np.array(trajectory)
         plt.scatter(trajectory[-1, 0], trajectory[-1, 2], s=3, color="red")
 
-    obstacles_vertices = [np.array([[3, 2], [8, 2], [8, 7]])]
-    obstacles_vertices.append(np.array([[3, 4], [6, 7], [3, 7]]))
+    obstacles_vertices = [np.array([[2.7, 2], [8, 2], [8, 7.3]])]
+    obstacles_vertices.append(np.array([[3, 3.7], [6.3, 7], [3, 7]]))
 
     for obs_verts in obstacles_vertices:
         plt.gca().add_patch(plt.Polygon(obs_verts, fc="black", ec="none"))
@@ -794,8 +824,8 @@ def plot_mc_validation(
         f"% violation: {num_violations / num_monte_carlo} [{num_violations}/{num_monte_carlo}]"
     )
 
-    obstacles_vertices = [np.array([[3, 2], [8, 2], [8, 7]])]
-    obstacles_vertices.append(np.array([[3, 4], [6, 7], [3, 7]]))
+    obstacles_vertices = [np.array([[2.7, 2], [8, 2], [8, 7.3]])]
+    obstacles_vertices.append(np.array([[3, 3.7], [6.3, 7], [3, 7]]))
 
     for obs_verts in obstacles_vertices:
         plt.gca().add_patch(plt.Polygon(obs_verts, fc="red", ec="none", alpha=0.4))
