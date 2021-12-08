@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 import gym
 
+from gym_socks.envs.dynamical_system import DynamicalSystem
+
 import numpy as np
 
 
@@ -69,6 +71,44 @@ class RandomizedPolicy(BasePolicy):
         return self.action_space.sample()
 
 
+class ConstantPresampledPolicy(BasePolicy):
+    """Constant policy.
+
+    A policy which returns a constant control action.
+
+    Args:
+        system: The system the policy is defined on. Needed to specify the shape of
+            the inputs and outputs.
+        constant: The constant value returned by the policy.
+
+    """
+
+    def __init__(self, controls, action_space=None):
+        # controls is a list
+        print("[ConstantPresampledPolicy] len(controls) = ", len(controls))
+        print("[ConstantPresampledPolicy] controls[0].shape = ", controls[0].shape)
+        self.action_space = action_space
+        self._controls = controls
+        self._nb_controls = len(controls)
+        self._u_dim = self.action_space.shape[0]
+        self._time_max = int(len(controls[0]) / self._u_dim)
+        self._id_sample = -1
+
+    def __call__(self, time=0, *args, **kwargs):
+        if time == 0:
+            self._id_sample += 1
+        if self._id_sample == self._nb_controls:
+            self._id_sample = 0
+        control_traj = self._controls[self._id_sample]
+        control_traj = np.reshape(control_traj, (self._time_max, self._u_dim))
+        control = control_traj[time, :]
+        return np.full(
+            self.action_space.shape,
+            control,
+            dtype=self.action_space.dtype,
+        )
+
+
 class ConstantPolicy(BasePolicy):
     """Constant policy.
 
@@ -115,3 +155,59 @@ class ZeroPolicy(ConstantPolicy):
             raise ValueError("action space must be provided")
 
         self._constant = 0
+
+
+class PDController(ConstantPolicy):
+    """PD controller.
+
+    Args:
+        action_space : The action space of the policy.
+        state_space : The state space of the system.
+        goal_state : The goal state of the system.
+        pd_gains : The gains of the controller.
+
+    """
+
+    def __init__(
+        self,
+        action_space: gym.Space = None,
+        state_space: gym.Space = None,
+        goal_state=np.zeros(4),
+        PD_gains=np.zeros(4),
+    ):
+        if goal_state.shape != state_space.shape:
+            raise ValueError(
+                "goal_state should have same shape " + "as environment state"
+            )
+        if PD_gains.shape[0] != action_space.shape[0]:
+            raise ValueError(
+                "PD_gains[:,0] should have same shape " + "as environment action"
+            )
+        if PD_gains.shape[1] != state_space.shape[0]:
+            raise ValueError(
+                "PD_gains[0,:] should have same shape " + "as environment state"
+            )
+
+        self.state_space = state_space
+        self.action_space = action_space
+        self.goal_state = goal_state
+        self.PD_gains = -1 * PD_gains
+
+    def __call__(self, time=0, state=np.zeros(4), *args, **kwargs):
+        control = np.zeros(self.action_space.shape, dtype=np.float32)
+
+        # PD regulation to goal
+        if time > 2:
+            control = self.PD_gains @ (state - self.goal_state)
+
+        # add exploratory noise
+        sampled_control = self.action_space.sample()
+        if time <= 2:
+            control = control + 1 * np.abs(sampled_control)
+
+        # saturate control
+        control = np.clip(control, self.action_space.low, self.action_space.high)
+
+        return control.astype(
+            self.action_space.dtype,
+        )

@@ -12,9 +12,15 @@ from functools import partial
 
 import gym_socks
 
+from gym.utils import seeding
+
 from gym_socks.envs.policy import BasePolicy
+
 from gym_socks.algorithms.control.control_common import compute_solution
+
 from gym_socks.kernel.metrics import rbf_kernel, regularized_inverse
+
+from gym_socks.utils import normalize
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
@@ -31,6 +37,7 @@ def kernel_control_fwd(
     regularization_param: float = None,
     kernel_fn=None,
     verbose: bool = True,
+    seed=None,
 ):
     """Stochastic optimal control policy forward in time.
 
@@ -48,6 +55,7 @@ def kernel_control_fwd(
             problem used to construct the approximation.
         kernel_fn: The kernel function used by the algorithm.
         verbose: Whether the algorithm should print verbose output.
+        seed: The random seed.
 
     Returns:
         The policy.
@@ -60,6 +68,7 @@ def kernel_control_fwd(
         regularization_param=regularization_param,
         kernel_fn=kernel_fn,
         verbose=verbose,
+        seed=seed,
     )
     alg.train(S, A)
 
@@ -81,6 +90,7 @@ class KernelControlFwd(BasePolicy):
             problem used to construct the approximation.
         kernel_fn: The kernel function used by the algorithm.
         verbose: Whether the algorithm should print verbose output.
+        seed: The random seed.
 
     """
 
@@ -92,6 +102,7 @@ class KernelControlFwd(BasePolicy):
         regularization_param: float = None,
         kernel_fn=None,
         verbose: bool = True,
+        seed=None,
         *args,
         **kwargs,
     ):
@@ -105,6 +116,32 @@ class KernelControlFwd(BasePolicy):
         self.regularization_param = regularization_param
 
         self.verbose = verbose
+
+        self._seed = None
+        self._np_random = None
+        if seed is not None:
+            self._seed = self.seed(seed)
+
+    @property
+    def np_random(self):
+        """Random number generator."""
+        if self._np_random is None:
+            self._seed = self.seed()
+
+        return self._np_random
+
+    def seed(self, seed=None):
+        """Sets the seed of the random number generator.
+
+        Args:
+            seed: Integer value representing the random seed.
+
+        Returns:
+            The seed of the RNG.
+
+        """
+        self._np_random, seed = seeding.np_random(seed)
+        return [seed]
 
     def _validate_params(self, S=None, A=None):
 
@@ -207,5 +244,6 @@ class KernelControlFwd(BasePolicy):
         # Compute the solution to the LP.
         gym_socks.logger.debug("Computing solution to the LP.")
         sol = compute_solution(C, D, heuristic=self.heuristic)
-        idx = np.argmax(sol)
+        sol = normalize(sol)  # Normalize the vector.
+        idx = self.np_random.choice(self.CUA.shape[1], size=None, p=sol)
         return np.array(self.A[idx], dtype=np.float32)

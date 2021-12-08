@@ -58,3 +58,43 @@ class NDIntegratorEnv(DynamicalSystem):
     def dynamics(self, time, state, action, disturbance):
         _, *x = state
         return np.array([*x, *action], dtype=np.float32) + disturbance
+
+
+class RepeatedIntegratorEnv(DynamicalSystem):
+    """Repeated integrator system.
+
+    The repeated integrator system is a 4D system with x/y position and velocity
+    variables. It has two inputs, which apply to the velocity variables and are then
+    "integrated" upwards to affect the position.
+
+    The system can be viewed as two independent 2D integrator systems, with the first
+    controlling the x position and velocity of the system, and the second controlling
+    the y position and velocity.
+
+    """
+
+    def __init__(self, seed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+        )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+        )
+
+        self.state = None
+
+        self.seed(seed=seed)
+
+    def generate_disturbance(self, time, state, action):
+        w = self.np_random.standard_normal(size=self.state_space.shape)
+        return 1e-2 * np.array(w)
+
+    def dynamics(self, time, state, action, disturbance):
+        x1, x2, x3, x4 = state
+        u1, u2 = action
+        return np.array([x2, u1, x4, u2], dtype=np.float32) + disturbance
