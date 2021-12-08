@@ -665,7 +665,7 @@ def plot_results(system, cost, obstacle, plot_cfg):
 
 
 @ex.command(unobserved=True)
-def plot_sample(seed, time_horizon, cost, obstacle, plot_cfg):
+def plot_sample(seed, time_horizon, delta, cost, obstacle, plot_cfg):
 
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     logging.getLogger("PIL").setLevel(logging.WARNING)
@@ -745,6 +745,7 @@ def plot_mc_validation(
     env,
     probability_vector,
     simulation,
+    delta,
     time_horizon,
     num_monte_carlo,
     cost,
@@ -838,7 +839,7 @@ def plot_mc_validation(
 
     for obs_verts in obstacles_vertices:
         plt.gca().add_patch(plt.Polygon(obs_verts, fc="red", ec="none", alpha=0.4))
-    plt.text(6, 3, r"$\mathcal{O}$", color=(0.7, 0, 0))
+    plt.text(3.5, 5.5, r"$\mathcal{O}$", color=(0.7, 0, 0))
 
     x_init = simulation["initial_condition"]
     plt.scatter(x_init[0], x_init[1], s=30, c="k", marker="+")
@@ -848,6 +849,7 @@ def plot_mc_validation(
     eps_goal = 2.5  # todo make this a variable
     plt.gca().add_patch(plt.Circle(x_goal, eps_goal, fc="black", ec="none", alpha=0.2))
     plt.text(x_goal[0] - 1, x_goal[1] - 3.5, r"$\mathcal{X}_{goal}$")
+    # plt.text(7.5, 0, r"$\delta = {{{delta}}}$".format(delta=delta))
 
     plt.xlabel(r"$p_x$")
     plt.ylabel(r"$p_y$").set_rotation(0)

@@ -294,6 +294,8 @@ class KernelControlCC(BasePolicy):
         #     kernel_fn=self.kernel_fn,
         #     regularization_param=self.regularization_param,
         # )
+        print(f"sigma = {1/X.shape[1]}")
+        print(f"sigma = {1/U.shape[1]}")
         K = self.kernel_fn_x(X) * self.kernel_fn_u(U)
         self.W = np.linalg.inv(
             K + self.regularization_param * len(X) * np.identity(len(X))
