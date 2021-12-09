@@ -38,41 +38,17 @@ class TestIndicatorFunction(unittest.TestCase):
         # One point inside.
         points = [[0.1, 0.1]]
         groundTruth = np.array([True], dtype=bool)
-        indicator_result = gym_socks.utils.indicator_fn(points=points, set=interval)
+        indicator_result = gym_socks.utils.indicator_fn(points=points, space=interval)
         cls.assertTrue(np.all(np.equal(indicator_result, groundTruth)))
 
         # Multiple points inside.
         points = [[0.1, 0.1], [0.2, -0.2]]
         groundTruth = np.array([True, True], dtype=bool)
-        indicator_result = gym_socks.utils.indicator_fn(points=points, set=interval)
+        indicator_result = gym_socks.utils.indicator_fn(points=points, space=interval)
         cls.assertTrue(np.all(np.equal(indicator_result, groundTruth)))
 
         # One point in, one point out.
         points = [[0.1, 0.1], [1.2, -0.2]]
         groundTruth = np.array([True, False], dtype=bool)
-        indicator_result = gym_socks.utils.indicator_fn(points=points, set=interval)
-        cls.assertTrue(np.all(np.equal(indicator_result, groundTruth)))
-
-    def test_indicator_function_on_function(cls):
-        """Test indicator function on function."""
-
-        def interval(points):
-            return np.array(np.all(np.abs(points) <= 1, axis=1), dtype=bool)
-
-        # One point inside.
-        points = [[0.1, 0.1]]
-        groundTruth = np.array([True], dtype=bool)
-        indicator_result = gym_socks.utils.indicator_fn(points=points, set=interval)
-        cls.assertTrue(np.all(np.equal(indicator_result, groundTruth)))
-
-        # Multiple points inside.
-        points = [[0.1, 0.1], [0.2, -0.2]]
-        groundTruth = np.array([True, True], dtype=bool)
-        indicator_result = gym_socks.utils.indicator_fn(points=points, set=interval)
-        cls.assertTrue(np.all(np.equal(indicator_result, groundTruth)))
-
-        # One point in, one point out.
-        points = [[0.1, 0.1], [1.2, -0.2]]
-        groundTruth = np.array([True, False], dtype=bool)
-        indicator_result = gym_socks.utils.indicator_fn(points=points, set=interval)
+        indicator_result = gym_socks.utils.indicator_fn(points=points, space=interval)
         cls.assertTrue(np.all(np.equal(indicator_result, groundTruth)))

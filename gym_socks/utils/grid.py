@@ -77,7 +77,7 @@ def make_grid_from_space(sample_space: gym.spaces.Box, resolution: int) -> list:
     return grid
 
 
-def grid_size_from_ranges(xi):
+def grid_size_from_ranges(xi: list) -> int:
     """Returns the size of a grid sample based on ranges.
 
     Args:
@@ -91,7 +91,7 @@ def grid_size_from_ranges(xi):
     return reduce(mul, map(len, xi), 1)
 
 
-def grid_size_from_space(sample_space, resolution):
+def grid_size_from_space(sample_space: gym.spaces.Box, resolution: int) -> int:
     """Returns the size of a grid sample based on sample space and resolution.
 
     Args:

@@ -228,7 +228,7 @@ class TestSample(unittest.TestCase):
             action = cls.env.action_space.sample()
 
             cls.env.state = state
-            next_state, cost, done, _ = cls.env.step(action=action)
+            next_state, *_ = cls.env.step(action=action)
 
             return (state, action, next_state)
 
@@ -255,7 +255,7 @@ class TestSample(unittest.TestCase):
             action = cls.env.action_space.sample()
 
             cls.env.state = state
-            next_state, cost, done, _ = cls.env.step(action=action)
+            next_state, *_ = cls.env.step(action=action)
 
             yield (state, action, next_state)
 

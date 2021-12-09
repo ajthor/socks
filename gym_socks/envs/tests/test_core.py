@@ -11,11 +11,13 @@ import numpy as np
 
 
 def custom_pre_hook():
-    print("PRE")
+    # print("PRE")
+    pass
 
 
 def custom_post_hook():
-    print("POST")
+    # print("POST")
+    pass
 
 
 class DummyWrapper(NDIntegratorEnv):
@@ -44,4 +46,4 @@ class TestWrapper(unittest.TestCase):
 
         wrapped = BaseWrapper(NDIntegratorEnv(2))
 
-        print(wrapped.reset())
+        # print(wrapped.reset())
