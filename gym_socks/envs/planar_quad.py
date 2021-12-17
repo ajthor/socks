@@ -109,7 +109,6 @@ class PlanarQuadrotorEnv(DynamicalSystem):
         return np.array(w)
 
     def dynamics(self, time, state, action, disturbance):
-        """Dynamics for the system."""
 
         x1, x2, x3, x4, x5, x6 = state
         u1, u2 = action

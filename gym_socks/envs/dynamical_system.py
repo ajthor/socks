@@ -84,6 +84,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
         """Dynamics for the system.
 
         The dynamics are typically specified by a function::
+
             y = f(t, x, u, w)
                   ┬  ┬  ┬  ┬
                   │  │  │  └┤ w : Disturbance

@@ -1,4 +1,4 @@
-__all__ = ["logging"]
+__all__ = ["logging", "normalize", "indicator_fn", "generate_batches"]
 
 from typing import Generator
 import gym

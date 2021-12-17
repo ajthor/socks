@@ -1,5 +1,8 @@
 """Kernel-based stochastic reachability.
 
+Stochastic reachability seeks to compute the likelihood that a system will satisfy
+pre-specified safety constraints.
+
 References:
     .. [1] `Model-Free Stochastic Reachability
             Using Kernel Distribution Embeddings, 2019

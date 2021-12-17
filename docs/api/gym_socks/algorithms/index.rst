@@ -1,0 +1,24 @@
+:py:mod:`~gym_socks.algorithms`
+===============================
+
+.. py:module:: gym_socks.algorithms
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   control/index.rst
+   identification/index.rst
+   reach/index.rst
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   algorithm/index.rst
