@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients.cwh_ingredient`
-=============================================
+:py:mod:`~examples.ingredients.cwh_ingredient`
+==============================================
 
 .. py:module:: examples.ingredients.cwh_ingredient
 
@@ -27,13 +27,11 @@ Attributes
 
 
 .. py:data:: cwh_ingredient
-   
 
-   
+
+
 
 .. py:function:: make_cost(env, target_state, norm_order, squared)
 
 
 .. py:function:: make_constraint(time_horizon, env)
-
-

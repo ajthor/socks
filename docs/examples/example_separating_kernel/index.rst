@@ -1,5 +1,5 @@
-:py:mod:`examples.example_separating_kernel`
-============================================
+:py:mod:`~examples.example_separating_kernel`
+=============================================
 
 .. py:module:: examples.example_separating_kernel
 
@@ -54,9 +54,9 @@ Attributes
 
 
 .. py:data:: ex
-   
 
-   
+
+
 
 .. py:function:: config()
 
@@ -96,5 +96,3 @@ Attributes
 .. py:function:: plot_results(results_filename, plot_cfg)
 
    Plot the results of the experiement.
-
-

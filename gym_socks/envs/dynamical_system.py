@@ -10,57 +10,92 @@ from gym_socks.envs.core import BaseDynamicalObject
 
 
 class DynamicalSystem(BaseDynamicalObject, ABC):
-    """Base class for dynamical system models.
+    r"""Base class for dynamical system models.
 
-    This class is ABSTRACT, meaning it is not meant to be instantiated directly.
-    Instead, define a new class that inherits from `DynamicalSystem`, and define a
-    custom `dynamics` function.
+    Bases: :py:class:`gym_socks.envs.core.BaseDynamicalObject`, :py:obj:`abc.ABC`
+
+    This class is **abstract**, meaning it is not meant to be instantiated directly.
+    Instead, define a new class that inherits from :py:class:`DynamicalSystem`, and
+    define a custom :py:meth:`dynamics` function.
 
     Example:
+        ::
 
-        >>> from gym_socks.envs.dynamical_system import DynamicalSystem
-        >>> class CustomDynamicalSystem(DynamicalSystem):
-        ...     def __init__(self):
-        ...         super().__init__(state_dim=2, action_dim=1)
-        ...
-        ...     def dynamics(self, t, x, u, w):
-        ...         return u
+            import gym
+            import numpy as np
+            from gym_socks.envs.dynamical_system import DynamicalSystem
+            class CustomDynamicalSystem(DynamicalSystem):
 
-    Note:
-        * The state space and input space are assumed to be R^n and R^m, where n and m
-        are set by state_dim and action_dim above (though these can be altered, see
-        gym.spaces for more info).
-        * The dynamics function (defined by you) returns dx/dt, and the system is
-        integrated using scipy.integrate.solve_ivp to determine the state at the next
-        time instant and discretize the system.
-        * The reset function sets a new initial condition for the system.
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+
+                    state_dim = 2  # 2-D state and observation space
+                    action_dim = 1  # 1-D action space
+
+                    self.observation_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
+                    )
+                    self.state_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
+                    )
+                    self.action_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(action_dim,), dtype=np.float32
+                    )
+
+                    self.state = None
+
+                    self.seed(seed=seed)
+
+                def dynamics(self, time, state, action, disturbance):
+                    ...
+
+    Important:
+        The state space and input space are assumed to be :math:`\mathbb{R}^{n}` and
+        :math:`\mathbb{R}^{m}`, respectively, where :math:`n` and :math:`m` are
+        specified by ``state_dim`` and ``action_dim`` above.
+
+        In addition, the default :py:meth:`step` function solves an initial value
+        problem via :py:obj:`scipy.integrate.solve_ivp` to compute the state of the
+        system at the next time step. Thus, in order to use discrete spaces, you will
+        need to override the :py:meth:`step` function.
+
+        See :py:obj:`gym.spaces` for more information on the different available spaces.
 
     The system can then be simulated using the standard gym environment.
 
     Example:
 
-        >>> import gym
-        >>> import numpy as np
         >>> env = CustomDynamicalSystem()
         >>> env.reset()
-        >>> num_steps = env.num_time_steps
-        >>> for i in range(num_steps):
+        >>> for t in range(10):
         ...     action = env.action_space.sample()
-        ...     obs, reward, done, _ = env.step(action)
+        ...     obs, *_ = env.step(action)
+        ...
         >>> env.close()
-
-    Args:
-        observation_space: The space of system observations.
-        state_space: The state space of the system.
-        action_space: The action (input) space of the system.
-        seed: Random seed.
-        euler: Whether to use the Euler approximation for simulation.
 
     """
 
     observation_space = None
+    """The space of system observations.
+
+    Caution:
+        The observation space typically only differs from the state space if the system
+        is partially observable. If this is the case, :py:meth:`generate_observation`
+        should be defined to return an element of the observation space.
+
+    """
     action_space = None
+    """The action (input) space of the system."""
     state_space = None
+    """The state space of the system.
+
+    Note:
+        By convention, in controls theory the state space of the system is the set of
+        all possible states that the system can have. OpenAI Gym's convention is to
+        ignore the underlying state space, opting to use only the
+        :py:attr:`observation_space`.
+
+    """
 
     _euler = False
 
@@ -68,7 +103,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
     @property
     def sampling_time(self):
-        """Sampling time."""
+        """Sampling time, in seconds."""
         return self._sampling_time
 
     @sampling_time.setter
@@ -76,52 +111,153 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
         self._sampling_time = value
 
     def generate_disturbance(self, time, state, action):
-        """Generate disturbance."""
+        """Generate a disturbance.
+
+        Note:
+            Override :py:meth:`generate_disturbance` in subclasses to modify the
+            disturbance properties, such as the scale or distribution.
+
+        """
+
         return self._np_random.standard_normal(size=self.state_space.shape)
 
     @abstractmethod
     def dynamics(self, time, state, action, disturbance):
         """Dynamics for the system.
 
-        The dynamics are typically specified by a function::
+        .. math::
 
-            y = f(t, x, u, w)
-                  ┬  ┬  ┬  ┬
-                  │  │  │  └┤ w : Disturbance
-                  │  │  └───┤ u : Control action
-                  │  └──────┤ x : System state
-                  └─────────┤ t : Time variable
+            \dot{x} = f(x, u, w)
+
+        Args:
+            time: The time variable.
+            state: The state of the system at the current time step.
+            action: The control action applied at the current time step.
+            disturbance: A realization of a random variable representing process noise.
+
+        Returns:
+            The state of the system at the next time step.
+
+        Important:
+            The dynamics function (defined by you) returns :math:`\dot{x}`, and the
+            system is integrated using :py:obj:`scipy.integrate.solve_ivp` in the
+            :py:meth:`step` function to determine the state at the next time instant
+            and discretize the system in time.
+
+            To specify discrete time dynamics explicitly (for instance with linear
+            dynamics such as :math:`x_{t+1} = A x_{t} + B x_{t} + w_{t}` where :math:`A`
+            and :math:`B` are known, but the ODEs are difficult to write or are
+            time-varying), override the :py:meth:`step` function.
+
+            For example::
+
+                import gym
+                import numpy as np
+                from gym_socks.envs.dynamical_system import DynamicalSystem
+                class CustomDynamicalSystem(DynamicalSystem):
+
+                    def __init__(self, state_dim, action_dim, *args, **kwargs):
+                        super().__init__(*args, **kwargs)
+
+                        self.observation_space = gym.spaces.Box(
+                            low=-np.inf,
+                            high=np.inf,
+                            shape=(state_dim,),
+                            dtype=np.float32
+                        )
+                        self.state_space = gym.spaces.Box(
+                            low=-np.inf,
+                            high=np.inf,
+                            shape=(state_dim,),
+                            dtype=np.float32
+                        )
+                        self.action_space = gym.spaces.Box(
+                            low=-np.inf,
+                            high=np.inf,
+                            shape=(action_dim,),
+                            dtype=np.float32
+                        )
+
+                        self.state = None
+
+                        self.seed(seed=seed)
+
+                        def step(self, time, action):
+
+                            disturbance = self.generate_disturbance(
+                                time, self.state, action
+                            )
+                            self.state = self.dynamics(
+                                time, self.state, action, disturbance
+                            )
+                            obs = self.generate_observation(time, self.state, action)
+
+                            return obs, 0, False, {}
+
+                        def dynamics(self, time, state, action, disturbance):
+
+                            A = compute_state_matrix(time)
+                            B = compute_input_matrix(time)
+
+                            return A @ state + B @ action + disturbance
 
         """
         raise NotImplementedError
 
     def generate_observation(self, time, state, action):
-        """Generate observation."""
+        """Generate an observation from the system.
+
+        .. math::
+
+            y = h(x, u, v)
+
+        Args:
+            time: The time variable.
+            state: The state of the system at the current time step.
+            action: The control action applied at the current time step.
+
+        Returns:
+            An observation of the system at the current time step.
+
+        Note:
+            Override :py:meth:`generate_observation` in subclasses if the system is
+            partially observable. By default, the function returns the system state
+            directly, meaning it is fully observable.
+
+        """
+
         return np.array(state, dtype=np.float32)
 
     def cost(self, time, state, action):
-        """Cost function for the system."""
+        """Cost function for the system.
+
+        Warning:
+            This function is typically not used in SOCKS, but is included here for
+            compatibility with OpenAI gym, which returns the cost from the
+            :py:meth:`step` function.
+
+        """
+
         return 0.0
 
-    def step(self, time=0, action=None):
-        """Step function defined by OpenAI Gym.
-
-        Advances the system forward one time step.
+    def step(self, time=0, action=None) -> tuple:
+        """Advances the system forward one time step.
 
         Args:
             time: Time of the simulation. Used primarily for time-varying systems.
             action: Action (input) applied to the system at the current time step.
 
         Returns:
-            obs: The observation vector. Generally, it is the state of the system
-                corrupted by some measurement noise. If the system is fully observable,
-                this is the state of the system at the next time step.
-            cost: The cost (reward) obtained by the system for taking action u in state
-                x and transitioning to state y. In general, this is not typically used with `DynamicalSystem` models.
-            done: Flag to indicate the simulation has terminated. Usually toggled by
-                guard conditions, which terminates the simulation if the system
-                violates certain operating constraints.
-            info: Extra information.
+            A tuple ``(obs, cost, done, info)``, where ``obs`` is the observation
+            vector. Generally, it is the state of the system corrupted by some
+            measurement noise. If the system is fully observable, this is the actual
+            state of the system at the next time step. ``cost`` is the cost
+            (reward) obtained by the system for taking action u in state x and
+            transitioning to state y. In general, this is not typically used with
+            :py:class:`DynamicalSystem` models. ``done`` is a flag to indicate the
+            simulation has terminated. Usually toggled by guard conditions, which
+            terminates the simulation if the system violates certain operating
+            constraints. ``info`` is a dictionary containing extra information.
 
         """
 
@@ -181,14 +317,5 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
         return self._np_random
 
     def seed(self, seed=None):
-        """Sets the seed of the random number generator.
-
-        Args:
-            seed: Integer value representing the random seed.
-
-        Returns:
-            The seed of the RNG.
-
-        """
         self._np_random, seed = seeding.np_random(seed)
         return [seed]

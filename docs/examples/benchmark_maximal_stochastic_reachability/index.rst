@@ -1,5 +1,5 @@
-:py:mod:`examples.benchmark_maximal_stochastic_reachability`
-============================================================
+:py:mod:`~examples.benchmark_maximal_stochastic_reachability`
+=============================================================
 
 .. py:module:: examples.benchmark_maximal_stochastic_reachability
 
@@ -63,9 +63,9 @@ Attributes
 
 
 .. py:data:: ex
-   
 
-   
+
+
 
 .. py:function:: config()
 
@@ -108,5 +108,3 @@ Attributes
 
 
 .. py:function:: plot_results_3d(plot_cfg, results_filename)
-
-

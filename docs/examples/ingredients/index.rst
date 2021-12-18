@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients`
-==============================
+:py:mod:`~examples.ingredients`
+===============================
 
 .. py:module:: examples.ingredients
 
@@ -23,9 +23,3 @@ Submodules
 
 Package Contents
 ----------------
-
-
-
-
-
-

@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients.forward_reach_ingredient`
-=======================================================
+:py:mod:`~examples.ingredients.forward_reach_ingredient`
+========================================================
 
 .. py:module:: examples.ingredients.forward_reach_ingredient
 
@@ -27,9 +27,9 @@ Attributes
 
 
 .. py:data:: forward_reach_ingredient
-   
 
-   
+
+
 
 .. py:function:: compute_test_point_ranges(shape, test_points, _log)
 
@@ -37,5 +37,3 @@ Attributes
 .. py:function:: generate_test_points(shape, _log)
 
    Generate test points.
-
-

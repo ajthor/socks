@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients.system_ingredient`
-================================================
+:py:mod:`~examples.ingredients.system_ingredient`
+=================================================
 
 .. py:module:: examples.ingredients.system_ingredient
 
@@ -28,9 +28,9 @@ Attributes
 
 
 .. py:data:: system_ingredient
-   
 
-   
+
+
 
 .. py:function:: make_system(system_id, sampling_time, _config, _log)
 
@@ -58,5 +58,3 @@ Attributes
    Prints information of the system specified by `system_id` to the screen.
 
    :param system_id: System identifier string.
-
-

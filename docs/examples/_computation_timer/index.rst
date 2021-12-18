@@ -1,7 +1,7 @@
 :orphan:
 
-:py:mod:`examples._computation_timer`
-=====================================
+:py:mod:`~examples._computation_timer`
+======================================
 
 .. py:module:: examples._computation_timer
 
@@ -33,9 +33,9 @@ Attributes
 
 
 .. py:data:: logger
-   
 
-   
+
+
 
 .. py:class:: ComputationTimer
 
@@ -61,6 +61,3 @@ Attributes
    .. py:method:: log_time(self)
 
       Output the computation time to the log.
-
-
-

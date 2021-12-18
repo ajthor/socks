@@ -10,6 +10,7 @@ Welcome to the SOCKS documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   GitHub Repo <https://github.com/ajthor/socks>
    installation
    /examples/index
    /api/index

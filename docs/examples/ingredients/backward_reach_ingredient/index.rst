@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients.backward_reach_ingredient`
-========================================================
+:py:mod:`~examples.ingredients.backward_reach_ingredient`
+=========================================================
 
 .. py:module:: examples.ingredients.backward_reach_ingredient
 
@@ -28,9 +28,9 @@ Attributes
 
 
 .. py:data:: backward_reach_ingredient
-   
 
-   
+
+
 
 .. py:function:: generate_tube(time_horizon, shape, bounds)
 
@@ -50,5 +50,3 @@ Attributes
 .. py:function:: generate_test_points(env, _log)
 
    Generate test points to evaluate the safety probabilities.
-
-

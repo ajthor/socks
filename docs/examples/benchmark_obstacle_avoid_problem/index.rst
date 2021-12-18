@@ -1,5 +1,5 @@
-:py:mod:`examples.benchmark_obstacle_avoid_problem`
-===================================================
+:py:mod:`~examples.benchmark_obstacle_avoid_problem`
+====================================================
 
 .. py:module:: examples.benchmark_obstacle_avoid_problem
 
@@ -69,9 +69,9 @@ Attributes
 
 
 .. py:data:: ex
-   
 
-   
+
+
 
 .. py:function:: config(sample)
 
@@ -111,5 +111,3 @@ Attributes
 .. py:function:: plot_results(system, time_horizon, plot_cfg)
 
    Plot the results of the experiement.
-
-

@@ -1,5 +1,5 @@
-:py:mod:`examples.example_monte_carlo`
-======================================
+:py:mod:`~examples.example_monte_carlo`
+=======================================
 
 .. py:module:: examples.example_monte_carlo
 
@@ -53,9 +53,9 @@ Attributes
 
 
 .. py:data:: ex
-   
 
-   
+
+
 
 .. py:function:: config()
 
@@ -98,5 +98,3 @@ Attributes
 
 
 .. py:function:: plot_results_3d(plot_cfg, results_filename)
-
-

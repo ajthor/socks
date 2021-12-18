@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients.sample_ingredient`
-================================================
+:py:mod:`~examples.ingredients.sample_ingredient`
+=================================================
 
 .. py:module:: examples.ingredients.sample_ingredient
 
@@ -68,9 +68,9 @@ Attributes
 
 
 .. py:data:: sample_ingredient
-   
 
-   
+
+
 
 .. py:function:: generate_sample(seed, env, sample_space, sample_policy, action_space, _log)
 
@@ -94,5 +94,3 @@ Attributes
 .. py:function:: generate_admissible_actions(seed, env, action_space, _log)
 
    Generate a collection of admissible control actions.
-
-

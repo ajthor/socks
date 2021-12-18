@@ -1,5 +1,5 @@
-:py:mod:`examples.benchmark_tracking_problem`
-=============================================
+:py:mod:`~examples.benchmark_tracking_problem`
+==============================================
 
 .. py:module:: examples.benchmark_tracking_problem
 
@@ -68,9 +68,9 @@ Attributes
 
 
 .. py:data:: ex
-   
 
-   
+
+
 
 .. py:function:: config(sample)
 
@@ -110,5 +110,3 @@ Attributes
 .. py:function:: plot_results(system, plot_cfg)
 
    Plot the results of the experiement.
-
-

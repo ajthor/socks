@@ -36,8 +36,10 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
+    "sphinxcontrib.bibtex",
     "autoapi.extension",
     "sphinx.ext.autodoc.typehints",
+    "sphinx_design",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -86,12 +88,15 @@ mathjax3_config = {
             "noErrors": "noerrors",
             "noUndefined": "noundefined",
         }
-    }
+    },
+    "tex": {
+        "tagSide": "right",
+    },
 }
 
 autodoc_typehints = "description"
 
-autosummary_generate = True
+autosummary_generate = False
 
 autoapi_root = "api"
 autoapi_dirs = ["../gym_socks", "../examples"]
@@ -107,3 +112,5 @@ autoapi_options = [
 
 autoapi_generate_api_docs = False
 autoapi_keep_files = True
+
+bibtex_bibfiles = ["bibliography.bib"]

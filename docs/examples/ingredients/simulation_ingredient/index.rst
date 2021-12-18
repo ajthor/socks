@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients.simulation_ingredient`
-====================================================
+:py:mod:`~examples.ingredients.simulation_ingredient`
+=====================================================
 
 .. py:module:: examples.ingredients.simulation_ingredient
 
@@ -35,9 +35,9 @@ Attributes
 
 
 .. py:data:: simulation_ingredient
-   
 
-   
+
+
 
 .. py:function:: config()
 
@@ -47,5 +47,3 @@ Attributes
 .. py:function:: simulate_system(time_horizon, env, policy, initial_condition, _log)
 
    Simulate the system from a given initial condition.
-
-

@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients.tracking_ingredient`
-==================================================
+:py:mod:`~examples.ingredients.tracking_ingredient`
+===================================================
 
 .. py:module:: examples.ingredients.tracking_ingredient
 
@@ -27,9 +27,9 @@ Attributes
 
 
 .. py:data:: tracking_ingredient
-   
 
-   
+
+
 
 .. py:function:: compute_target_trajectory(time_horizon, path_amplitude, path_period)
 
@@ -51,5 +51,3 @@ Attributes
 
 
 .. py:function:: make_cost(target_trajectory, norm_order, squared)
-
-

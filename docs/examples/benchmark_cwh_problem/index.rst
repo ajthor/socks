@@ -1,5 +1,5 @@
-:py:mod:`examples.benchmark_cwh_problem`
-========================================
+:py:mod:`~examples.benchmark_cwh_problem`
+=========================================
 
 .. py:module:: examples.benchmark_cwh_problem
 
@@ -61,9 +61,9 @@ Attributes
 
 
 .. py:data:: ex
-   
 
-   
+
+
 
 .. py:function:: config(sample)
 
@@ -108,5 +108,3 @@ Attributes
 .. py:function:: plot_sample(seed, plot_cfg)
 
    Plot a sample taken from the system.
-
-

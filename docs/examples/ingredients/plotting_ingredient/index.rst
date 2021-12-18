@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients.plotting_ingredient`
-==================================================
+:py:mod:`~examples.ingredients.plotting_ingredient`
+===================================================
 
 .. py:module:: examples.ingredients.plotting_ingredient
 
@@ -33,10 +33,8 @@ Attributes
 
 
 .. py:data:: plotting_ingredient
-   
 
-   
+
+
 
 .. py:function:: update_rc_params(matplotlib, rc_params, rc_params_filename)
-
-

@@ -1,5 +1,5 @@
-:py:mod:`examples.ingredients.common`
-=====================================
+:py:mod:`~examples.ingredients.common`
+======================================
 
 .. py:module:: examples.ingredients.common
 
@@ -58,5 +58,3 @@ Functions
 .. py:function:: grid_sample_size(space, grid_resolution)
 
    Compute grid sample size.
-
-

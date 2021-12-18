@@ -1,4 +1,20 @@
-"""Backward in time stochastic optimal control.
+r"""Backward in time stochastic optimal control.
+
+The backward in time (dynamic programming) stochastic optimal control algorithm computes
+the control actions working backward in time from the terminal time step to the current
+time step. It computes a "value" function for each time step, and then as the system
+evolves forward in time, it chooses a control action that optimizes the value function,
+rather than the actual cost.
+
+The policy is specified as a sequence of stochastic kernels :math:`\pi = \lbrace
+\pi_{0}, \pi_{1}, \ldots, \pi_{N-1} \rbrace`.
+
+.. math::
+
+    \min_{\pi_{t}} \quad \int_{\mathcal{U}} \int_{\mathcal{X}} f_{0}(y) Q(\mathrm{d} y \mid x, u) \pi_{t}(\mathrm{d} u \mid x)
+
+Note:
+    See :py:mod:`examples.benchmark_tracking_problem` for a complete example.
 
 References:
     .. [1] `Stochastic Optimal Control via
