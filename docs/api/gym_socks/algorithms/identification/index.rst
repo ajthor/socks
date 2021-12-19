@@ -20,6 +20,6 @@ Package Contents
 Functions
 ~~~~~~~~~
 
-.. autoapisummary::
+.. autosummary::
 
    gym_socks.algorithms.identification.kernel_linear_id

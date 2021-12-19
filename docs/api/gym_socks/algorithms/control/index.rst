@@ -23,7 +23,7 @@ Package Contents
 Functions
 ~~~~~~~~~
 
-.. autoapisummary::
+.. autosummary::
 
     gym_socks.algorithms.control.kernel_control_bwd
     gym_socks.algorithms.control.kernel_control_fwd

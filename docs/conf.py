@@ -43,7 +43,6 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.linkcode",
     "sphinxcontrib.bibtex",
-    "autoapi.extension",
     "sphinx.ext.autodoc.typehints",
     "sphinx_copybutton",
     "sphinx_inline_tabs",
@@ -97,21 +96,6 @@ copybutton_prompt_is_regexp = True
 autodoc_typehints = "description"
 
 autosummary_generate = False
-
-autoapi_root = "api"
-autoapi_dirs = ["../gym_socks", "../examples"]
-autoapi_ignore = ["*tests*"]
-
-autoapi_options = [
-    "members",
-    "undoc-members",
-    "show-inheritance",
-    "show-module-summary",
-    "special-members",
-]
-
-autoapi_generate_api_docs = False
-autoapi_keep_files = True
 
 bibtex_bibfiles = ["bibliography.bib"]
 
