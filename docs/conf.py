@@ -94,9 +94,11 @@ autodoc_typehints = "description"
 autodoc_mock_imports = [
     "numpy",
     "scipy",
-    "gym",
+    "matplotlib",
     "sklearn",
+    "gym",
     "sacred",
+    "tqdm",
 ]
 
 # bibtex
