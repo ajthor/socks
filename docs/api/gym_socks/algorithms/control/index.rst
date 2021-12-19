@@ -1,8 +1,6 @@
 :py:mod:`~gym_socks.algorithms.control`
 =======================================
 
-.. py:module:: gym_socks.algorithms.control
-
 .. automodule:: gym_socks.algorithms.control
 
 Submodules

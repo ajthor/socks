@@ -1,7 +1,7 @@
 :py:mod:`gym_socks`
 ===================
 
-.. py:module:: gym_socks
+.. automodule:: gym_socks
 
 
 Subpackages
@@ -14,5 +14,3 @@ Subpackages
    envs/index.rst
    kernel/index.rst
    utils/index.rst
-
-

@@ -5,9 +5,12 @@ This example shows the Monte-Carlo stochastic reachability algorithm.
 By default, the system is a double integrator (2D stochastic chain of integrators).
 
 Example:
+
     To run the example, use the following command:
 
-        $ python -m examples.example_monte_carlo
+    .. code-block:: shell
+
+        python -m examples.example_monte_carlo
 
 """
 

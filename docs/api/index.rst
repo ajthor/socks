@@ -2,6 +2,6 @@ API Reference
 =============
 
 .. toctree::
-   :titlesonly:
+    :titlesonly:
 
-   /api/gym_socks/index
+    /api/gym_socks/index

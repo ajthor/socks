@@ -1,9 +1,7 @@
 """Quadrotor system.
 
-References:
-    .. [1] `ARCH-COMP20 Category Report:
-            Continuous and Hybrid Systems with Nonlinear Dynamics
-            <https://easychair.org/publications/open/nrdD>`_
+This system is taken from `ARCH-COMP20 Category Report: Continuous and Hybrid Systems
+with Nonlinear Dynamics <https://easychair.org/publications/open/nrdD>`_.
 
 """
 

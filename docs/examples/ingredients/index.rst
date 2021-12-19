@@ -1,7 +1,7 @@
 :py:mod:`~examples.ingredients`
 ===============================
 
-.. py:module:: examples.ingredients
+.. automodule:: examples.ingredients
 
 
 Submodules

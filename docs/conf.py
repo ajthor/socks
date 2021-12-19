@@ -95,18 +95,25 @@ copybutton_prompt_is_regexp = True
 
 autodoc_typehints = "description"
 
-autosummary_generate = False
+autodoc_mock_imports = [
+    "numpy",
+    "scipy",
+    "gym",
+    "sklearn",
+    "sacred",
+]
+
+autosummary_generate = True
 
 bibtex_bibfiles = ["bibliography.bib"]
 
 linkcode_resolve = make_linkcode_resolve(
     "gym_socks",
-    "https://github.com/ajthor/socks/blob/main/{package}/{path}#L{lineno}",
+    "https://github.com/ajthor/socks/blob/{revision}/{package}/{path}#L{lineno}",
 )
 
 nbsphinx_custom_formats = {
     ".spx.py": ["jupytext.reads", {"fmt": "py:sphinx"}],
-    ".py": ["jupytext.reads", {"fmt": "py:percent"}],
 }
 
 

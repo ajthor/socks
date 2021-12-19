@@ -6,14 +6,12 @@ taken from system observations via a simple substitution. The reason for the dum
 is to showcase the technique on a non-convex forward reachable set.
 
 Example:
+
     To run the example, use the following command:
 
-        $ python -m examples.forward_reach.forward_reach
+    .. code-block:: shell
 
-.. [1] `Learning Approximate Forward Reachable Sets Using Separating Kernels, 2021
-        Adam J. Thorpe, Kendric R. Ortiz, Meeko M. K. Oishi
-        Learning for Dynamics and Control,
-        <https://arxiv.org/abs/2011.09678>`_
+        python -m examples.example_separating_kernel
 
 """
 

@@ -1,7 +1,7 @@
 :py:mod:`~gym_socks.algorithms`
 ===============================
 
-.. py:module:: gym_socks.algorithms
+.. automodule:: gym_socks.algorithms
 
 
 Subpackages

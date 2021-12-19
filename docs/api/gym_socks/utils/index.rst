@@ -1,8 +1,7 @@
 :py:mod:`~gym_socks.utils`
 ==========================
 
-.. py:module:: gym_socks.utils
-
+.. automodule:: gym_socks.utils
 
 Submodules
 ----------
@@ -20,4 +19,5 @@ Functions
 ~~~~~~~~~
 
 .. automodule:: gym_socks.utils
-   :members:
+    :noindex:
+    :members:

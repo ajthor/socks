@@ -1,8 +1,7 @@
 :py:mod:`~gym_socks.algorithms.identification`
 ==============================================
 
-.. py:module:: gym_socks.algorithms.identification
-
+.. automodule:: gym_socks.algorithms.identification
 
 Submodules
 ----------

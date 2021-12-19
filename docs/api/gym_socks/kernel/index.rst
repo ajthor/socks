@@ -1,13 +1,12 @@
 :py:mod:`~gym_socks.kernel`
 ===========================
 
-.. py:module:: gym_socks.kernel
-
+.. automodule:: gym_socks.kernel
 
 Submodules
 ----------
 .. toctree::
-   :titlesonly:
-   :maxdepth: 1
+    :titlesonly:
+    :maxdepth: 1
 
-   metrics/index.rst
+    metrics/index.rst

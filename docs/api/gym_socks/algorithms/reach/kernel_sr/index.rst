@@ -1,8 +1,6 @@
 :py:mod:`~gym_socks.algorithms.reach.kernel_sr`
 ===============================================
 
-.. py:module:: gym_socks.algorithms.reach.kernel_sr
-
 .. automodule:: gym_socks.algorithms.reach.kernel_sr
     :members:
     :undoc-members:

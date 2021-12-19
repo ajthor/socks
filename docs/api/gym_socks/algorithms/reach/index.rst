@@ -1,8 +1,7 @@
 :py:mod:`~gym_socks.algorithms.reach`
 =====================================
 
-.. py:module:: gym_socks.algorithms.reach
-
+.. automodule:: gym_socks.algorithms.reach
 
 Submodules
 ----------
