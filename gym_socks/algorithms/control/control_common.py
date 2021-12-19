@@ -1,7 +1,7 @@
 """Common functions for kernel control algorithms.
 
 This file contains common functions used by the kernel optimal control algorithms, and
-implements an LP solver to compute the probability vector :math:`gamma`. This
+implements an LP solver to compute the probability vector :math:`\gamma`. This
 functionality is accessed via the :py:func:``compute_solution`` function, which serves
 as a single entrypoint, and the unconstrained version is chosen if the constraint matrix
 ``D`` is None.

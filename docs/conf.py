@@ -40,7 +40,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
-    "sphinx.ext.autosummary",
     "sphinx.ext.linkcode",
     "sphinxcontrib.bibtex",
     "sphinx.ext.autodoc.typehints",
@@ -90,9 +89,6 @@ mathjax3_config = {
     },
 }
 
-copybutton_prompt_text = r">>> |\.\.\. "
-copybutton_prompt_is_regexp = True
-
 autodoc_typehints = "description"
 
 autodoc_mock_imports = [
@@ -103,15 +99,19 @@ autodoc_mock_imports = [
     "sacred",
 ]
 
-autosummary_generate = True
-
+# bibtex
 bibtex_bibfiles = ["bibliography.bib"]
+
+# Code block and signature options.
+copybutton_prompt_text = r">>> |\.\.\. "
+copybutton_prompt_is_regexp = True
 
 linkcode_resolve = make_linkcode_resolve(
     "gym_socks",
     "https://github.com/ajthor/socks/blob/{revision}/{package}/{path}#L{lineno}",
 )
 
+# nbsphinx configuration options
 nbsphinx_custom_formats = {
     ".spx.py": ["jupytext.reads", {"fmt": "py:sphinx"}],
 }

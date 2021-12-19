@@ -12,16 +12,3 @@ Submodules
     control_common/index.rst
     kernel_control_bwd/index.rst
     kernel_control_fwd/index.rst
-
-
-Package Contents
-----------------
-
-
-Functions
-~~~~~~~~~
-
-.. autosummary::
-
-    gym_socks.algorithms.control.kernel_control_bwd
-    gym_socks.algorithms.control.kernel_control_fwd

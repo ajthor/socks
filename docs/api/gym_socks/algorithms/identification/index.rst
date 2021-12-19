@@ -10,15 +10,3 @@ Submodules
    :maxdepth: 1
 
    kernel_linear_id/index.rst
-
-
-Package Contents
-----------------
-
-
-Functions
-~~~~~~~~~
-
-.. autosummary::
-
-   gym_socks.algorithms.identification.kernel_linear_id
