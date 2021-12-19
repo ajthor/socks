@@ -15,7 +15,8 @@ class BaseDynamicalObject(gym.Env, ABC):
     Instead, define a new class that inherits from :py:class:`BaseDynamicalObject`.
 
     This class serves as the base interface for dynamical objects, represented in most
-    cases by either a :py:class:`DynamicalSystem` or an obstacle.
+    cases by either a :py:class:`~gym_socks.envs.dynamical_system.DynamicalSystem` or an
+    obstacle.
 
     """
 

@@ -230,7 +230,11 @@ class CWH4DEnv(BaseCWH, DynamicalSystem):
 
 
 class CWH6DEnv(BaseCWH, DynamicalSystem):
-    """6D Clohessy-Wiltshire-Hill (CWH) system."""
+    """6D Clohessy-Wiltshire-Hill (CWH) system.
+
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
+
+    """
 
     def __init__(self, seed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)

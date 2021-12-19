@@ -18,6 +18,8 @@ from scipy.constants import g
 class QuadrotorEnv(DynamicalSystem):
     """Quadrotor system.
 
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
+
     The quadrotor system is a high-dimensional (12D) system. The states are the
     position, velocity, and angles of the system, and the inputs are the torques on the
     angles.
