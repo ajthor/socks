@@ -4,51 +4,47 @@ An integrator system is an extremely simple dynamical system model, typically us
 to model a single variable and its higher order derivatives, where the input is
 applied to the highest derivative term, and is "integrated" upwards.
 
-.. tab-set::
+.. tab:: Continuous Time
 
-    .. tab-item:: Continuous Time
-        :sync: key1
+    .. math::
 
-        .. math::
+        \dot{x} =
+        \begin{bmatrix}
+            0 & 1 & 0 & \cdots & 0 & 0 \\
+            0 & 0 & 1 & \cdots & 0 & 0 \\
+            0 & 0 & 0 & \cdots & 0 & 0 \\
+            \vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\
+            0 & 0 & 0 & \cdots & 0 & 1 \\
+            0 & 0 & 0 & \cdots & 0 & 0
+        \end{bmatrix} x +
+        \begin{bmatrix}
+            0 \\
+            0 \\
+            0 \\
+            \vdots \\
+            0 \\
+            1
+        \end{bmatrix} u + w
 
-            \dot{x} =
-            \begin{bmatrix}
-                0 & 1 & 0 & \cdots & 0 & 0 \\
-                0 & 0 & 1 & \cdots & 0 & 0 \\
-                0 & 0 & 0 & \cdots & 0 & 0 \\
-                \vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\
-                0 & 0 & 0 & \cdots & 0 & 1 \\
-                0 & 0 & 0 & \cdots & 0 & 0
-            \end{bmatrix} x +
-            \begin{bmatrix}
-                0 \\
-                0 \\
-                0 \\
-                \vdots \\
-                0 \\
-                1
-            \end{bmatrix} u + w
+.. tab:: Discrete Time
 
-    .. tab-item:: Discrete Time
-        :sync: key2
+    .. math::
 
-        .. math::
-
-            x_{t+1} =
-            \begin{bmatrix}
-                1 & T & \cdots & \frac{T^{N-2}}{(N-2)!} & \frac{T^{N-1}}{(N-1)!} \\
-                0 & 1 & \cdots & \frac{T^{N-3}}{(N-3)!} & \frac{T^{N-2}}{(N-2)!} \\
-                \vdots & \vdots & \ddots & \vdots & \vdots \\
-                0 & 0 & \cdots & 1 & T \\
-                0 & 0 & \cdots & 0 & 1
-            \end{bmatrix} x_{t} +
-            \begin{bmatrix}
-                \frac{T^{N}}{N!} \\
-                \frac{T^{N-1}}{(N-1)!} \\
-                \vdots \\
-                \frac{T^{2}}{2} \\
-                T
-            \end{bmatrix} u_{t} + w_{t}
+        x_{t+1} =
+        \begin{bmatrix}
+            1 & T & \cdots & \frac{T^{N-2}}{(N-2)!} & \frac{T^{N-1}}{(N-1)!} \\
+            0 & 1 & \cdots & \frac{T^{N-3}}{(N-3)!} & \frac{T^{N-2}}{(N-2)!} \\
+            \vdots & \vdots & \ddots & \vdots & \vdots \\
+            0 & 0 & \cdots & 1 & T \\
+            0 & 0 & \cdots & 0 & 1
+        \end{bmatrix} x_{t} +
+        \begin{bmatrix}
+            \frac{T^{N}}{N!} \\
+            \frac{T^{N-1}}{(N-1)!} \\
+            \vdots \\
+            \frac{T^{2}}{2} \\
+            T
+        \end{bmatrix} u_{t} + w_{t}
 
 A 2D Integrator system, for example, corresponds to the position and velocity
 components of a variable, where the input is applied to the velocity and then
@@ -58,47 +54,41 @@ Tip:
     Chaining two 2D integrator systems can model a system with x/y position and
     velocity.
 
-    .. dropdown:: Dynamics
+    .. tab:: Continuous Time
 
-        .. tab-set::
+        .. math::
 
-            .. tab-item:: Continuous Time
-                :sync: key1
+            \dot{x} =
+            \begin{bmatrix}
+                0 & 1 & 0 & 0 \\
+                0 & 0 & 0 & 0 \\
+                0 & 0 & 0 & 1 \\
+                0 & 0 & 0 & 0
+            \end{bmatrix} x +
+            \begin{bmatrix}
+                0 & 0 \\
+                1 & 0 \\
+                0 & 0 \\
+                0 & 1
+            \end{bmatrix} u + w
 
-                .. math::
+    .. tab:: Discrete Time
 
-                    \dot{x} =
-                    \begin{bmatrix}
-                        0 & 1 & 0 & 0 \\
-                        0 & 0 & 0 & 0 \\
-                        0 & 0 & 0 & 1 \\
-                        0 & 0 & 0 & 0
-                    \end{bmatrix} x +
-                    \begin{bmatrix}
-                        0 & 0 \\
-                        1 & 0 \\
-                        0 & 0 \\
-                        0 & 1
-                    \end{bmatrix} u + w
+        .. math::
 
-            .. tab-item:: Discrete Time
-                :sync: key2
-
-                .. math::
-
-                    x_{t+1} =
-                    \begin{bmatrix}
-                        1 & T & 0 & 0 \\
-                        0 & 1 & 0 & 0 \\
-                        0 & 0 & 1 & T \\
-                        0 & 0 & 0 & 1
-                    \end{bmatrix} x_{t} +
-                    \begin{bmatrix}
-                        \frac{T^{2}}{2} & 0 \\
-                        T & 0 \\
-                        0 & \frac{T^{2}}{2} \\
-                        0 & T
-                    \end{bmatrix} u_{t} + w_{t}
+            x_{t+1} =
+            \begin{bmatrix}
+                1 & T & 0 & 0 \\
+                0 & 1 & 0 & 0 \\
+                0 & 0 & 1 & T \\
+                0 & 0 & 0 & 1
+            \end{bmatrix} x_{t} +
+            \begin{bmatrix}
+                \frac{T^{2}}{2} & 0 \\
+                T & 0 \\
+                0 & \frac{T^{2}}{2} \\
+                0 & T
+            \end{bmatrix} u_{t} + w_{t}
 
 """
 

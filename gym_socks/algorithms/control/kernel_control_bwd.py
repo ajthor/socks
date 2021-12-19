@@ -2,26 +2,36 @@ r"""Backward in time stochastic optimal control.
 
 The backward in time (dynamic programming) stochastic optimal control algorithm computes
 the control actions working backward in time from the terminal time step to the current
-time step. It computes a "value" function for each time step, and then as the system
+time step. It computes a sequence of "value" functions, and then as the system
 evolves forward in time, it chooses a control action that optimizes the value function,
 rather than the actual cost.
 
 The policy is specified as a sequence of stochastic kernels :math:`\pi = \lbrace
-\pi_{0}, \pi_{1}, \ldots, \pi_{N-1} \rbrace`.
+\pi_{0}, \pi_{1}, \ldots, \pi_{N-1} \rbrace`. Typically, the cost is formulated as an
+additive cost structure, where at each time step the system incurs a *stage cost*
+:math:`g_{t}(x_{t}, u_{t})`, and at the final time step, it incurs a *terminal cost*
+:math:`g_{N}(x_{N})`.
 
 .. math::
 
-    \min_{\pi_{t}} \quad \int_{\mathcal{U}} \int_{\mathcal{X}} f_{0}(y) Q(\mathrm{d} y \mid x, u) \pi_{t}(\mathrm{d} u \mid x)
+    \min_{\pi} \quad \mathbb{E} \biggl[ g_{N}(x_{N}) +
+    \sum_{t=0}^{N-1} g_{t}(x_{t}, u_{t}) \biggr]
+
+In dynamic programming, we solve the problem iteratively, by considering each time step
+independently. We can do this by defining a sequence of *value functions* :math:`V_{0},
+\ldots, V_{N}` that describe a type of "overall" cost at each time step, starting with
+the terminal cost :math:`V_{N}(x) = g_{N}(x)`, and then substituting the subsequent
+value function into the current one. Then, the policy is chosen to minimize (or
+maximize, as is the convention for RL) the value functions.
+
+.. math::
+
+    V_{t}(x)
+    = \max_{\pi_{t}} \quad \int_{\mathcal{U}} \int_{\mathcal{X}} g_{t}(x_{t}, u_{t})
+    + V_{t+1}(y) Q(\mathrm{d} y \mid x, u) \pi_{t}(\mathrm{d} u \mid x)
 
 Note:
     See :py:mod:`examples.benchmark_tracking_problem` for a complete example.
-
-References:
-    .. [1] `Stochastic Optimal Control via
-            Hilbert Space Embeddings of Distributions, 2021
-            Adam J. Thorpe, Meeko M. K. Oishi
-            IEEE Conference on Decision and Control,
-            <https://arxiv.org/abs/2103.12759>`_
 
 """
 
@@ -340,7 +350,7 @@ class KernelControlBwd(BasePolicy):
             A: Collection of admissible control actions.
 
         Returns:
-            self: An instance of the KernelControlFwd algorithm class.
+            An instance of the KernelControlFwd algorithm class.
 
         """
 

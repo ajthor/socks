@@ -29,8 +29,8 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
                 def __init__(self, *args, **kwargs):
                     super().__init__(*args, **kwargs)
 
-                    state_dim = 2  # 2-D state and observation space
-                    action_dim = 1  # 1-D action space
+                    state_dim = 2  # 2-D state and observation space.
+                    action_dim = 1  # 1-D action space.
 
                     self.observation_space = gym.spaces.Box(
                         low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
@@ -48,6 +48,65 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
                 def dynamics(self, time, state, action, disturbance):
                     ...
+
+    Important:
+        The dynamics function (defined by you) returns :math:`\dot{x}`, and the
+        system is integrated using :py:obj:`scipy.integrate.solve_ivp` in the
+        :py:meth:`step` function to determine the state at the next time instant
+        and discretize the system in time.
+
+        To specify discrete time dynamics explicitly (for instance with linear
+        dynamics such as :math:`x_{t+1} = A x_{t} + B x_{t} + w_{t}` where :math:`A`
+        and :math:`B` are known, but the ODEs are difficult to write or are
+        time-varying), override the :py:meth:`step` function.
+
+        For example::
+
+            import gym
+            import numpy as np
+            from gym_socks.envs.dynamical_system import DynamicalSystem
+            class CustomDynamicalSystem(DynamicalSystem):
+
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+
+                    state_dim = 2  # 2-D state and observation space.
+                    action_dim = 1  # 1-D action space.
+
+                    self.observation_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
+                    )
+                    self.state_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
+                    )
+                    self.action_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(action_dim,), dtype=np.float32
+                    )
+
+                    self.state = None
+
+                    self.seed(seed=seed)
+
+                def step(self, time, action):
+
+                    disturbance = self.generate_disturbance(time, self.state, action)
+                    self.state = self.dynamics(time, self.state, action, disturbance)
+                    obs = self.generate_observation(time, self.state, action)
+
+                    return obs, 0, False, {}
+
+                def compute_state_matrix(time):
+                    ...
+
+                def compute_input_matrix(time):
+                    ...
+
+                def dynamics(self, time, state, action, disturbance):
+
+                    A = compute_state_matrix(time)
+                    B = compute_input_matrix(time)
+
+                    return A @ state + B @ action + disturbance
 
     Important:
         The state space and input space are assumed to be :math:`\mathbb{R}^{n}` and
@@ -78,7 +137,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
     observation_space = None
     """The space of system observations.
 
-    Caution:
+    Note:
         The observation space typically only differs from the state space if the system
         is partially observable. If this is the case, :py:meth:`generate_observation`
         should be defined to return an element of the observation space.
@@ -137,69 +196,6 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
         Returns:
             The state of the system at the next time step.
-
-        Important:
-            The dynamics function (defined by you) returns :math:`\dot{x}`, and the
-            system is integrated using :py:obj:`scipy.integrate.solve_ivp` in the
-            :py:meth:`step` function to determine the state at the next time instant
-            and discretize the system in time.
-
-            To specify discrete time dynamics explicitly (for instance with linear
-            dynamics such as :math:`x_{t+1} = A x_{t} + B x_{t} + w_{t}` where :math:`A`
-            and :math:`B` are known, but the ODEs are difficult to write or are
-            time-varying), override the :py:meth:`step` function.
-
-            For example::
-
-                import gym
-                import numpy as np
-                from gym_socks.envs.dynamical_system import DynamicalSystem
-                class CustomDynamicalSystem(DynamicalSystem):
-
-                    def __init__(self, state_dim, action_dim, *args, **kwargs):
-                        super().__init__(*args, **kwargs)
-
-                        self.observation_space = gym.spaces.Box(
-                            low=-np.inf,
-                            high=np.inf,
-                            shape=(state_dim,),
-                            dtype=np.float32
-                        )
-                        self.state_space = gym.spaces.Box(
-                            low=-np.inf,
-                            high=np.inf,
-                            shape=(state_dim,),
-                            dtype=np.float32
-                        )
-                        self.action_space = gym.spaces.Box(
-                            low=-np.inf,
-                            high=np.inf,
-                            shape=(action_dim,),
-                            dtype=np.float32
-                        )
-
-                        self.state = None
-
-                        self.seed(seed=seed)
-
-                        def step(self, time, action):
-
-                            disturbance = self.generate_disturbance(
-                                time, self.state, action
-                            )
-                            self.state = self.dynamics(
-                                time, self.state, action, disturbance
-                            )
-                            obs = self.generate_observation(time, self.state, action)
-
-                            return obs, 0, False, {}
-
-                        def dynamics(self, time, state, action, disturbance):
-
-                            A = compute_state_matrix(time)
-                            B = compute_input_matrix(time)
-
-                            return A @ state + B @ action + disturbance
 
         """
         raise NotImplementedError

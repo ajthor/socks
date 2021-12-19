@@ -1,10 +1,8 @@
 r"""Forward in time stochastic optimal control.
 
-Implementation of the algorithm presented in :cite:t:`thorpe2021stochastic`.
-
 The policy is specified as a sequence of stochastic kernels :math:`\pi = \lbrace
 \pi_{0}, \pi_{1}, \ldots, \pi_{N-1} \rbrace`. At each time step, the problem seeks
-to solve:
+to solve a constrained optimization problem.
 
 .. math::
     :label: optimization_problem
@@ -16,11 +14,10 @@ to solve:
 
 Using kernel embeddings of disrtibutions, assuming the cost and constraint functions
 :math:`f_{0}, \ldots, f_{m}` are in an RKHS, the integral with respect to the stochastic
-kernel :math:`Q` and the policy :math:`\pi_{t}` can be replaced by an inner product,
-i.e. :math:`\int_{\mathcal{X}} f_{0}(y) Q(\mathrm{d} y \mid x, u) = \langle f_{0}, m(x,
-u) \rangle`. We use this to construct an approximate problem to
-:eq:`optimization_problem` and solve for a policy represented as an element in an RKHS
-of the form,
+kernel :math:`Q` and the policy :math:`\pi_{t}` can be approximated by an inner product,
+i.e. :math:`\int_{\mathcal{X}} f_{0}(y) Q(\mathrm{d} y \mid x, u) \approx \langle f_{0},
+\hat{m}(x, u) \rangle`. We use this to construct an approximate problem to
+:eq:`optimization_problem` and solve for a policy represented as an element in an RKHS.
 
 .. math::
 
@@ -31,8 +28,6 @@ standard optimization solvers.
 
 Note:
     See :py:mod:`examples.benchmark_tracking_problem` for a complete example.
-
-.. bibliography::
 
 """
 
@@ -170,7 +165,7 @@ class KernelControlFwd(BasePolicy):
             A: Collection of admissible control actions.
 
         Returns:
-            self: An instance of the KernelControlFwd algorithm class.
+            An instance of the KernelControlFwd algorithm class.
 
         """
 
