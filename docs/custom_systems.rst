@@ -22,9 +22,14 @@ Typically, the main methods to be overridden in custom systems are
 .. important::
 
     Remember that :py:meth:`~gym_socks.envs.dynamical_system.DynamicalSystem.dynamics`
-    is defined using the dynamical system equations in :eq:`dynamics`. This makes the
-    code easier since in many cases the system dynamics are given in continuous time,
-    but need to be simulated in discrete time.
+    is defined using dynamics:
+
+    .. math::
+
+        \dot{x} = f(x, u, w)
+
+    This makes the code easier since in many cases the system dynamics are given in
+    continuous time, but need to be simulated in discrete time.
 
 Templates
 ---------
@@ -32,54 +37,154 @@ Templates
 It is recommended to use the following templates when defining new systems
 (environments) to use in algorithms.
 
-Default Template
-~~~~~~~~~~~~~~~~
+.. tab:: Default
+    :new-set:
 
-The default template defines a dynamical system with dynamics given by:
+    .. code-block:: python
 
-.. math::
-    :label: dynamics
+        import gym
+        from gym_socks.envs.dynamical_system import DynamicalSystem
 
-    \dot{x} &= f(x, u, w) \\
-    y &= h(x, u, v)
-
-.. code-block:: python
-
-    import gym
-    from gym_socks.envs.dynamical_system import DynamicalSystem
-
-    import numpy as np
+        import numpy as np
 
 
-    class CustomDynamicalSystemEnv(DynamicalSystem):
+        class CustomDynamicalSystemEnv(DynamicalSystem):
 
-        def __init__(self, seed=0, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+            def __init__(self, seed=0, *args, **kwargs):
+                super().__init__(*args, **kwargs)
 
-            self.observation_space = gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-            )
-            self.state_space = gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-            )
-            self.action_space = gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-            )
+                self.observation_space = gym.spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                )
+                self.state_space = gym.spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                )
+                self.action_space = gym.spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+                )
 
-            self.state = None
+                self.state = None
 
-            self.seed(seed=seed)
+                self.seed(seed=seed)
 
-        def generate_disturbance(self, time, state, action):
-            w = self.np_random.standard_normal(size=self.state_space.shape)
-            return 1e-2 * np.array(w)
+            def generate_disturbance(self, time, state, action):
+                w = self.np_random.standard_normal(size=self.state_space.shape)
+                return 1e-2 * np.array(w)
 
-        def generate_observation(self, time, state, action):
-            v = self.np_random.standard_normal(size=self.observation_space.shape)
-            return np.array(state, dtype=np.float32) + np.array(v)
+            def dynamics(self, time, state, action, disturbance):
+                ...
 
-        def dynamics(self, time, state, action, disturbance):
-            ...
+
+    The default template defines a stochastic dynamical system with dynamics given by:
+
+    .. math::
+
+        \dot{x} = f(x, u, w)
+
+.. tab:: Discrete-Time Linear
+
+    .. code-block:: python
+
+        import gym
+        from gym_socks.envs.dynamical_system import DynamicalSystem
+
+        import numpy as np
+
+
+        class CustomDynamicalSystemEnv(DynamicalSystem):
+
+            def __init__(self, seed=0, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+                self.observation_space = gym.spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                )
+                self.state_space = gym.spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                )
+                self.action_space = gym.spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+                )
+
+                self.state = None
+
+                self.A = np.zeros(shape=(2, 2))  # <-- change this
+                self.B = np.zeros(shape=(2, 1))  # <-- change this
+
+                self.seed(seed=seed)
+
+            def step(self, time, action):
+
+                disturbance = self.generate_disturbance(time, self.state, action)
+                self.state = self.dynamics(time, self.state, action, disturbance)
+                obs = self.generate_observation(time, self.state, action)
+
+                return obs, 0, False, {}
+
+            def generate_disturbance(self, time, state, action):
+                w = self.np_random.standard_normal(size=self.state_space.shape)
+                return 1e-2 * np.array(w)
+
+            def dynamics(self, time, state, action, disturbance):
+                return self.A @ state + self.B @ action + disturbance
+
+
+    A discrete-time linear system has dynamics given by:
+
+    .. math::
+
+        x_{t+1} = A x_{t} + B u_{t} + w_{t}
+
+
+.. tab:: Partially Observable
+
+    .. code-block:: python
+
+        import gym
+        from gym_socks.envs.dynamical_system import DynamicalSystem
+
+        import numpy as np
+
+
+        class CustomDynamicalSystemEnv(DynamicalSystem):
+
+            def __init__(self, seed=0, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+                self.observation_space = gym.spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                )
+                self.state_space = gym.spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                )
+                self.action_space = gym.spaces.Box(
+                    low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+                )
+
+                self.state = None
+
+                self.seed(seed=seed)
+
+            def generate_disturbance(self, time, state, action):
+                w = self.np_random.standard_normal(size=self.state_space.shape)
+                return 1e-2 * np.array(w)
+
+            def generate_observation(self, time, state, action):
+                v = self.np_random.standard_normal(size=self.observation_space.shape)
+                return np.array(state, dtype=np.float32) + np.array(v)
+
+            def dynamics(self, time, state, action, disturbance):
+                ...
+
+
+    A partially observable system includes an observation function :math:`h`. It is
+    usually used when the state observations are corrupted by some sort of noise
+    process.
+
+    .. math::
+
+        \dot{x} &= f(x, u, w) \\
+        y &= h(x, u, v)
 
 The system can then be "registered" using the OpenAI gym ``register`` function in order
 to "make" the system via a string identifier. This is useful for configuring experiments
@@ -102,57 +207,3 @@ of environments for repeatability.
     ``gym.Env`` and should be overridden if custom behavior is needed, for instance if
     explicitly using linear dynamics :math:`x_{t+1} = A x_{t} + B u_{t} + w_{t}` is
     desired.
-
-Discrete Time Linear System Template
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This template defines a dynamical system with dynamics given by:
-
-.. math::
-
-    x_{t+1} = A x_{t} + B u_{t} + w_{t}
-
-.. code-block:: python
-
-    import gym
-    from gym_socks.envs.dynamical_system import DynamicalSystem
-
-    import numpy as np
-
-
-    class CustomDynamicalSystemEnv(DynamicalSystem):
-
-        def __init__(self, seed=0, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-            self.observation_space = gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-            )
-            self.state_space = gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-            )
-            self.action_space = gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-            )
-
-            self.state = None
-
-            self.state_matrix = np.zeros(shape=(2, 2))  # <-- change this
-            self.input_matrix = np.zeros(shape=(2, 1))  # <-- change this
-
-            self.seed(seed=seed)
-
-        def step(self, time, action):
-
-            disturbance = self.generate_disturbance(time, self.state, action)
-            self.state = self.dynamics(time, self.state, action, disturbance)
-            obs = self.generate_observation(time, self.state, action)
-
-            return obs, 0, False, {}
-
-        def generate_disturbance(self, time, state, action):
-            w = self.np_random.standard_normal(size=self.state_space.shape)
-            return 1e-2 * np.array(w)
-
-        def dynamics(self, time, state, action, disturbance):
-            return self.state_matrix @ state + self.input_matrix @ action + disturbance

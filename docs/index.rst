@@ -24,6 +24,8 @@ Welcome to the SOCKS documentation!
     custom_systems
     custom_experiments
     custom_policies
+    custom_sampling
+
 
 Indices and tables
 ==================
