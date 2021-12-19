@@ -1,2 +1,8 @@
 ipykernel
 nbsphinx
+jupytext
+furo
+sphinx-autodoc-typehints
+sphinx-copybutton
+sphinx-inline-tabs
+sphinxcontrib-bibtex
