@@ -3,13 +3,6 @@
 Stochastic reachability seeks to compute the likelihood that a system will satisfy
 pre-specified safety constraints.
 
-References:
-    .. [1] `Model-Free Stochastic Reachability
-            Using Kernel Distribution Embeddings, 2019
-           Adam J. Thorpe, Meeko M. K. Oishi
-           IEEE Control Systems Letters,
-           <https://arxiv.org/abs/1908.00697>`_
-
 """
 
 from functools import partial

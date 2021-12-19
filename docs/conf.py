@@ -4,17 +4,21 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("sphinxext"))
+from github_link import make_linkcode_resolve
 
+sys.path.insert(0, os.path.abspath(".."))
 
 # -- Project information -----------------------------------------------------
 
@@ -36,10 +40,12 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
+    "sphinx.ext.linkcode",
     "sphinxcontrib.bibtex",
     "autoapi.extension",
     "sphinx.ext.autodoc.typehints",
-    "sphinx_design",
+    "sphinx_copybutton",
+    "sphinx_inline_tabs",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -56,22 +62,11 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'alabaster'
-
-import sphinx_rtd_theme
-
-# html_theme = "sphinx_rtd_theme"
-# html_theme = "sphinx_book_theme"
-
-# html_theme_options = {
-#     "repository_url": "https://github.com/ajthor/socks",
-#     "repository_branch": "main",
-#     "path_to_docs": "docs",
-#     "use_repository_button": True,
-# }
 html_theme = "furo"
 
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme_options = {
+    "sidebar_hide_name": False,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -94,6 +89,9 @@ mathjax3_config = {
     },
 }
 
+copybutton_prompt_text = r">>> |\.\.\. "
+copybutton_prompt_is_regexp = True
+
 autodoc_typehints = "description"
 
 autosummary_generate = False
@@ -114,3 +112,8 @@ autoapi_generate_api_docs = False
 autoapi_keep_files = True
 
 bibtex_bibfiles = ["bibliography.bib"]
+
+linkcode_resolve = make_linkcode_resolve(
+    "gym_socks",
+    "https://github.com/ajthor/socks/blob/main/{package}/{path}#L{lineno}",
+)
