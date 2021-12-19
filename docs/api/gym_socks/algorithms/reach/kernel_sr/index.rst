@@ -10,18 +10,15 @@
 .. bibliography::
     :filter: docname in docnames
 
-Cite As
-~~~~~~~
+.. code:: bibtex
 
-   .. code:: bibtex
-
-        @article{thorpe2020model,
-          author  = {Thorpe, Adam J. and Oishi, Meeko M. K.},
-          journal = {IEEE Control Systems Letters},
-          title   = {Model-Free Stochastic Reachability Using Kernel Distribution Embeddings},
-          year    = {2020},
-          volume  = {4},
-          number  = {2},
-          pages   = {512-517},
-          doi     = {10.1109/LCSYS.2019.2954102}
-        }
+    @article{thorpe2020model,
+        author  = {Thorpe, Adam J. and Oishi, Meeko M. K.},
+        journal = {IEEE Control Systems Letters},
+        title   = {Model-Free Stochastic Reachability Using Kernel Distribution Embeddings},
+        year    = {2020},
+        volume  = {4},
+        number  = {2},
+        pages   = {512-517},
+        doi     = {10.1109/LCSYS.2019.2954102}
+    }

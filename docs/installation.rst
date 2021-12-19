@@ -9,6 +9,7 @@ SOCKS requires python 3.7 or greater to work.
 The toolbox currently supports linux and macOS systems, but we do not officially support
 Windows. The code should still work on Windows systems, but this is currently untested.
 
+
 .. tab:: pip
 
     In order to avoid conflicts with other packages, it is highly recommended to use a
@@ -45,6 +46,7 @@ Windows. The code should still work on Windows systems, but this is currently un
     .. code-block:: shell
 
         pip install .
+
 
 .. tab:: docker
 

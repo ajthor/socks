@@ -11,18 +11,15 @@
 .. bibliography::
     :filter: docname in docnames
 
-Cite As
-~~~~~~~
+.. code:: bibtex
 
-   .. code:: bibtex
-
-        @inproceedings{thorpe2021stochastic,
-            author    = {Thorpe, Adam J. and Oishi, Meeko M. K.},
-            booktitle = {2021 Conference on Decision and Control (CDC)},
-            title     = {Stochastic Optimal Control via Hilbert Space Embeddings of Distributions},
-            year      = {2021},
-            volume    = {},
-            number    = {},
-            pages     = {},
-            doi       = {}
-        }
+    @inproceedings{thorpe2021stochastic,
+        author    = {Thorpe, Adam J. and Oishi, Meeko M. K.},
+        booktitle = {2021 Conference on Decision and Control (CDC)},
+        title     = {Stochastic Optimal Control via Hilbert Space Embeddings of Distributions},
+        year      = {2021},
+        volume    = {},
+        number    = {},
+        pages     = {},
+        doi       = {}
+    }
