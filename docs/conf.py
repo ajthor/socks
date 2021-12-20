@@ -12,6 +12,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
+import shutil
 import os
 import sys
 
@@ -115,9 +116,14 @@ linkcode_resolve = make_linkcode_resolve(
 
 # nbsphinx configuration options
 nbsphinx_custom_formats = {
-    ".spx.py": ["jupytext.reads", {"fmt": "py:sphinx"}],
+    ".py": ["jupytext.reads", {"fmt": "py:percent"}],
 }
 
+shutil.copytree(
+    os.path.join("..", "examples"),
+    os.path.join("..", "docs/examples"),
+    dirs_exist_ok=True,
+)
 
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
@@ -131,9 +137,9 @@ nbsphinx_prolog = r"""
     .. nbinfo::
         This page was generated from `{{ docname }}`__.
         Interactive online version:
-        :raw-html:`<a href="https://mybinder.org/v2/gh/spatialaudio/nbsphinx/{{ env.config.release }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+        :raw-html:`<a href="https://mybinder.org/v2/gh/ajthor/socks/{{ env.config.release }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
 
-    __ https://github.com/spatialaudio/nbsphinx/blob/
+    __ https://github.com/ajthor/socks/blob/
         {{ env.config.release }}/{{ docname }}
 
 .. raw:: latex

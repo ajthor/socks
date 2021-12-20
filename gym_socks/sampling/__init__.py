@@ -36,6 +36,7 @@ from gym_socks.sampling.sample import sample
 from gym_socks.sampling.sample import default_sampler
 from gym_socks.sampling.sample import default_trajectory_sampler
 from gym_socks.sampling.sample import grid_sampler
+from gym_socks.sampling.sample import random_sampler
 
 from gym_socks.sampling.sample import repeat
 
@@ -45,5 +46,6 @@ __all__ = [
     "default_sampler",
     "default_trajectory_sampler",
     "grid_sampler",
+    "random_sampler",
     "repeat",
 ]

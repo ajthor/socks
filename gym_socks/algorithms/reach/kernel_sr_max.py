@@ -7,17 +7,21 @@ Maximal stochastic reachability.
 from functools import partial
 
 import gym_socks
+
 from gym_socks.algorithms.algorithm import AlgorithmInterface
 from gym_socks.algorithms.reach.reach_common import _fht_step
 from gym_socks.algorithms.reach.reach_common import _tht_step
-from gym_socks.sampling.transform import transpose_sample
+
 from gym_socks.kernel.metrics import rbf_kernel
 from gym_socks.kernel.metrics import regularized_inverse
+
+from gym_socks.sampling.transform import transpose_sample
 
 from gym_socks.utils import indicator_fn
 from gym_socks.utils import normalize
 from gym_socks.utils.batch import generate_batches
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
+
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 import numpy as np

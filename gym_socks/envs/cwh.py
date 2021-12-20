@@ -100,7 +100,7 @@ class CWH4DEnv(BaseCWH, DynamicalSystem):
             low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
         )
         self.action_space = gym.spaces.Box(
-            low=-0.01, high=0.01, shape=(2,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
         )
 
         self.state = None
@@ -174,6 +174,8 @@ class CWH4DEnv(BaseCWH, DynamicalSystem):
         return np.matmul(eAt, B)
 
     def step(self, action, time=0):
+        action = np.asarray(action, dtype=np.float32)
+
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
@@ -246,7 +248,7 @@ class CWH6DEnv(BaseCWH, DynamicalSystem):
             low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
         )
         self.action_space = gym.spaces.Box(
-            low=-0.01, high=0.01, shape=(3,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
         )
 
         self.state = None
@@ -341,6 +343,8 @@ class CWH6DEnv(BaseCWH, DynamicalSystem):
         return np.matmul(eAt, B)
 
     def step(self, action, time=0):
+        action = np.asarray(action, dtype=np.float32)
+
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
