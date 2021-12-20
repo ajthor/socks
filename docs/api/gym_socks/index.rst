@@ -13,4 +13,6 @@ Subpackages
    algorithms/index.rst
    envs/index.rst
    kernel/index.rst
+   policies/index.rst
+   sampling/index.rst
    utils/index.rst
