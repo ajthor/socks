@@ -2,15 +2,14 @@
 
 This file contains a collection of sampling methods. The core principle is to define a
 function that returns a single observation (either via return or yield) from a
-probability measure. Then, the `sample_generator` is a decorator, which converts a
-function that returns a single observation into a generator, that can be sampled using
-`islice`.
+probability measure. Then, using the decorator `sample_generator`, a function that
+returns a single observation can be converted into a generator, that can then be sampled
+using `islice`.
 
-Example:
-    Sample the stochastic kernel of a dynamical system (i.e. the state transition
+Example: Sample the stochastic kernel of a dynamical system (i.e. the state transition
     probability kernel).
 
-        >>> env = NdIntegrator(2)
+        >>> env = NDIntegratorEnv(2)
         >>> sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         >>> sampler = step_sampler(
         ...     system=env, policy=RandomizedPolicy(env), sample_space=sample_space
