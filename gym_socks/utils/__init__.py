@@ -1,4 +1,4 @@
-__all__ = ["batch", "grid", "logging"]
+__all__ = ["logging", "normalize", "indicator_fn", "generate_batches"]
 
 import gym
 

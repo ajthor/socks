@@ -9,6 +9,8 @@ import numpy as np
 class NDPointMassEnv(DynamicalSystem):
     """ND point mass system.
 
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
+
     A point mass is a very simple system in which the inputs apply directly to the state
     variables. Thus, it is essentially a representation of a particle using Newton's
     equations `F = mA`.

@@ -9,6 +9,8 @@ import numpy as np
 class TORAEnv(DynamicalSystem):
     """TORA (translational oscillation with rotational actuation) system.
 
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
+
     The TORA system is a mass with an attached pendulum (rotational oscillator) attached via a spring to a surface. This system is useful for modeling a variant of the pendulum system or a cart-pole system. The input is to the pendulum.
 
     """

@@ -6,21 +6,13 @@ avoidance problemlem.
 By default, it uses a nonlinear dynamical system with nonholonomic vehicle dynamics.
 Other dynamical systems can also be used, by modifying the configuration as needed.
 
-Several configuration files are included in the `examples/configs` folder, and can be
-used by running the example using the `with` syntax, e.g.
-
-    $ python -m <experiment> with examples/configs/<config_file>
-
 Example:
+
     To run the example, use the following command:
 
-        $ python -m examples.benchmark_tracking_problem
+    .. code-block:: shell
 
-.. [1] `Stochastic Optimal Control via
-        Hilbert Space Embeddings of Distributions, 2021
-        Adam J. Thorpe, Meeko M. K. Oishi
-        IEEE Conference on Decision and Control,
-        <https://arxiv.org/abs/2103.12759>`_
+        python -m examples.benchmark_obstacle_avoid_problem
 
 """
 

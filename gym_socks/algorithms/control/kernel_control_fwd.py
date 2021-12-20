@@ -1,11 +1,34 @@
-"""Forward in time stochastic optimal control.
+r"""Forward in time stochastic optimal control.
 
-References:
-    .. [1] `Stochastic Optimal Control via
-            Hilbert Space Embeddings of Distributions, 2021
-            Adam J. Thorpe, Meeko M. K. Oishi
-            IEEE Conference on Decision and Control,
-            <https://arxiv.org/abs/2103.12759>`_
+The policy is specified as a sequence of stochastic kernels :math:`\pi = \lbrace
+\pi_{0}, \pi_{1}, \ldots, \pi_{N-1} \rbrace`. At each time step, the problem seeks
+to solve a constrained optimization problem.
+
+.. math::
+    :label: optimization_problem
+
+    \min_{\pi_{t}} \quad & \int_{\mathcal{U}} \int_{\mathcal{X}} f_{0}(y, u)
+    Q(\mathrm{d} y \mid x, u) \pi_{t}(\mathrm{d} u \mid x) \\
+    \textnormal{s.t.} \quad & \int_{\mathcal{U}} \int_{\mathcal{X}} f_{i}(y, u)
+    Q(\mathrm{d} y \mid x, u) \pi_{t}(\mathrm{d} u \mid x), i = 1, \ldots, m
+
+Using kernel embeddings of disrtibutions, assuming the cost and constraint functions
+:math:`f_{0}, \ldots, f_{m}` are in an RKHS, the integral with respect to the stochastic
+kernel :math:`Q` and the policy :math:`\pi_{t}` can be approximated by an inner product,
+i.e. :math:`\int_{\mathcal{X}} f_{0}(y) Q(\mathrm{d} y \mid x, u) \approx \langle f_{0},
+\hat{m}(x, u) \rangle`. We use this to construct an approximate problem to
+:eq:`optimization_problem` and solve for a policy represented as an element in an RKHS.
+
+.. math::
+
+    p_{t}(x) = \sum_{i=1}^{P} \gamma_{i}(x) k(\tilde{u}_{i}, \cdot)
+
+The approximate problem is a linear program (LP), and can be solved efficiently using
+standard optimization solvers.
+
+Note:
+    See :py:mod:`examples.benchmark_tracking_problem` for a complete example.
+
 """
 
 from functools import partial
@@ -142,7 +165,7 @@ class KernelControlFwd(BasePolicy):
             A: Collection of admissible control actions.
 
         Returns:
-            self: An instance of the KernelControlFwd algorithm class.
+            An instance of the KernelControlFwd algorithm class.
 
         """
 

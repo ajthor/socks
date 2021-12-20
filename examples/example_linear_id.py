@@ -7,9 +7,12 @@ lower for higher accuracy. Note that this can introduce numerical instability if
 low.
 
 Example:
+
     To run the example, use the following command:
 
-        $ python -m examples.example_linear_id
+    .. code-block:: shell
+
+        python -m examples.example_linear_id
 
 """
 

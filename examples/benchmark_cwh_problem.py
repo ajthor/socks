@@ -3,15 +3,12 @@
 This example demonstrates the optimal controller synthesis algorithm on a satellite rendezvous and docking problem with CWH dynamics.
 
 Example:
+
     To run the example, use the following command:
 
-        $ python -m examples.benchmark_cwh_problem
+    .. code-block:: shell
 
-.. [1] `Stochastic Optimal Control via
-        Hilbert Space Embeddings of Distributions, 2021
-        Adam J. Thorpe, Meeko M. K. Oishi
-        IEEE Conference on Decision and Control,
-        <https://arxiv.org/abs/2103.12759>`_
+        python -m examples.benchmark_cwh_problem
 
 """
 

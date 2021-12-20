@@ -12,6 +12,8 @@ from scipy.integrate import solve_ivp
 class PlanarQuadrotorEnv(DynamicalSystem):
     """Planar quadrotor system.
 
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
+
     A planar quadrotor is quadrotor restricted to two dimensions. Similar to the OpenAI gym lunar lander benchmark, the planar quadrotor is a bar with two independent rotors at either end. Inputs are the trust of the rotors, and apply a torque to the bar. The system is also subject to gravitational forces.
 
     """
@@ -109,7 +111,6 @@ class PlanarQuadrotorEnv(DynamicalSystem):
         return np.array(w)
 
     def dynamics(self, time, state, action, disturbance):
-        """Dynamics for the system."""
 
         x1, x2, x3, x4, x5, x6 = state
         u1, u2 = action
