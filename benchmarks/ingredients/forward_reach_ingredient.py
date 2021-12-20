@@ -5,11 +5,11 @@ from sacred.utils import convert_camel_case_to_snake_case
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
-from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import sample_generator
-from gym_socks.envs.sample import step_sampler
-from gym_socks.envs.sample import uniform_grid
-from gym_socks.envs.sample import uniform_grid_step_sampler
+from gym_socks.sampling import sample
+from gym_socks.sampling import sample_generator
+from gym_socks.sampling import step_sampler
+from gym_socks.sampling import uniform_grid
+from gym_socks.sampling import uniform_grid_step_sampler
 
 import numpy as np
 

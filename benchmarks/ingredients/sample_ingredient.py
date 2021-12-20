@@ -49,16 +49,16 @@ from functools import wraps
 from sacred import Ingredient
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
-from gym_socks.envs.policy import BasePolicy
-from gym_socks.envs.policy import ConstantPolicy
-from gym_socks.envs.policy import RandomizedPolicy
-from gym_socks.envs.policy import ZeroPolicy
+from gym_socks.policies import BasePolicy
+from gym_socks.policies import ConstantPolicy
+from gym_socks.policies import RandomizedPolicy
+from gym_socks.policies import ZeroPolicy
 
-from gym_socks.envs.sample import sample, sequential_action_sampler
-from gym_socks.envs.sample import sample_generator
-from gym_socks.envs.sample import step_sampler
-from gym_socks.envs.sample import uniform_grid
-from gym_socks.envs.sample import uniform_grid_step_sampler
+from gym_socks.sampling import sample, sequential_action_sampler
+from gym_socks.sampling import sample_generator
+from gym_socks.sampling import step_sampler
+from gym_socks.sampling import uniform_grid
+from gym_socks.sampling import uniform_grid_step_sampler
 
 from examples.ingredients.common import grid_sample_size, parse_array
 from examples.ingredients.common import box_factory

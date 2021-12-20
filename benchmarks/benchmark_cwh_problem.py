@@ -29,7 +29,7 @@ from sklearn.metrics.pairwise import rbf_kernel
 from gym_socks.algorithms.control import KernelControlFwd
 from gym_socks.algorithms.control import KernelControlBwd
 
-from gym_socks.envs.sample import transpose_sample
+from gym_socks.sampling.transform import transpose_sample
 
 from examples._computation_timer import ComputationTimer
 

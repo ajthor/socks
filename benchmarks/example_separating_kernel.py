@@ -29,14 +29,14 @@ from gym_socks.algorithms.reach.separating_kernel import SeparatingKernelClassif
 
 from sklearn.metrics.pairwise import euclidean_distances
 
-from gym_socks.envs.sample import sample
+from gym_socks.sampling import sample
 
-from examples._computation_timer import ComputationTimer
-from examples.ingredients.forward_reach_ingredient import forward_reach_ingredient
-from examples.ingredients.forward_reach_ingredient import generate_test_points
+from benchmarks._computation_timer import ComputationTimer
+from benchmarks.ingredients.forward_reach_ingredient import forward_reach_ingredient
+from benchmarks.ingredients.forward_reach_ingredient import generate_test_points
 
-from examples.ingredients.plotting_ingredient import plotting_ingredient
-from examples.ingredients.plotting_ingredient import update_rc_params
+from benchmarks.ingredients.plotting_ingredient import plotting_ingredient
+from benchmarks.ingredients.plotting_ingredient import update_rc_params
 
 
 @forward_reach_ingredient.config

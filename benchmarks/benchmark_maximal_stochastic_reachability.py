@@ -28,25 +28,25 @@ from sklearn.metrics.pairwise import rbf_kernel
 
 from gym_socks.algorithms.reach.kernel_sr_max import kernel_sr_max
 
-from gym_socks.envs.sample import sample
+from gym_socks.sampling import sample
 
-from examples._computation_timer import ComputationTimer
+from benchmarks._computation_timer import ComputationTimer
 
-from examples.ingredients.system_ingredient import system_ingredient
-from examples.ingredients.system_ingredient import set_system_seed
-from examples.ingredients.system_ingredient import make_system
+from benchmarks.ingredients.system_ingredient import system_ingredient
+from benchmarks.ingredients.system_ingredient import set_system_seed
+from benchmarks.ingredients.system_ingredient import make_system
 
-from examples.ingredients.sample_ingredient import sample_ingredient
-from examples.ingredients.sample_ingredient import generate_sample
-from examples.ingredients.sample_ingredient import generate_admissible_actions
+from benchmarks.ingredients.sample_ingredient import sample_ingredient
+from benchmarks.ingredients.sample_ingredient import generate_sample
+from benchmarks.ingredients.sample_ingredient import generate_admissible_actions
 
-from examples.ingredients.backward_reach_ingredient import backward_reach_ingredient
-from examples.ingredients.backward_reach_ingredient import generate_test_points
-from examples.ingredients.backward_reach_ingredient import compute_test_point_ranges
-from examples.ingredients.backward_reach_ingredient import generate_tube
+from benchmarks.ingredients.backward_reach_ingredient import backward_reach_ingredient
+from benchmarks.ingredients.backward_reach_ingredient import generate_test_points
+from benchmarks.ingredients.backward_reach_ingredient import compute_test_point_ranges
+from benchmarks.ingredients.backward_reach_ingredient import generate_tube
 
-from examples.ingredients.plotting_ingredient import plotting_ingredient
-from examples.ingredients.plotting_ingredient import update_rc_params
+from benchmarks.ingredients.plotting_ingredient import plotting_ingredient
+from benchmarks.ingredients.plotting_ingredient import update_rc_params
 
 
 @system_ingredient.config

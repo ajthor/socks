@@ -26,24 +26,24 @@ import numpy as np
 from functools import partial
 from sacred import Experiment
 
-from gym_socks.envs.policy import ConstantPolicy
+from gym_socks.policies import ConstantPolicy
 
 from gym_socks.algorithms.identification.kernel_linear_id import kernel_linear_id
 
-from examples._computation_timer import ComputationTimer
+from benchmarks._computation_timer import ComputationTimer
 
-from examples.ingredients.system_ingredient import system_ingredient
-from examples.ingredients.system_ingredient import set_system_seed
-from examples.ingredients.system_ingredient import make_system
+from benchmarks.ingredients.system_ingredient import system_ingredient
+from benchmarks.ingredients.system_ingredient import set_system_seed
+from benchmarks.ingredients.system_ingredient import make_system
 
-from examples.ingredients.sample_ingredient import sample_ingredient
-from examples.ingredients.sample_ingredient import generate_sample
+from benchmarks.ingredients.sample_ingredient import sample_ingredient
+from benchmarks.ingredients.sample_ingredient import generate_sample
 
-from examples.ingredients.simulation_ingredient import simulation_ingredient
-from examples.ingredients.simulation_ingredient import simulate_system
+from benchmarks.ingredients.simulation_ingredient import simulation_ingredient
+from benchmarks.ingredients.simulation_ingredient import simulate_system
 
-from examples.ingredients.plotting_ingredient import plotting_ingredient
-from examples.ingredients.plotting_ingredient import update_rc_params
+from benchmarks.ingredients.plotting_ingredient import plotting_ingredient
+from benchmarks.ingredients.plotting_ingredient import update_rc_params
 
 
 @system_ingredient.config

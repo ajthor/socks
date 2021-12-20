@@ -8,7 +8,7 @@ policy via one of the included control algorithms.
 from sacred import Ingredient
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
-from gym_socks.envs.policy import BasePolicy
+from gym_socks.policies import BasePolicy
 
 import numpy as np
 
