@@ -20,7 +20,6 @@ sys.path.insert(0, os.path.abspath("sphinxext"))
 from github_link import make_linkcode_resolve
 
 sys.path.insert(0, os.path.abspath(".."))
-sys.path.insert(0, os.path.abspath("../examples"))
 
 # -- Project information -----------------------------------------------------
 
