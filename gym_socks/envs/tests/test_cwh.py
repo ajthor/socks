@@ -4,7 +4,8 @@ from unittest.mock import patch
 
 import gym
 
-import gym_socks.envs
+from gym_socks.envs.cwh import CWH4DEnv
+from gym_socks.envs.cwh import CWH6DEnv
 
 import numpy as np
 
@@ -14,7 +15,7 @@ from scipy.constants import gravitational_constant
 class Test4DCWHSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = gym_socks.envs.cwh.CWH4DEnv()
+        cls.env = CWH4DEnv()
 
     def test_set_parameters(cls):
 
@@ -30,7 +31,7 @@ class Test4DCWHSystem(unittest.TestCase):
         cls.assertTrue(np.allclose(state_matrix, cls.env.state_matrix))
         cls.assertTrue(np.allclose(input_matrix, cls.env.input_matrix))
 
-    @patch.object(gym_socks.envs.cwh.CWH4DEnv, "generate_disturbance")
+    @patch.object(CWH4DEnv, "generate_disturbance")
     def test_known_trajectory(cls, mock_generate_disturbance):
         """Test against specific known trajectory. Sanity check."""
         mock_generate_disturbance.return_value = np.zeros((4,))
@@ -99,9 +100,9 @@ class Test4DCWHSystem(unittest.TestCase):
 class Test6DCWHSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = gym_socks.envs.cwh.CWH6DEnv()
+        cls.env = CWH6DEnv()
 
-    @patch.object(gym_socks.envs.cwh.CWH6DEnv, "generate_disturbance")
+    @patch.object(CWH6DEnv, "generate_disturbance")
     def test_known_trajectory(cls, mock_generate_disturbance):
         """Test against specific known trajectory. Sanity check."""
         mock_generate_disturbance.return_value = np.zeros((6,))

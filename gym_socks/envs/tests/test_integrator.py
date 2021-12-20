@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import gym
 
-import gym_socks.envs
+from gym_socks.envs.integrator import NDIntegratorEnv
 
 import numpy as np
 
@@ -11,9 +11,9 @@ import numpy as np
 class TestIntegratorSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = gym_socks.envs.NDIntegratorEnv(2)
+        cls.env = NDIntegratorEnv(2)
 
-    @patch.object(gym_socks.envs.NDIntegratorEnv, "generate_disturbance")
+    @patch.object(NDIntegratorEnv, "generate_disturbance")
     def test_known_trajectory(cls, mock_generate_disturbance):
         """Test against specific known trajectory. Sanity check."""
         mock_generate_disturbance.return_value = np.zeros((2,))
@@ -57,7 +57,7 @@ class TestIntegratorSystem(unittest.TestCase):
 
         cls.assertTrue(np.allclose(trajectory, groundTruth))
 
-    @patch.object(gym_socks.envs.NDIntegratorEnv, "generate_disturbance")
+    @patch.object(NDIntegratorEnv, "generate_disturbance")
     def test_euler_approximation(cls, mock_generate_disturbance):
         """Test against specific known trajectory (Euler). Sanity check."""
         mock_generate_disturbance.return_value = np.zeros((2,))

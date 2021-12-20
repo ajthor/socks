@@ -4,19 +4,19 @@ from unittest.mock import patch
 import gym
 
 from gym_socks.envs import NDIntegratorEnv
-from gym_socks.envs.policy import ConstantPolicy
-from gym_socks.envs.policy import RandomizedPolicy
+from gym_socks.policies import ConstantPolicy
+from gym_socks.policies import RandomizedPolicy
 
-from gym_socks.sample.sample import sample_generator
-from gym_socks.sample.sample import sample
-from gym_socks.sample.sample import default_sampler
-from gym_socks.sample.sample import default_trajectory_sampler
-from gym_socks.sample.sample import random_sampler
-from gym_socks.sample.sample import grid_sampler
-from gym_socks.sample.sample import repeat
+from gym_socks.sampling.sample import sample_generator
+from gym_socks.sampling.sample import sample
+from gym_socks.sampling.sample import default_sampler
+from gym_socks.sampling.sample import default_trajectory_sampler
+from gym_socks.sampling.sample import random_sampler
+from gym_socks.sampling.sample import grid_sampler
+from gym_socks.sampling.sample import repeat
 
-from gym_socks.sample.transform import transpose_sample
-from gym_socks.sample.transform import flatten_sample
+from gym_socks.sampling.transform import transpose_sample
+from gym_socks.sampling.transform import flatten_sample
 
 from gym_socks.utils.grid import make_grid_from_ranges
 from gym_socks.utils.grid import make_grid_from_space

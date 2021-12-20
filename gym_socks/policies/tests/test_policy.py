@@ -5,14 +5,18 @@ import gym
 
 import gym_socks.envs
 
-from gym_socks.envs.policy import BasePolicy, ZeroPolicy
+from gym_socks.policies import BasePolicy
+
+from gym_socks.policies import ConstantPolicy
+from gym_socks.policies import RandomizedPolicy
+from gym_socks.policies import ZeroPolicy
 
 import numpy as np
 
 
 class TestBasePolicy(unittest.TestCase):
     @classmethod
-    @patch("gym_socks.envs.policy.BasePolicy.__abstractmethods__", set())
+    @patch("gym_socks.policies.policy.BasePolicy.__abstractmethods__", set())
     def setUpClass(cls):
         cls.policy = BasePolicy()
 
@@ -31,14 +35,10 @@ class TestConstantPolicy(unittest.TestCase):
         )
 
     def test_constant_policy_returns_constants(cls):
-        policy = gym_socks.envs.policy.ConstantPolicy(
-            action_space=cls.action_space, constant=1
-        )
+        policy = ConstantPolicy(action_space=cls.action_space, constant=1)
         cls.assertEqual(policy(), [1])
 
-        policy = gym_socks.envs.policy.ConstantPolicy(
-            action_space=cls.action_space, constant=5.0
-        )
+        policy = ConstantPolicy(action_space=cls.action_space, constant=5.0)
         cls.assertEqual(policy(), [5.0])
 
 
@@ -51,5 +51,5 @@ class TestZeroPolicy(unittest.TestCase):
         )
 
     def test_zero_policy_returns_zero(cls):
-        policy = gym_socks.envs.policy.ZeroPolicy(action_space=cls.action_space)
+        policy = ZeroPolicy(action_space=cls.action_space)
         cls.assertEqual(policy(), [0])

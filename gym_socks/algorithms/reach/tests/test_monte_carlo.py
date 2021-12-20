@@ -9,12 +9,12 @@ from scipy.constants.codata import unit
 
 from gym_socks.envs.integrator import NDIntegratorEnv
 from gym_socks.envs.dynamical_system import DynamicalSystem
-from gym_socks.envs.policy import ZeroPolicy
-from gym_socks.envs.policy import RandomizedPolicy
+from gym_socks.policies import ZeroPolicy
+from gym_socks.policies import RandomizedPolicy
 
-from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import transpose_sample
-from gym_socks.envs.sample import trajectory_sampler
+from gym_socks.sampling import sample
+from gym_socks.sampling import transpose_sample
+from gym_socks.sampling import trajectory_sampler
 
 from gym_socks.algorithms.reach.reach_common import _tht_step, _fht_step
 from gym_socks.algorithms.reach.monte_carlo import MonteCarloSR

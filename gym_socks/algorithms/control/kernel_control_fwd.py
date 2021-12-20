@@ -35,9 +35,14 @@ from functools import partial
 
 import gym_socks
 
-from gym_socks.envs.policy import BasePolicy
+from gym_socks.policies import BasePolicy
 from gym_socks.algorithms.control.control_common import compute_solution
-from gym_socks.kernel.metrics import rbf_kernel, regularized_inverse
+
+from gym_socks.kernel.metrics import rbf_kernel
+from gym_socks.kernel.metrics import regularized_inverse
+
+from gym_socks.sampling.transform import transpose_sample
+
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
@@ -173,7 +178,7 @@ class KernelControlFwd(BasePolicy):
         self._validate_data(A)
         self._validate_params(S=S, A=A)
 
-        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X, U, Y = transpose_sample(S)
         X = np.array(X)
         U = np.array(U)
         Y = np.array(Y)

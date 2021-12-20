@@ -3,25 +3,34 @@ from unittest.mock import patch
 
 import gym
 
-import gym_socks.envs
+from gym_socks.envs.dynamical_system import DynamicalSystem
+
+from gym_socks.envs import NDIntegratorEnv
+from gym_socks.envs import NDPointMassEnv
+from gym_socks.envs import NonholonomicVehicleEnv
+from gym_socks.envs import PlanarQuadrotorEnv
+from gym_socks.envs import CWH4DEnv
+from gym_socks.envs import CWH6DEnv
+from gym_socks.envs import QuadrotorEnv
+from gym_socks.envs import TORAEnv
 
 import numpy as np
 
 system_list = [
-    gym_socks.envs.NDIntegratorEnv(1),
-    gym_socks.envs.NDIntegratorEnv(2),
-    gym_socks.envs.NDIntegratorEnv(3),
-    gym_socks.envs.NDIntegratorEnv(4),
-    gym_socks.envs.NDPointMassEnv(1),
-    gym_socks.envs.NDPointMassEnv(2),
-    gym_socks.envs.NDPointMassEnv(3),
-    gym_socks.envs.NDPointMassEnv(4),
-    gym_socks.envs.NonholonomicVehicleEnv(),
-    gym_socks.envs.PlanarQuadrotorEnv(),
-    gym_socks.envs.CWH4DEnv(),
-    gym_socks.envs.CWH6DEnv(),
-    gym_socks.envs.QuadrotorEnv(),
-    gym_socks.envs.TORAEnv(),
+    NDIntegratorEnv(1),
+    NDIntegratorEnv(2),
+    NDIntegratorEnv(3),
+    NDIntegratorEnv(4),
+    NDPointMassEnv(1),
+    NDPointMassEnv(2),
+    NDPointMassEnv(3),
+    NDPointMassEnv(4),
+    NonholonomicVehicleEnv(),
+    PlanarQuadrotorEnv(),
+    CWH4DEnv(),
+    CWH6DEnv(),
+    QuadrotorEnv(),
+    TORAEnv(),
 ]
 
 
@@ -50,9 +59,9 @@ class TestEnvironmentsRun(unittest.TestCase):
 class TestDynamicalSystem(unittest.TestCase):
     """Dynamical system tests."""
 
-    @patch("gym_socks.envs.dynamical_system.DynamicalSystem.__abstractmethods__", set())
+    @patch("DynamicalSystem.__abstractmethods__", set())
     def setUp(cls):
-        cls.env = gym_socks.envs.dynamical_system.DynamicalSystem()
+        cls.env = DynamicalSystem()
 
         cls.env.observation_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
