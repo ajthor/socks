@@ -9,11 +9,14 @@ import numpy as np
 class BaseDynamicalObject(gym.Env, ABC):
     """Base dynamical object class.
 
-    This class is ABSTRACT, meaning it is not meant to be instantiated directly.
-    Instead, define a new class that inherits from BaseDynamicalObject.
+    Bases: :py:obj:`gym.Env`, :py:obj:`abc.ABC`
+
+    This class is **abstract**, meaning it is not meant to be instantiated directly.
+    Instead, define a new class that inherits from :py:class:`BaseDynamicalObject`.
 
     This class serves as the base interface for dynamical objects, represented in most
-    cases by either a `DynamicalSystem` or an obstacle.
+    cases by either a :py:class:`~gym_socks.envs.dynamical_system.DynamicalSystem` or an
+    obstacle.
 
     """
 
@@ -24,9 +27,24 @@ class BaseDynamicalObject(gym.Env, ABC):
         Advances the object in the simulation. By default, an object is uncontrolled,
         meaning it accepts no parameters and the system evolves forward in time
         according to its own, internal dynamics. Controlled systems should accept an
-        `action` parameter, which represents the user-selected control input.
+        ``action`` parameter, which represents the user-selected control input.
 
-        Additionally, time-varying systems should also accept a `time` parameter.
+        Additionally, time-varying systems should also accept a ``time`` parameter.
+
+        Returns:
+            A tuple ``(obs, cost, done, info)``, where ``obs`` is the observation
+            vector. Generally, it is the state of the system corrupted by some
+            measurement noise. If the system is fully observable, this is the actual
+            state of the system at the next time step. ``cost`` is the cost
+            (reward) obtained by the system for taking action u in state x and
+            transitioning to state y. In general, this is not typically used with
+            :py:class:`DynamicalSystem` models. ``done`` is a flag to indicate the
+            simulation has terminated. Usually toggled by guard conditions, which
+            terminates the simulation if the system violates certain operating
+            constraints. ``info`` is a dictionary containing extra information.
+
+        See also:
+            :py:meth:`gym_socks.envs.dynamical_system.DynamicalSystem.step`
 
         """
 
@@ -47,16 +65,27 @@ class BaseDynamicalObject(gym.Env, ABC):
 
     @abstractmethod
     def render(self, mode="human"):
+        """Renders the environment.
+
+        This method must be overridden in subclasses in order to enable rendering.
+        Not all environments support rendering.
+
+        Args:
+            mode: the mode to render with
+
+        """
         raise NotImplementedError
 
     def close(self):
+        """Override close in your subclass to perform any necessary cleanup.
+
+        Environments will automatically :py:func:`close` themselves when garbage collected or when the program exits.
+
+        """
         pass
 
     def seed(self, seed=None):
         """Sets the seed of the random number generator.
-
-        This is primarily useful for objects which incorporate some sort of
-        stochasticity to ensure repeatability.
 
         Args:
             seed: Integer value representing the random seed.

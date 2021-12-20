@@ -10,12 +10,8 @@ from scipy.integrate import solve_ivp
 class _WorldObjectMeta(type):
     """_WorldObject meta class.
 
-    The meta class defines a virtual interface for world objects, which must implement the following methods:
-    * `step`
-    * `reset`
-    * `render`
-    * `close`
-    * `seed`
+    The meta class defines a virtual interface for world objects, which must implement
+    the following methods: ``step``, ``reset``, ``render``, ``close``, and ``seed``.
 
     """
 
@@ -41,6 +37,7 @@ class _WorldObject(metaclass=_WorldObjectMeta):
     """Virtual interface for world objects.
 
     Example:
+
         >>> class DummyObject(object):
         ...     def step(self):
         ...         pass
@@ -59,7 +56,6 @@ class _WorldObject(metaclass=_WorldObjectMeta):
         ...
         >>> dummy = DummyObject()
         >>> isinstance(DummyObject, _WorldObject)
-        True
 
     """
 
@@ -69,11 +65,11 @@ class _WorldObject(metaclass=_WorldObjectMeta):
 class World(MutableSequence):
     """World.
 
-    The `World` class is essentially a `MutableSequence` (such as a list), of objects
-    contained within the world. The objects contained within the world must be of type
-    `_WorldObject`, meaning the implement the `step`, `reset`, `render`, `close`, and
-    `seed` methods. If an object that does not implement these methods is added, an
-    assertion error will be thrown.
+    The ``World`` class is essentially a ``MutableSequence`` (such as a list), of
+    objects contained within the world. The objects contained within the world must be
+    of type ``_WorldObject``, meaning the implement the ``step``, ``reset``, ``render``,
+    ``close``, and ``seed`` methods. If an object that does not implement these methods
+    is added, an assertion error will be thrown.
 
     It can be used in much the same was as a list, for example::
 
@@ -82,20 +78,15 @@ class World(MutableSequence):
         >>> world[1] = item
         >>> world += [item]
 
-    The `World` is primarily used for keeping track of multiple objects, such as
+    The ``World`` is primarily used for keeping track of multiple objects, such as
     obstacles, which are contained within the world environment and simulated together.
-    While it can track `DynamicalSystem`s, it is moreso intended to track uncontrolled
+    While it can track ``DynamicalSystem``, it is moreso intended to track uncontrolled
     or fully autonomous systems or objects, and to synchronize the simulation time.
 
     In addition, it implements the following methods, which are applied to all objects
-    in the world environment:
-    * `step`
-    * `reset`
-    * `render`
-    * `close`
-    * `seed`
+    in the world environment: ``step``, ``reset``, ``render``, ``close``, and ``seed``.
 
-    E.g., the `step` method calls the `step` method for each item in the world. The
+    E.g., the ``step`` method calls the ``step`` method for each item in the world. The
     order in which the items are iterated over is the same as the order of the list. If
     the functions return a value, the results are given in a list.
 
@@ -120,10 +111,10 @@ class World(MutableSequence):
 
     @staticmethod
     def _check_item(item: object):
-        """Checks whether an item is a `_WorldObject`.
+        """Checks whether an item is a ``_WorldObject``.
 
         Raises:
-            ValueError: If item is not an instance of `_WorldObject`.
+            ValueError: If item is not an instance of ``_WorldObject``.
 
         """
 

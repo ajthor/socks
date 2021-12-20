@@ -5,15 +5,12 @@ This example shows the maximal stochastic reachability algorithm.
 By default, the system is a double integrator (2D stochastic chain of integrators).
 
 Example:
+
     To run the example, use the following command:
 
-        $ python -m examples.benchmark_maximal_stochastic_reachability
+    .. code-block:: shell
 
-.. [1] `Model-Free Stochastic Reachability
-        Using Kernel Distribution Embeddings, 2019
-        Adam J. Thorpe, Meeko M. K. Oishi
-        IEEE Control Systems Letters,
-        <https://arxiv.org/abs/1908.00697>`_
+        python -m examples.benchmark_maximal_stochastic_reachability
 
 """
 

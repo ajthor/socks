@@ -1,9 +1,7 @@
 """Quadrotor system.
 
-References:
-    .. [1] `ARCH-COMP20 Category Report:
-            Continuous and Hybrid Systems with Nonlinear Dynamics
-            <https://easychair.org/publications/open/nrdD>`_
+This system is taken from `ARCH-COMP20 Category Report: Continuous and Hybrid Systems
+with Nonlinear Dynamics <https://easychair.org/publications/open/nrdD>`_.
 
 """
 
@@ -17,6 +15,8 @@ from scipy.constants import g
 
 class QuadrotorEnv(DynamicalSystem):
     """Quadrotor system.
+
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
 
     The quadrotor system is a high-dimensional (12D) system. The states are the
     position, velocity, and angles of the system, and the inputs are the torques on the

@@ -1,3 +1,6 @@
+"""SOCKS - A kernel-based stochastic optimal control toolbox."""
+
+
 import logging
 
 __all__ = ["algorithms", "kernel", "systems", "utils"]
