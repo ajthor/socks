@@ -1,13 +1,20 @@
+import gym
+
+import numpy as np
+
 from gym_socks.utils import indicator_fn
 
 
 def _fht_step(Y, V, constraint_set, target_set):
-    """First-hitting time problem backward recursion step.
+    r"""First-hitting time problem backward recursion step.
 
     This function implements the backward recursion step for the first-hitting time
-    problem, given by::
+    problem, given by:
 
-        V_t(x) = 1[T](x) + 1[K\T](x) E[V_t+1]
+    .. math::
+
+        V_{t}(x) = 1_{\mathcal{T}}(x)
+        + 1_{\mathcal{K} \backslash \mathcal{T}}(x) \mathbb{E}[V_{t+1}]
 
     Args:
         Y: Vector of data points in the sample.
@@ -33,12 +40,14 @@ def _fht_step(Y, V, constraint_set, target_set):
 
 
 def _tht_step(Y, V, constraint_set, target_set):
-    """Terminal-hitting time problem backward recursion step.
+    r"""Terminal-hitting time problem backward recursion step.
 
     This function implements the backward recursion step for the terminal-hitting time
-    problem, given by::
+    problem, given by:
 
-        V_t(x) = 1[K](x) E[V_t+1]
+    .. math::
+
+        V_{t}(x) = 1_{\mathcal{K}}(x) \mathbb{E}[V_{t+1}]
 
     Args:
         Y: Vector of data points in the sample.
@@ -58,3 +67,33 @@ def _tht_step(Y, V, constraint_set, target_set):
     Y_in_constraint_set = indicator_fn(Y, constraint_set)
 
     return Y_in_constraint_set * V
+
+
+def generate_tube(time_horizon: int, low, high):
+    """Generate a stochastic reachability tube using config.
+
+    This function computes a stochastic reachability tube using the tube configuration.
+
+    Args:
+        env: The dynamical system model.
+        bounds: The bounds of the tube. Specified as a dictionary.
+
+    Returns:
+        A list of spaces indexed by time.
+
+    """
+
+    tube_lb = bounds["lower_bound"]
+    tube_ub = bounds["upper_bound"]
+
+    tube = []
+    for i in range(time_horizon):
+        tube_t = gym.spaces.Box(
+            low[i],
+            high[i],
+            shape=shape,
+            dtype=np.float32,
+        )
+        tube.append(tube_t)
+
+    return tube

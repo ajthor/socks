@@ -1,8 +1,8 @@
 # %% [markdown]
 """
-# Linear System Identification
+# Linear System ID
 
-This file demonstrates the linear system identification algorithm.
+This example demonstrates the linear system identification algorithm.
 
 By default, it uses the CWH4D system dynamics. Try setting the regularization
 parameter lower for higher accuracy. Note that this can introduce numerical
@@ -44,7 +44,7 @@ time_horizon = 1000
 # %%
 env = make(system_id)
 
-sample_size = 10
+sample_size = 100
 
 state_sampler = random_sampler(sample_space=env.state_space)
 policy = ConstantPolicy(action_space=env.action_space, constant=-1.0)
