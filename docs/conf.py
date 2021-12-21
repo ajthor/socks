@@ -45,7 +45,7 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx.ext.autodoc.typehints",
     "sphinx_copybutton",
-    "sphinx_inline_tabs",
+    "sphinx_design",
     "nbsphinx",
 ]
 
@@ -68,6 +68,8 @@ html_theme = "furo"
 html_theme_options = {
     "sidebar_hide_name": False,
 }
+
+html_title = "SOCKS"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -153,3 +155,9 @@ nbsphinx_epilog = r"""
     \textcolor{gray}{\dotfill\ \sphinxcode{\sphinxupquote{\strut
     {{ env.doc2path(env.docname, base='doc') | escape_latex }}}} ends here.}}
 """
+
+rst_epilog = """
+.. |release| replace: {release}
+""".format(
+    release=release
+)

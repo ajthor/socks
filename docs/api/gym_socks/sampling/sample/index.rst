@@ -4,3 +4,4 @@
 .. automodule:: gym_socks.sampling.sample
     :members:
     :undoc-members:
+    :inherited-members:

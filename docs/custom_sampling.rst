@@ -4,41 +4,43 @@ Sampling
 Templates
 ---------
 
-.. tab:: Uniform
+.. tab-set::
 
-    .. code-block:: python
+    .. tab-item:: Uniform
 
-        from gym_socks.sampling import sample_generator
+        .. code-block:: python
 
-        @sample_generator
-        def custom_sampler(env, policy, sample_space):
-            env.state = sample_space.sample()
-            action = policy(state=state)
-            next_state, *_ = env.step(action)
-            yield (env.state, action, next_state)
+            from gym_socks.sampling import sample_generator
 
-.. tab:: Grid
+            @sample_generator
+            def custom_sampler(env, policy, sample_space):
+                env.state = sample_space.sample()
+                action = policy(state=state)
+                next_state, *_ = env.step(action)
+                yield (env.state, action, next_state)
 
-    .. code-block:: python
+    .. tab-item:: Grid
 
-        from gym_socks.sampling import sample_generator
+        .. code-block:: python
 
-        @sample_generator
-        def custom_sampler(env):
+            from gym_socks.sampling import sample_generator
 
-            state = env.state_space.sample()
+            @sample_generator
+            def custom_sampler(env):
 
-            yield state
+                state = env.state_space.sample()
 
-.. tab:: Policy
+                yield state
 
-    .. code-block:: python
+    .. tab-item:: Policy
 
-        from gym_socks.sampling import sample_generator
+        .. code-block:: python
 
-        @sample_generator
-        def custom_sampler(env):
+            from gym_socks.sampling import sample_generator
 
-            state = env.state_space.sample()
+            @sample_generator
+            def custom_sampler(env):
 
-            yield state
+                state = env.state_space.sample()
+
+                yield state

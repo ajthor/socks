@@ -4,5 +4,5 @@ jupytext
 furo
 sphinx-autodoc-typehints
 sphinx-copybutton
-sphinx-inline-tabs
+sphinx-design
 sphinxcontrib-bibtex

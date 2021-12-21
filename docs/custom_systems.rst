@@ -37,154 +37,158 @@ Templates
 It is recommended to use the following templates when defining new systems
 (environments) to use in algorithms.
 
-.. tab:: Default
-    :new-set:
+.. tab-set::
 
-    .. code-block:: python
+    .. tab-item:: Default
 
-        import gym
-        from gym_socks.envs.dynamical_system import DynamicalSystem
+        .. code-block:: python
 
-        import numpy as np
+            import gym
+            from gym_socks.envs.dynamical_system import DynamicalSystem
 
-
-        class CustomDynamicalSystemEnv(DynamicalSystem):
-
-            def __init__(self, seed=0, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.observation_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-                )
-                self.state_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-                )
-                self.action_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-                )
-
-                self.state = None
-
-                self.seed(seed=seed)
-
-            def generate_disturbance(self, time, state, action):
-                w = self.np_random.standard_normal(size=self.state_space.shape)
-                return 1e-2 * np.array(w)
-
-            def dynamics(self, time, state, action, disturbance):
-                ...
+            import numpy as np
 
 
-    The default template defines a stochastic dynamical system with dynamics given by:
+            class CustomDynamicalSystemEnv(DynamicalSystem):
 
-    .. math::
+                def __init__(self, seed=0, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
 
-        \dot{x} = f(x, u, w)
+                    self.observation_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                    )
+                    self.state_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                    )
+                    self.action_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+                    )
 
-.. tab:: Discrete-Time Linear
+                    self.state = None
 
-    .. code-block:: python
+                    self.seed(seed=seed)
 
-        import gym
-        from gym_socks.envs.dynamical_system import DynamicalSystem
+                def generate_disturbance(self, time, state, action):
+                    w = self.np_random.standard_normal(size=self.state_space.shape)
+                    return 1e-2 * np.array(w)
 
-        import numpy as np
-
-
-        class CustomDynamicalSystemEnv(DynamicalSystem):
-
-            def __init__(self, seed=0, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.observation_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-                )
-                self.state_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-                )
-                self.action_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-                )
-
-                self.state = None
-
-                self.A = np.zeros(shape=(2, 2))  # <-- change this
-                self.B = np.zeros(shape=(2, 1))  # <-- change this
-
-                self.seed(seed=seed)
-
-            def step(self, time, action):
-
-                disturbance = self.generate_disturbance(time, self.state, action)
-                self.state = self.dynamics(time, self.state, action, disturbance)
-                obs = self.generate_observation(time, self.state, action)
-
-                return obs, 0, False, {}
-
-            def generate_disturbance(self, time, state, action):
-                w = self.np_random.standard_normal(size=self.state_space.shape)
-                return 1e-2 * np.array(w)
-
-            def dynamics(self, time, state, action, disturbance):
-                return self.A @ state + self.B @ action + disturbance
+                def dynamics(self, time, state, action, disturbance):
+                    ...
 
 
-    A discrete-time linear system has dynamics given by:
+        The default template defines a stochastic dynamical system with dynamics given
+        by:
 
-    .. math::
+        .. math::
 
-        x_{t+1} = A x_{t} + B u_{t} + w_{t}
+            \dot{x} = f(x, u, w)
 
+    .. tab-item:: Discrete-Time Linear
 
-.. tab:: Partially Observable
+        .. code-block:: python
 
-    .. code-block:: python
+            import gym
+            from gym_socks.envs.dynamical_system import DynamicalSystem
 
-        import gym
-        from gym_socks.envs.dynamical_system import DynamicalSystem
-
-        import numpy as np
-
-
-        class CustomDynamicalSystemEnv(DynamicalSystem):
-
-            def __init__(self, seed=0, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-                self.observation_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-                )
-                self.state_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-                )
-                self.action_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-                )
-
-                self.state = None
-
-                self.seed(seed=seed)
-
-            def generate_disturbance(self, time, state, action):
-                w = self.np_random.standard_normal(size=self.state_space.shape)
-                return 1e-2 * np.array(w)
-
-            def generate_observation(self, time, state, action):
-                v = self.np_random.standard_normal(size=self.observation_space.shape)
-                return np.array(state, dtype=np.float32) + np.array(v)
-
-            def dynamics(self, time, state, action, disturbance):
-                ...
+            import numpy as np
 
 
-    A partially observable system includes an observation function :math:`h`. It is
-    usually used when the state observations are corrupted by some sort of noise
-    process.
+            class CustomDynamicalSystemEnv(DynamicalSystem):
 
-    .. math::
+                def __init__(self, seed=0, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
 
-        \dot{x} &= f(x, u, w) \\
-        y &= h(x, u, v)
+                    self.observation_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                    )
+                    self.state_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                    )
+                    self.action_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+                    )
+
+                    self.state = None
+
+                    self.A = np.zeros(shape=(2, 2))  # <-- change this
+                    self.B = np.zeros(shape=(2, 1))  # <-- change this
+
+                    self.seed(seed=seed)
+
+                def step(self, time, action):
+
+                    disturbance = self.generate_disturbance(time, self.state, action)
+                    self.state = self.dynamics(time, self.state, action, disturbance)
+                    obs = self.generate_observation(time, self.state, action)
+
+                    return obs, 0, False, {}
+
+                def generate_disturbance(self, time, state, action):
+                    w = self.np_random.standard_normal(size=self.state_space.shape)
+                    return 1e-2 * np.array(w)
+
+                def dynamics(self, time, state, action, disturbance):
+                    return self.A @ state + self.B @ action + disturbance
+
+
+        A discrete-time linear system has dynamics given by:
+
+        .. math::
+
+            x_{t+1} = A x_{t} + B u_{t} + w_{t}
+
+
+    .. tab-item:: Partially Observable
+
+        .. code-block:: python
+
+            import gym
+            from gym_socks.envs.dynamical_system import DynamicalSystem
+
+            import numpy as np
+
+
+            class CustomDynamicalSystemEnv(DynamicalSystem):
+
+                def __init__(self, seed=0, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+
+                    self.observation_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                    )
+                    self.state_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                    )
+                    self.action_space = gym.spaces.Box(
+                        low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+                    )
+
+                    self.state = None
+
+                    self.seed(seed=seed)
+
+                def generate_disturbance(self, time, state, action):
+                    w = self.np_random.standard_normal(size=self.state_space.shape)
+                    return 1e-2 * np.array(w)
+
+                def generate_observation(self, time, state, action):
+                    v = self.np_random.standard_normal(
+                        size=self.observation_space.shape
+                    )
+                    return np.array(state, dtype=np.float32) + np.array(v)
+
+                def dynamics(self, time, state, action, disturbance):
+                    ...
+
+
+        A partially observable system includes an observation function :math:`h`. It is
+        usually used when the state observations are corrupted by some sort of noise
+        process.
+
+        .. math::
+
+            \dot{x} &= f(x, u, w) \\
+            y &= h(x, u, v)
 
 The system can then be "registered" using the OpenAI gym ``register`` function in order
 to "make" the system via a string identifier. This is useful for configuring experiments

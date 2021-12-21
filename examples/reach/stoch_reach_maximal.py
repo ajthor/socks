@@ -1,6 +1,6 @@
 # %% [markdown]
 """
-# Maximal Stochastic Reachability
+# Maximal Policies
 
 This example demonstrates the stochastic reachability algorithm to compute the maximal
 policy in the terminal (first) sense.
