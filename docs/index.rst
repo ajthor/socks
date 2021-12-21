@@ -113,6 +113,7 @@ Check out the user guide to use SOCKS in your own projects.
     :caption: User Guide
 
     using_socks
+    contributing
 
 
 Indices and Tables
