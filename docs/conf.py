@@ -127,9 +127,21 @@ shutil.copytree(
     dirs_exist_ok=True,
 )
 
+# print(git_revision)
+# https://mybinder.org/v2/gh/scikit-learn/scikit-learn/1.0.X?urlpath=lab/tree/notebooks/auto_examples/ensemble/plot_adaboost_regression.ipynb
+# https://hub.gke2.mybinder.org/user/scikit-learn-scikit-learn-q3mk29qx/lab/tree/notebooks/auto_examples/ensemble/plot_adaboost_regression.ipynb
+
+# https://scikit-learn.org/stable/_downloads/38e826c9e3778d7de78b2fc671fd7903/plot_adaboost_regression.ipynb
+
+# https://mybinder.org/v2/gh/ajthor/socks/fa24fa3?filepath=/home/docs/checkouts/readthedocs.org/user_builds/socks/checkouts/feature-rework-sampling/docs/examples/identification/linear_id.ipynb
+
+# https://mybinder.org/v2/gh/ajthor/socks/fa24fa3?urlpath=https://socks.readthedocs.io/en/feature-rework-sampling/examples/identification/linear_id.ipynb
+
+# https://hub.gke2.mybinder.org/user/ajthor-socks-t8gkdjbk/https://socks.readthedocs.io/en/feature-rework-sampling/examples/identification/linear_id.ipynb
+
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
-{% set docname = env.doc2path(env.docname, base='docs') %}
+{% set docname = env.doc2path(env.docname, base=None) %}
 
 .. only:: html
 
@@ -138,7 +150,7 @@ nbsphinx_prolog = r"""
 
     .. nbinfo::
         Open an interactive version of this example on Binder:
-        :raw-html:`<a href="https://mybinder.org/v2/gh/ajthor/socks/{{ env.config.git_revision }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+        :raw-html:`<a href="https://mybinder.org/v2/gh/ajthor/socks/{{ env.config.git_revision }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:middle"></a>`
 
     __ https://github.com/ajthor/socks/blob/
         {{ env.config.git_revision }}/{{ docname }}
