@@ -18,6 +18,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath("sphinxext"))
 from github_link import make_linkcode_resolve
+from github_link import _get_git_revision
 
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -29,6 +30,8 @@ author = "Adam Thorpe"
 
 # The full version, including alpha/beta/rc tags
 release = "0.1.0-alpha0"
+
+git_revision = _get_git_revision()
 
 
 # -- General configuration ---------------------------------------------------
@@ -134,12 +137,11 @@ nbsphinx_prolog = r"""
         :format: html
 
     .. nbinfo::
-        This page was generated from `{{ docname }}`__.
-        Interactive online version:
-        :raw-html:`<a href="https://mybinder.org/v2/gh/ajthor/socks/{{ env.config.release }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+        Open an interactive version of this example on Binder:
+        :raw-html:`<a href="https://mybinder.org/v2/gh/ajthor/socks/{{ env.config.git_revision }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
 
     __ https://github.com/ajthor/socks/blob/
-        {{ env.config.release }}/{{ docname }}
+        {{ env.config.git_revision }}/{{ docname }}
 
 .. raw:: latex
 
