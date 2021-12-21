@@ -39,7 +39,11 @@ regularization_param = 1e-9
 time_horizon = 1000
 
 # %% [markdown]
-# Generate the system sample.
+# ## Generate the Sample
+#
+# We generate a sample from the system, with random initial conditions and random
+# actions. Increasing the sample size and reducing the regularization parameter will
+# increase the accuracy of the approximation.
 
 # %%
 env = make(system_id)
@@ -47,13 +51,13 @@ env = make(system_id)
 sample_size = 100
 
 state_sampler = random_sampler(sample_space=env.state_space)
-policy = ConstantPolicy(action_space=env.action_space, constant=-1.0)
+action_sampler = random_sampler(sample_space=env.action_space)
 
 
 @sample_generator
 def sampler():
     state = next(state_sampler)
-    action = policy()
+    action = next(action_sampler)
 
     env.state = state
     next_state, *_ = env.step(action=action)
@@ -65,16 +69,23 @@ S = sample(sampler=sampler, sample_size=sample_size)
 
 
 # %% [markdown]
-# Run the algorithm.
+# ## Algorithm
+#
+# We then compute the system approximation using the sample.
 
 # %%
 alg = kernel_linear_id(S=S, regularization_param=regularization_param)
 
 # %% [markdown]
-# Validate the output.
+# Using the known dynamics, we can validate the output of the algorithm against a known
+# result. We simulate the system forward in time over a very long time horizon in order
+# to observe how close the approximation is to the actual system dynamics.
+#
+# For simulation, we choose to apply a constant policy, that applies the same control
+# action at each time step.
 
 # %%
-simulation_policy = ConstantPolicy(action_space=env.action_space, constant=[0.01, 0.01])
+policy = ConstantPolicy(action_space=env.action_space, constant=[0.01, 0.01])
 
 env.reset()
 
@@ -100,7 +111,10 @@ for t in range(time_horizon):
     estimated_trajectory.append(state)
 
 # %% [markdown]
-# Plot the results.
+# ## Results
+#
+# We then plot the simulated trajectories of the actual system alongside the predicted
+# state trajectory using the approximated dynamics.
 
 # %%
 import matplotlib

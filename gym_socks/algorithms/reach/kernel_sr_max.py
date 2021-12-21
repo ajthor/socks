@@ -344,7 +344,7 @@ class KernelMaximalSR(AlgorithmInterface):
             value_functions=value_functions,
             out=value_functions,
             step_fn=self.step_fn,
-            verbose=True,
+            verbose=self.verbose,
         )
 
     def predict(self, T):
@@ -378,7 +378,7 @@ class KernelMaximalSR(AlgorithmInterface):
             target_tube=self.target_tube,
             value_functions=self.value_functions,
             step_fn=self.step_fn,
-            verbose=True,
+            verbose=self.verbose,
         )
 
         return safety_probabilities

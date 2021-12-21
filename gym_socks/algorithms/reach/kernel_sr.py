@@ -23,8 +23,6 @@ from gym_socks.utils import normalize
 from gym_socks.utils.batch import generate_batches
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
-from tqdm.contrib.logging import logging_redirect_tqdm
-
 import numpy as np
 
 
@@ -305,7 +303,7 @@ class KernelSR(AlgorithmInterface):
             value_functions=value_functions,
             out=value_functions,
             step_fn=self.step_fn,
-            verbose=True,
+            verbose=self.verbose,
         )
 
     def predict(self, T: np.ndarray) -> np.ndarray:
@@ -338,7 +336,7 @@ class KernelSR(AlgorithmInterface):
             target_tube=self.target_tube,
             value_functions=self.value_functions,
             step_fn=self.step_fn,
-            verbose=True,
+            verbose=self.verbose,
         )
 
         return safety_probabilities

@@ -69,7 +69,7 @@ def _tht_step(Y, V, constraint_set, target_set):
     return Y_in_constraint_set * V
 
 
-def generate_tube(time_horizon: int, low, high):
+def generate_tube(time_horizon: int, shape, low, high):
     """Generate a stochastic reachability tube using config.
 
     This function computes a stochastic reachability tube using the tube configuration.
