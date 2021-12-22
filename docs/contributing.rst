@@ -20,12 +20,12 @@ Some Ways That You Can Help
 
 1. Number one is to submit pull requests. We :octicon:`heart;1em;sd-text-danger` pull
    requests.
-2. We'd love to hear how you are using SOCKS, or how you plan to use it in your own
-   research or projects. Submit feedback using the GitHub `issues
-   <https://github.com/ajthor/socks/issues>`_ page, and tag your suggestions or
-   feedback so that we know whether you're asking a question, posting about a bug, or
-   would like to propose the next big idea.
-3. Discussion. We'd love to discuss more! Check out the `discussions
+2. Submit feedback using the GitHub `issues
+   <https://github.com/ajthor/socks/issues>`_ page, and tag your suggestions or feedback
+   so that we know whether you're asking a question, posting about a bug, or would like
+   to propose the next big idea.
+3. Discussion. We'd love to hear how you are using SOCKS, or how you plan to use it in
+   your own research or projects. Check out the `discussions
    <https://github.com/ajthor/socks/discussions>`_ page to get in touch.
 4. Documentation. We have made an effort to fully document SOCKS, but know there is
    always room for improvement. If you notice the documentation is lacking, or even if
