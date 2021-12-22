@@ -38,6 +38,8 @@ class NonholonomicVehicleEnv(DynamicalSystem):
         self.seed(seed=seed)
 
     def step(self, action, time=0):
+        action = np.asarray(action, dtype=np.float32)
+
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
