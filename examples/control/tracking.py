@@ -197,5 +197,4 @@ for x in trajectory:
     plt.plot(x[0], x[1], marker=t, markersize=15, linestyle="None", color="C1")
 
 plt.legend()
-# plt.show()
-plt.savefig("results/plot.png")
+plt.show()
