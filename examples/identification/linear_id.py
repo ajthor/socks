@@ -11,7 +11,7 @@ instability if set too low.
 To run the example, use the following command:
 
 ```shell
-    python -m examples.identification.linear_id
+    python examples/identification/linear_id.py
 ```
 
 """

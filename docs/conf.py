@@ -157,7 +157,7 @@ nbsphinx_epilog = r"""
 """
 
 rst_epilog = """
-.. |release| replace: {release}
+.. |release| replace:: {release}
 """.format(
     release=release
 )

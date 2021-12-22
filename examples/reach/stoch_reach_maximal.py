@@ -10,7 +10,7 @@ By default, the system is a double integrator (2D stochastic chain of integrator
 To run the example, use the following command:
 
 ```shell
-    python -m examples.reach.stoch_reach_maximal
+    python examples/reach/stoch_reach_maximal.py
 ```
 
 """

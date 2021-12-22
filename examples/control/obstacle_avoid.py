@@ -5,7 +5,7 @@
 To run the example, use the following command:
 
 ```shell
-    python -m examples.control.obstacle_avoid
+    python examples/control/obstacle_avoid.py
 ```
 
 """

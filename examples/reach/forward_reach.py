@@ -10,7 +10,7 @@ data is to showcase the technique on a non-convex forward reachable set.
 To run the example, use the following command:
 
 ```shell
-    python -m examples.reach.forward_reach
+    python examples/reach/forward_reach.py
 ```
 
 """

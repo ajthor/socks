@@ -4,8 +4,8 @@ Contributing
 Notice a bug? Have a feature idea? Interested in contributing an algorithm?
 
 There are many ways to contribute to SOCKS, and we welcome and encourage collaborators
-to point out `issues, post ideas <https://github.com/ajthor/socks/issues>`_, and
-(preferably) submit pull requests.
+to point out `issues <https://github.com/ajthor/socks/issues>`_, `post ideas
+<https://github.com/ajthor/socks/discussions>`_, and (preferably) submit pull requests.
 
 SOCKS is currently under active (alpha) development, meaning we are still in the early
 stages of ironing out the way things work and developing the underlying framework of
@@ -25,7 +25,9 @@ Some Ways That You Can Help
    <https://github.com/ajthor/socks/issues>`_ page, and tag your suggestions or
    feedback so that we know whether you're asking a question, posting about a bug, or
    would like to propose the next big idea.
-3. Documentation. We have made an effort to fully document SOCKS, but know there is
+3. Discussion. We'd love to discuss more! Check out the `discussions
+   <https://github.com/ajthor/socks/discussions>`_ page to get in touch.
+4. Documentation. We have made an effort to fully document SOCKS, but know there is
    always room for improvement. If you notice the documentation is lacking, or even if
    you notice a typo, we encourage you to reach out and submit an issue or a PR to help
    fix it.
