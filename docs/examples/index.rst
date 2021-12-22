@@ -33,6 +33,18 @@ Control
         +++
         :bdg-primary-line:`control`
 
+    .. grid-item-card::
+        :link: control/satellite_rendezvous
+        :link-type: doc
+
+        **CWH Problem**
+        ^^^
+
+        Satellite rendezvous and docking problem using Clohessy-Wiltshire-Hill dynamics.
+
+        +++
+        :bdg-primary-line:`control`
+
 Identification
 --------------
 

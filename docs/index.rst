@@ -82,13 +82,13 @@ several of the key examples.
         :bdg-primary-line:`control`
 
     .. grid-item-card::
-        :link: examples/control/obstacle_avoid
+        :link: examples/control/satellite_rendezvous
         :link-type: doc
 
-        **Obstacle Avoid**
+        **CWH Problem**
         ^^^
 
-        Constrained stochastic optimal control.
+        Satellite rendezvous and docking problem using Clohessy-Wiltshire-Hill dynamics.
 
         +++
         :bdg-primary-line:`control`
