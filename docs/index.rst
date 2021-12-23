@@ -20,6 +20,7 @@ environments.
     installation
 
     /examples/index
+    /benchmarks/index
 
     /api/index
 

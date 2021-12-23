@@ -1,8 +1,6 @@
 Examples
 ========
 
-.. py:module:: examples
-
 Control
 -------
 
@@ -109,3 +107,9 @@ Stochastic Reachability
         +++
         :bdg-primary-line:`control`
         :bdg-primary-line:`reachability`
+
+Contributing Examples
+---------------------
+
+Interested in contributing new examples to this page? See the :doc:`new_examples` page
+for details.
