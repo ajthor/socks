@@ -1,5 +1,6 @@
+*****
 SOCKS
-=====
+*****
 
 Release: |release|
 
@@ -24,8 +25,19 @@ environments.
 
     /api/index
 
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+    :caption: User Guide
+
+    guide/fundamentals
+    guide/using_socks
+    guide/templates
+    contributing/index
+
+
 Getting Started
----------------
+===============
 
 Install SOCKS using ``pip``:
 
@@ -35,14 +47,44 @@ Install SOCKS using ``pip``:
 
 Check out the :doc:`installation` page for more detailed instructions.
 
-Examples
-~~~~~~~~
 
-After installing, the best way to familiarize yourself with SOCKS is by checking out
-several of the key examples.
+User Guide
+==========
+
+Check out the user guide to use SOCKS in your own projects.
+
+:doc:`guide/fundamentals`
+    Describes the basic concepts of SOCKS, and gives a quick overview of data-driven
+    control.
+
+:doc:`guide/using_socks`
+    Information on how to simulate and generate samples from systems, as well as basic
+    information about how to use the algorithms in SOCKS.
+
+:doc:`guide/templates`
+    Some code templates that can be copy/paste into your own projects.
+
+
+Examples
+========
+
+After reading the user guide, the best way to familiarize yourself with SOCKS is by
+checking out several of the key examples.
 
 .. grid:: 2
     :gutter: 1 1 2 3
+
+    .. grid-item-card::
+        :link: examples/control/tracking
+        :link-type: doc
+
+        **Target Tracking Problem**
+        ^^^
+
+        Unconstrained stochastic optimal control.
+
+        +++
+        :bdg-primary-line:`control`
 
     .. grid-item-card::
         :link: examples/reach/stoch_reach_maximal
@@ -71,18 +113,6 @@ several of the key examples.
         :bdg-primary-line:`reachability`
 
     .. grid-item-card::
-        :link: examples/control/tracking
-        :link-type: doc
-
-        **Target Tracking Problem**
-        ^^^
-
-        Unconstrained stochastic optimal control.
-
-        +++
-        :bdg-primary-line:`control`
-
-    .. grid-item-card::
         :link: examples/control/satellite_rendezvous
         :link-type: doc
 
@@ -101,29 +131,9 @@ If you downloaded the code from the `GitHub repo <https://github.com/ajthor/sock
 you can also run the examples locally or using `docker <https://www.docker.com>`_ and
 the included Dockerfile.
 
-.. |binder_link| image:: https://mybinder.org/badge_logo.svg
-.. _binder_link: https://mybinder.org/v2/gh/ajthor/socks/HEAD
 
-User Guide
-----------
-
-Check out the user guide to use SOCKS in your own projects.
-
-.. toctree::
-    :maxdepth: 2
-    :caption: User Guide
-
-    using_socks
-    contributing
-
-
-Indices and Tables
-------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+Cite SOCKS
+==========
 
 In order to cite the toolbox, use the following bibtex entry:
 
@@ -135,3 +145,15 @@ In order to cite the toolbox, use the following bibtex entry:
       year      = {2022},
       booktitle = {Proceedings of the 25th ACM International Conference on Hybrid Systems: Computation and Control (submitted)}
     }
+
+
+Indices and Tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+
+
+.. |binder_link| image:: https://mybinder.org/badge_logo.svg
+.. _binder_link: https://mybinder.org/v2/gh/ajthor/socks/HEAD

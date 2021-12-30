@@ -1,5 +1,13 @@
+************
 Contributing
-============
+************
+
+.. toctree::
+    :hidden:
+
+    new_examples
+    new_benchmarks
+
 
 Notice a bug? Have a feature idea? Interested in contributing an algorithm?
 
@@ -16,7 +24,7 @@ SOCKS. We have a lot of great inspiration from existing libraries such as `OpenA
 ways to interact with the algorithms in SOCKS.
 
 Get Involved
-------------
+============
 
 1. Number one is to submit pull requests. We :octicon:`heart;1em;sd-text-danger` pull
    requests.
@@ -33,7 +41,7 @@ Get Involved
    fix it.
 
 How to Make a Pull Request :octicon:`git-pull-request`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------------
 
 Want to contribute code? Thank you!
 
@@ -89,7 +97,7 @@ Be sure to check out the guides on `GitHub <https://docs.github.com/en/pull-requ
 for more information.
 
 Contributor Covenant
---------------------
+====================
 
 We try our best to adhere to the |Contributor_Covenant|_, meaning, in short:
 

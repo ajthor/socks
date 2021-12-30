@@ -1,8 +1,9 @@
+********
 Examples
-========
+********
 
 Control
--------
+=======
 
 .. grid:: 2
     :gutter: 1 1 2 3
@@ -44,7 +45,7 @@ Control
         :bdg-primary-line:`control`
 
 Identification
---------------
+==============
 
 .. grid:: 2
     :gutter: 1 1 2 3
@@ -62,7 +63,7 @@ Identification
         :bdg-primary-line:`identification`
 
 Stochastic Reachability
------------------------
+=======================
 
 .. grid:: 2
     :gutter: 1 1 2 3
@@ -109,7 +110,7 @@ Stochastic Reachability
         :bdg-primary-line:`reachability`
 
 Contributing Examples
----------------------
+=====================
 
-Interested in contributing new examples to this page? See the :doc:`new_examples` page
+Interested in contributing new examples to this page? See the :doc:`/contributing/new_examples` page
 for details.

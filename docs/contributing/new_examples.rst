@@ -1,5 +1,6 @@
-Creating New Examples
-=====================
+******************
+Proposing Examples
+******************
 
 We welcome new examples that showcase the algorithms and techniques in SOCKS, including
 special use cases that may be of interest to the wider community.
@@ -15,11 +16,11 @@ codebase.
 .. admonition:: Have a different technique that you would like to compare against SOCKS?
 
     We are also interested in developing benchmarks for comparison against other
-    existing techniques. See the :doc:`/benchmarks/new_benchmarks` page for more
+    existing techniques. See the :doc:`new_benchmarks` page for more
     information.
 
 Main Points
------------
+===========
 
 We have integrated our documentation with `binder <https://mybinder.org>`_ to allow
 users to open an interactive version of the examples and modify them. Our examples are
@@ -39,7 +40,7 @@ be straightforward:
 
 
 Formatting
-~~~~~~~~~~
+----------
 
 Examples are written using the "percent" `format`_ for Jupyter notebooks.
 

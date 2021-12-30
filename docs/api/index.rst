@@ -1,5 +1,6 @@
+*************
 API Reference
-=============
+*************
 
 .. toctree::
     :titlesonly:

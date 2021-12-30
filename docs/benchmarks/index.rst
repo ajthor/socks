@@ -1,12 +1,13 @@
+**********
 Benchmarks
-==========
+**********
 
 .. note::
 
     Benchmarks will be soon be reported in the documentation. However, we are still
     investigating the best way to implement benchmarks.
 
-    See :doc:`new_benchmarks` for more information.
+    See :doc:`/contributing/new_benchmarks` for more information.
 
 Several benchmarks are provided for the algorithms in SOCKS using `sacred
 <https://github.com/IDSIA/sacred>`_ as an experimental framework. Sacred enables
@@ -15,7 +16,7 @@ experiment runs. It is strongly recommended to read the `sacred documentation
 <https://sacred.readthedocs.io/en/stable/index.html>`_ before using the benchmarks.
 
 Quick Start
------------
+===========
 
 The benchmarks and examples can be run using the python 'module' syntax, i.e.:
 

@@ -1,8 +1,9 @@
+************
 Installation
-============
+************
 
 Installing the Latest Release
------------------------------
+=============================
 
 SOCKS requires python 3.7 or greater to work.
 
@@ -76,14 +77,14 @@ Windows. The code should still work on Windows systems, but this is currently un
 
 
 Troubleshooting
----------------
+===============
 
 If you are having issues installing the code, open an issue at
 `<https://github.com/ajthor/socks/issues>`_ and describe your issue, including all
 relevant error messages.
 
 Common Issues
-~~~~~~~~~~~~~
+-------------
 
 * SOCKS currently depends on ``scikit-learn``, ``numpy``, and ``scipy`` to work. In our
   experience, installing these packages via linux package managers can lead to
