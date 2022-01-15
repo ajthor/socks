@@ -40,8 +40,8 @@ Get Involved
    you notice a typo, we encourage you to reach out and submit an issue or a PR to help
    fix it.
 
-How to Make a Pull Request :octicon:`git-pull-request`
-------------------------------------------------------
+How to Pull Request :octicon:`git-pull-request`
+-----------------------------------------------
 
 Want to contribute code? Thank you!
 
@@ -108,9 +108,9 @@ We aim to make SOCKS a positive environment for all.
 
 
 
-However, while we encourage users to submit bug reports, feature requests, and PRs, we
-do not consider issues that are "homework" questions or "help solve my specific problem"
-type issues-we simply don't have time. These issues will be marked as
+However, while we encourage users to submit bug reports, questions, feature requests,
+and PRs, we do not consider issues that are "homework" questions or "help solve my
+specific problem" type issues--we simply don't have time. These issues will be marked as
 :bdg-secondary:`off-topic` or :bdg-secondary:`wontfix`.
 
 .. |Contributor_Covenant| image:: https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg
