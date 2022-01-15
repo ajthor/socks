@@ -1,9 +1,7 @@
 """Quadrotor system.
 
-References:
-    .. [1] `ARCH-COMP20 Category Report:
-            Continuous and Hybrid Systems with Nonlinear Dynamics
-            <https://easychair.org/publications/open/nrdD>`_
+This system is taken from `ARCH-COMP20 Category Report: Continuous and Hybrid Systems
+with Nonlinear Dynamics <https://easychair.org/publications/open/nrdD>`_.
 
 """
 
@@ -18,33 +16,37 @@ from scipy.constants import g
 class QuadrotorEnv(DynamicalSystem):
     """Quadrotor system.
 
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
+
     The quadrotor system is a high-dimensional (12D) system. The states are the
     position, velocity, and angles of the system, and the inputs are the torques on the
     angles.
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+    # system parameters
+    _gravitational_acceleration = g  # [m/s^2]
+    _radius_center_mass = 0.1  # [m]
+    _rotor_distance = 0.5  # [m]
+    _rotor_mass = 0.1  # [kg]
+    _center_mass = 1  # [kg]
+
+    def __init__(self, seed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+        )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
         )
 
-        # system parameters
-        self._gravitational_acceleration = g  # [m/s^2]
-        self._radius_center_mass = 0.1  # [m]
-        self._rotor_distance = 0.5  # [m]
-        self._rotor_mass = 0.1  # [kg]
-        self._center_mass = 1  # [kg]
+        self.state = None
+
+        self.seed(seed=seed)
 
         self._compute_total_mass()
         self._compute_inertia()

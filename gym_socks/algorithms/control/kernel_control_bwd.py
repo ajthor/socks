@@ -1,11 +1,37 @@
-"""Backward in time stochastic optimal control.
+r"""Backward in time stochastic optimal control.
 
-References:
-    .. [1] `Stochastic Optimal Control via
-            Hilbert Space Embeddings of Distributions, 2021
-            Adam J. Thorpe, Meeko M. K. Oishi
-            IEEE Conference on Decision and Control,
-            <https://arxiv.org/abs/2103.12759>`_
+The backward in time (dynamic programming) stochastic optimal control algorithm computes
+the control actions working backward in time from the terminal time step to the current
+time step. It computes a sequence of "value" functions, and then as the system
+evolves forward in time, it chooses a control action that optimizes the value function,
+rather than the actual cost.
+
+The policy is specified as a sequence of stochastic kernels :math:`\pi = \lbrace
+\pi_{0}, \pi_{1}, \ldots, \pi_{N-1} \rbrace`. Typically, the cost is formulated as an
+additive cost structure, where at each time step the system incurs a *stage cost*
+:math:`g_{t}(x_{t}, u_{t})`, and at the final time step, it incurs a *terminal cost*
+:math:`g_{N}(x_{N})`.
+
+.. math::
+
+    \min_{\pi} \quad \mathbb{E} \biggl[ g_{N}(x_{N}) +
+    \sum_{t=0}^{N-1} g_{t}(x_{t}, u_{t}) \biggr]
+
+In dynamic programming, we solve the problem iteratively, by considering each time step
+independently. We can do this by defining a sequence of *value functions* :math:`V_{0},
+\ldots, V_{N}` that describe a type of "overall" cost at each time step, starting with
+the terminal cost :math:`V_{N}(x) = g_{N}(x)`, and then substituting the subsequent
+value function into the current one. Then, the policy is chosen to minimize (or
+maximize, as is the convention for RL) the value functions.
+
+.. math::
+
+    V_{t}(x)
+    = \max_{\pi_{t}} \quad \int_{\mathcal{U}} \int_{\mathcal{X}} g_{t}(x_{t}, u_{t})
+    + V_{t+1}(y) Q(\mathrm{d} y \mid x, u) \pi_{t}(\mathrm{d} u \mid x)
+
+Note:
+    See :py:mod:`examples.benchmark_tracking_problem` for a complete example.
 
 """
 
@@ -13,11 +39,15 @@ from functools import partial
 
 import gym_socks
 
-from gym_socks.envs.policy import BasePolicy
+from gym_socks.policies import BasePolicy
 from gym_socks.algorithms.control.control_common import compute_solution
-from gym_socks.kernel.metrics import rbf_kernel, regularized_inverse
-from gym_socks.envs.sample import transpose_sample
-from gym_socks.utils import generate_batches
+
+from gym_socks.kernel.metrics import rbf_kernel
+from gym_socks.kernel.metrics import regularized_inverse
+
+from gym_socks.sampling.transform import transpose_sample
+
+from gym_socks.utils.batch import generate_batches
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 import numpy as np
@@ -28,7 +58,7 @@ def _compute_backward_recursion(
     W,
     CXY,
     CUA,
-    num_steps=None,
+    time_horizon=None,
     cost_fn=None,
     constraint_fn=None,
     value_functions=None,
@@ -40,19 +70,21 @@ def _compute_backward_recursion(
     beta = np.einsum("ij,ik->ijk", CXY, CUA)
 
     pbar = ms_tqdm(
-        total=num_steps,
+        total=time_horizon,
         bar_format=_progress_fmt,
         disable=False if verbose is True else True,
     )
 
     # set up empty array to hold value functions
     if out is None:
-        out = np.zeros((num_steps, len(Y)), dtype=np.float32)
-    out[num_steps - 1, :] = np.array(cost_fn(time=num_steps - 1), dtype=np.float32)
+        out = np.zeros((time_horizon, len(Y)), dtype=np.float32)
+    out[time_horizon - 1, :] = np.array(
+        cost_fn(time=time_horizon - 1), dtype=np.float32
+    )
     pbar.update()
 
     # run backwards in time and compute the safety probabilities
-    for t in range(num_steps - 2, -1, -1):
+    for t in range(time_horizon - 2, -1, -1):
 
         Z = np.matmul(value_functions[t + 1, :], W)
         C = np.einsum("i,ijk->jk", Z, beta)
@@ -93,7 +125,7 @@ def _compute_backward_recursion_batch(
     W,
     CXY,
     CUA,
-    num_steps=None,
+    time_horizon=None,
     cost_fn=None,
     constraint_fn=None,
     value_functions=None,
@@ -102,19 +134,21 @@ def _compute_backward_recursion_batch(
     verbose=False,
 ):
     pbar = ms_tqdm(
-        total=num_steps,
+        total=time_horizon,
         bar_format=_progress_fmt,
         disable=False if verbose is True else True,
     )
 
     # set up empty array to hold value functions
     if out is None:
-        out = np.zeros((num_steps + 1, len(Y)), dtype=np.float32)
-    out[num_steps - 1, :] = np.array(cost_fn(time=num_steps - 1), dtype=np.float32)
+        out = np.zeros((time_horizon + 1, len(Y)), dtype=np.float32)
+    out[time_horizon - 1, :] = np.array(
+        cost_fn(time=time_horizon - 1), dtype=np.float32
+    )
     pbar.update()
 
     # run backwards in time and compute the safety probabilities
-    for t in range(num_steps - 2, -1, -1):
+    for t in range(time_horizon - 2, -1, -1):
 
         Z = np.matmul(value_functions[t + 1, :], W)
         # C = np.empty((1, len(Y)))
@@ -189,7 +223,7 @@ def _compute_backward_recursion_batch(
 def kernel_control_bwd(
     S: np.ndarray,
     A: np.ndarray,
-    num_steps: int = None,
+    time_horizon: int = None,
     cost_fn=None,
     constraint_fn=None,
     heuristic: bool = False,
@@ -216,7 +250,7 @@ def kernel_control_bwd(
     """
 
     alg = KernelControlBwd(
-        num_steps=num_steps,
+        time_horizon=time_horizon,
         cost_fn=cost_fn,
         constraint_fn=constraint_fn,
         heuristic=heuristic,
@@ -250,7 +284,7 @@ class KernelControlBwd(BasePolicy):
 
     def __init__(
         self,
-        num_steps: int = None,
+        time_horizon: int = None,
         cost_fn=None,
         constraint_fn=None,
         heuristic: bool = False,
@@ -261,9 +295,8 @@ class KernelControlBwd(BasePolicy):
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
 
-        self.num_steps = num_steps
+        self.time_horizon = time_horizon
 
         self.cost_fn = cost_fn
         self.constraint_fn = constraint_fn
@@ -321,7 +354,7 @@ class KernelControlBwd(BasePolicy):
             A: Collection of admissible control actions.
 
         Returns:
-            self: An instance of the KernelControlFwd algorithm class.
+            An instance of the KernelControlFwd algorithm class.
 
         """
 
@@ -360,13 +393,13 @@ class KernelControlBwd(BasePolicy):
             self.constraint_fn = partial(self.constraint_fn, state=Y)
 
         gym_socks.logger.debug("Computing value functions.")
-        value_functions = np.empty((self.num_steps, len(Y)))
+        value_functions = np.empty((self.time_horizon, len(Y)))
         self.value_functions = self._compute_backward_recursion_caller(
             Y,
             self.W,
             CXY,
             self.CUA,
-            num_steps=self.num_steps,
+            time_horizon=self.time_horizon,
             cost_fn=self.cost_fn,
             constraint_fn=self.constraint_fn,
             value_functions=value_functions,

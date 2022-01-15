@@ -1,6 +1,4 @@
-ARG PYTHON_VERSION
-FROM python:$PYTHON_VERSION
-# FROM python:3.9
+FROM python:3.9
 
 RUN apt-get -y update && \
   apt-get install -y --no-install-recommends \
@@ -18,9 +16,6 @@ RUN apt-get -y update && \
   texlive-plain-generic && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY . /usr/local/gym_socks/
-WORKDIR /usr/local/gym_socks/
-
 RUN pip install -U \
   black \
   gym \
@@ -31,6 +26,28 @@ RUN pip install -U \
   scipy \
   scikit-learn \
   matplotlib \
+  notebook \
+  jupyterlab \
+  jupytext \
   tqdm
 
+# The following is to enable Binder compatibility using a Dockerfile.
+ARG NB_USER=root
+ARG NB_UID=0
+ENV USER ${NB_USER}
+ENV HOME /home
+
+RUN if [[ "$arg" != "root" ]] ; then adduser --disabled-password \
+    --gecos "Default user" \
+    --uid ${NB_UID} \
+    ${NB_USER} ; fi
+
+COPY . ${HOME}
+
+USER root
+RUN chown -R ${NB_UID} ${HOME}
+
+WORKDIR ${HOME}
 RUN pip install .
+
+USER ${USER}

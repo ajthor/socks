@@ -12,30 +12,35 @@ from scipy.integrate import solve_ivp
 class PlanarQuadrotorEnv(DynamicalSystem):
     """Planar quadrotor system.
 
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
+
     A planar quadrotor is quadrotor restricted to two dimensions. Similar to the OpenAI gym lunar lander benchmark, the planar quadrotor is a bar with two independent rotors at either end. Inputs are the trust of the rotors, and apply a torque to the bar. The system is also subject to gravitational forces.
 
     """
 
-    def __init__(self, *args, **kwargs):
+    # system parameters
+    _gravitational_acceleration = g  # [m/s^2]
+    _rotor_distance = 2  # [m]
+    _total_mass = 5  # [kg]
+    _inertia = 2
+
+    def __init__(self, seed=None, *args, **kwargs):
         """Initialize the system."""
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+        )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
         )
 
-        self._gravitational_acceleration = g  # [m/s^2]
-        self._rotor_distance = 2  # [m]
-        self._total_mass = 5  # [kg]
-        self._inertia = 2
+        self.state = None
+
+        self.seed(seed=seed)
 
     @property
     def gravitational_acceleration(self):
@@ -106,7 +111,6 @@ class PlanarQuadrotorEnv(DynamicalSystem):
         return np.array(w)
 
     def dynamics(self, time, state, action, disturbance):
-        """Dynamics for the system."""
 
         x1, x2, x3, x4, x5, x6 = state
         u1, u2 = action

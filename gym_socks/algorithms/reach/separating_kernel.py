@@ -2,22 +2,13 @@
 
 Separating kernel classifier, useful for forward stochastic reachability analysis.
 
-References:
-    .. [1] `Learning sets with separating kernels, 2014
-            De Vito, Ernesto, Lorenzo Rosasco, and Alessandro Toigo.
-            Applied and Computational Harmonic Analysis 37(2)`_
-
-    .. [2] `Learning Approximate Forward Reachable Sets Using Separating Kernels, 2021
-            Adam J. Thorpe, Kendric R. Ortiz, Meeko M. K. Oishi
-            Learning for Dynamics and Control,
-            <https://arxiv.org/abs/2011.09678>`_
-
 """
 
 from functools import partial
 
 from gym_socks.algorithms.algorithm import AlgorithmInterface
-from gym_socks.kernel.metrics import abel_kernel, regularized_inverse
+from gym_socks.kernel.metrics import abel_kernel
+from gym_socks.kernel.metrics import regularized_inverse
 
 import numpy as np
 

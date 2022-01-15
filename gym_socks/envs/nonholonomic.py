@@ -11,6 +11,8 @@ from scipy.integrate import solve_ivp
 class NonholonomicVehicleEnv(DynamicalSystem):
     """Nonholonomic vehicle system.
 
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
+
     A nonholonomic vehicle (car-like) is typically modeled using what are known as
     "unicycle" dynamics. It is useful for modeling vehicles which can move forward and
     backward, and incorporates a steering angle or heading. The inputs are the velocity
@@ -18,22 +20,26 @@ class NonholonomicVehicleEnv(DynamicalSystem):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+    def __init__(self, seed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+        )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
         )
 
+        self.state = None
+
+        self.seed(seed=seed)
+
     def step(self, action, time=0):
+        action = np.asarray(action, dtype=np.float32)
+
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 

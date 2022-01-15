@@ -9,8 +9,6 @@ the functions defined here.
 
 To use the sklearn functions, use them like so:
 
-    >>> from sklearn.metrics import pairwise_distances
-    >>> from sklearn.metrics.pairwise import pairwise_kernels
     >>> from sklearn.metrics.pairwise import rbf_kernel
     >>> from sklearn.metrics.pairwise import euclidean_distances
     >>> X = np.arange(4).reshape((2, 2))
@@ -233,10 +231,22 @@ def regularized_inverse(
     regularization_param: float = None,
     kernel_fn=None,
 ) -> np.ndarray:
-    """Regularized inverse.
+    r"""Regularized inverse.
 
-    Computes the regularized matrix inverse (K + lambda * M * I)^-1.
+    Computes the regularized matrix inverse.
 
+    .. math::
+
+        W = (K + \lambda M I)^{-1}, \quad
+        K \in \mathbb{R}^{n \times n}, \quad
+        K_{ij} = k(x_{i}, y_{j})
+
+    Example:
+
+        >>> from gym_socks.kernel.metrics import regularized_inverse
+        >>> X = np.arange(4).reshape((2, 2))
+        >>> Y = np.arange(6).reshape((3, 2))
+        >>> K = regularized_inverse(X, Y)
 
     Args:
         X: The observations are oganized in ROWS.
@@ -248,7 +258,7 @@ def regularized_inverse(
             metrics.pairwise for more info. The default is the RBF kernel.
 
     Returns:
-        np.ndarray: Regularized matrix inverse.
+        Regularized matrix inverse.
 
     """
 

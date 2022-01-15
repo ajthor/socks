@@ -10,7 +10,8 @@ from functools import partial
 
 import gym_socks
 from gym_socks.algorithms.algorithm import AlgorithmInterface
-from gym_socks.envs.sample import transpose_sample
+
+from gym_socks.sampling.transform import transpose_sample
 
 import numpy as np
 
