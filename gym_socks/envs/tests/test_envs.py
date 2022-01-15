@@ -59,7 +59,7 @@ class TestEnvironmentsRun(unittest.TestCase):
 class TestDynamicalSystem(unittest.TestCase):
     """Dynamical system tests."""
 
-    @patch("DynamicalSystem.__abstractmethods__", set())
+    @patch("gym_socks.envs.dynamical_system.DynamicalSystem.__abstractmethods__", set())
     def setUp(cls):
         cls.env = DynamicalSystem()
 
