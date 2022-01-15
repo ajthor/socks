@@ -33,7 +33,22 @@ Results
 In the following figures, the blue line indicates the mean, the black dots indicate the
 actual data, and the error bars indicate the 95% confidence interval.
 
+.. figure:: stoch_reach_maximal_action_sample_size_vs_time.png
+    :scale: 100 %
+
+    Action sample size vs. computation time.
+
 .. figure:: stoch_reach_maximal_sample_size_vs_time.png
     :scale: 100 %
 
     Sample size vs. computation time.
+
+.. figure:: stoch_reach_maximal_test_sample_size_vs_time.png
+    :scale: 100 %
+
+    Test sample size vs. computation time.
+
+.. figure:: stoch_reach_maximal_time_horizon_vs_time.png
+    :scale: 100 %
+
+    Time horizon vs. computation time.

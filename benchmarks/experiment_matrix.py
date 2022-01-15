@@ -119,7 +119,7 @@ def _config_generator(
 def experiment_matrix(
     ex,
     min_iter: int = 3,
-    max_iter: int = 256,
+    max_iter: int = 32,
     warmup: bool = True,
     callback=None,
     same_seed: bool = True,

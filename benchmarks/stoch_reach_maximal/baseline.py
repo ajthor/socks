@@ -172,3 +172,7 @@ def main(
 
     elapsed_time = perf_counter() - start_time
     return elapsed_time
+
+
+if __name__ == "__main__":
+    ex.run_commandline()

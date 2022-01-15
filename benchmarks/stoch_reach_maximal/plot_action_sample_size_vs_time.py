@@ -16,7 +16,7 @@ mx = experiment_matrix(ex, callback=partial(sample_mean, alpha=0.95))
 
 @mx.config
 def mx_config():
-    action_sample_size = range(100, 1600, 100)
+    action_sample_size = range(25, 275, 25)
 
 
 @mx.post_run_hook
@@ -54,7 +54,10 @@ def _plot(action_sample_size, _run, _log):
             mu.append(np.mean(v))
             sigma = np.std(v, ddof=1)
             ci = stats.norm.interval(alpha=0.95, loc=mu[-1], scale=sigma)
-            _low, _high = ci
+
+            _low = mu[-1] if ci[0] < 0 else mu[-1] - ci[0]
+            _high = ci[1] - mu[-1]
+
             low.append(_low)
             high.append(_high)
 
@@ -68,4 +71,4 @@ def _plot(action_sample_size, _run, _log):
 
 
 if __name__ == "__main__":
-    r = mx.run_commandline()
+    mx.run_commandline()
