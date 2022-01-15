@@ -28,6 +28,7 @@ RUN pip install -U \
   matplotlib \
   notebook \
   jupyterlab \
+  jupytext \
   tqdm
 
 # The following is to enable Binder compatibility using a Dockerfile.

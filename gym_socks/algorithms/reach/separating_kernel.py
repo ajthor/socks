@@ -7,7 +7,8 @@ Separating kernel classifier, useful for forward stochastic reachability analysi
 from functools import partial
 
 from gym_socks.algorithms.algorithm import AlgorithmInterface
-from gym_socks.kernel.metrics import abel_kernel, regularized_inverse
+from gym_socks.kernel.metrics import abel_kernel
+from gym_socks.kernel.metrics import regularized_inverse
 
 import numpy as np
 

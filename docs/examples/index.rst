@@ -1,69 +1,116 @@
+********
 Examples
-========
+********
 
-.. py:module:: examples
+Control
+=======
 
-Several examples and benchmarks are provided for the algorithms in SOCKS using `sacred
-<https://github.com/IDSIA/sacred>`_ as an experimental framework. Sacred enables
-repeatability by specifying a configuration, controlling randomness, and tracking
-experiment runs. It is strongly recommended to read the `sacred documentation
-<https://sacred.readthedocs.io/en/stable/index.html>`_ before using the examples.
+.. grid:: 2
+    :gutter: 1 1 2 3
 
-Quick Start
------------
+    .. grid-item-card::
+        :link: control/obstacle_avoid
+        :link-type: doc
 
-The benchmarks and examples can be run using the python 'module' syntax, i.e.:
+        **Obstacle Avoid**
+        ^^^
 
-.. code-block:: shell
+        Constrained stochastic optimal control.
 
-    python -m <examples.experiment_name>
+        +++
+        :bdg-primary-line:`control`
 
-This uses the default parameters and configuration for the experiments. To view the
-configuration for a particular experiment, use the ``print_config`` command after the
-experiment name, like so:
+    .. grid-item-card::
+        :link: control/tracking
+        :link-type: doc
 
-.. code-block:: shell
+        **Target Tracking Problem**
+        ^^^
 
-    python -m <examples.experiment_name> print_config
+        Unconstrained stochastic optimal control.
 
-You should see a description of all of the configuration variables that are available.
-Most algorithm parameters are controlled by the sacred config, and sacred allows for
-configuration updates to be specified at the command-line, making it easy to change
-parameters at run-time without having to modify the experiment file. To specify
-parameters, use the ``with`` syntax, followed by the configuration updates. For
-instance, to specify a particular seed, use the following command:
+        +++
+        :bdg-primary-line:`control`
 
-.. code-block:: shell
+    .. grid-item-card::
+        :link: control/satellite_rendezvous
+        :link-type: doc
 
-    python -m <examples.experiment_name> with seed=0
+        **CWH Problem**
+        ^^^
 
-You can also view the updates before running the experiment using the ``print_config``
-command alongside the ``with <updates>`` syntax.
+        Satellite rendezvous and docking problem using Clohessy-Wiltshire-Hill dynamics.
 
-.. code-block:: shell
+        +++
+        :bdg-primary-line:`control`
 
-    python -m <examples.experiment_name> print_config with seed=0
+Identification
+==============
 
-Subpackages
------------
-.. toctree::
-   :titlesonly:
-   :maxdepth: 3
+.. grid:: 2
+    :gutter: 1 1 2 3
 
-   ingredients/index.rst
+    .. grid-item-card::
+        :link: identification/linear_id
+        :link-type: doc
+
+        **Linear System Identification**
+        ^^^
+
+        Compute an approximation of the linear dynamics of a system using data.
+
+        +++
+        :bdg-primary-line:`identification`
+
+Stochastic Reachability
+=======================
+
+.. grid:: 2
+    :gutter: 1 1 2 3
+
+    .. grid-item-card::
+        :link: reach/forward_reach
+        :link-type: doc
+
+        **Forward Reachability**
+        ^^^
+
+        Compute a forward reachable set classifier.
+
+        +++
+        :bdg-primary-line:`reachability`
 
 
-Submodules
-----------
-.. toctree::
-   :titlesonly:
-   :maxdepth: 1
+    .. grid-item-card::
+        :link: reach/stoch_reach
+        :link-type: doc
 
-   benchmark_cwh_problem/index.rst
-   benchmark_maximal_stochastic_reachability/index.rst
-   benchmark_obstacle_avoid_problem/index.rst
-   benchmark_stochastic_reachability/index.rst
-   benchmark_tracking_problem/index.rst
-   example_linear_id/index.rst
-   example_monte_carlo/index.rst
-   example_separating_kernel/index.rst
+        **Stochastic Reachability**
+        ^^^
+
+        Stochastic reachability analysis. Compute the probability at a given point of
+        remaining within a safe set and reaching the target set.
+
+        +++
+        :bdg-primary-line:`reachability`
+
+
+    .. grid-item-card::
+        :link: reach/stoch_reach_maximal
+        :link-type: doc
+
+        **Maximal Stochastic Reachability**
+        ^^^
+
+        Compute a policy that maximizes the probability of remaining within a safe set
+        and reaching a target set.
+
+        +++
+        :bdg-primary-line:`control`
+        :bdg-primary-line:`reachability`
+
+Contributing Examples
+=====================
+
+Interested in contributing new examples to this page? See the :doc:`/contributing/new_examples` page
+for details.

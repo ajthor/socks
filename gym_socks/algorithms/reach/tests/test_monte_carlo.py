@@ -9,12 +9,14 @@ from scipy.constants.codata import unit
 
 from gym_socks.envs.integrator import NDIntegratorEnv
 from gym_socks.envs.dynamical_system import DynamicalSystem
-from gym_socks.envs.policy import ZeroPolicy
-from gym_socks.envs.policy import RandomizedPolicy
+from gym_socks.policies import ZeroPolicy
+from gym_socks.policies import RandomizedPolicy
 
-from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import transpose_sample
-from gym_socks.envs.sample import trajectory_sampler
+from gym_socks.sampling import sample
+from gym_socks.sampling import default_trajectory_sampler
+from gym_socks.sampling import random_sampler
+from gym_socks.sampling import sample_generator
+from gym_socks.sampling.transform import transpose_sample
 
 from gym_socks.algorithms.reach.reach_common import _tht_step, _fht_step
 from gym_socks.algorithms.reach.monte_carlo import MonteCarloSR
@@ -40,6 +42,11 @@ def make_tube(
         tube.append(tube_t)
 
     return tube
+
+
+@sample_generator
+def zero_sampler(sample_space):
+    yield np.zeros(shape=sample_space.shape, dtype=sample_space.dtype)
 
 
 class TestTrajectoryIndicator(unittest.TestCase):
@@ -83,11 +90,11 @@ class TestTrajectoryIndicator(unittest.TestCase):
         sample_size = 5
 
         S = sample(
-            sampler=trajectory_sampler(
-                time_horizon=cls.time_horizon,
+            sampler=default_trajectory_sampler(
+                state_sampler=random_sampler(sample_space=sample_space),
+                action_sampler=zero_sampler(sample_space=env.action_space),
                 env=env,
-                policy=ZeroPolicy(action_space=env.action_space),
-                sample_space=sample_space,
+                time_horizon=cls.time_horizon,
             ),
             sample_size=sample_size,
         )
@@ -126,11 +133,11 @@ class TestTrajectoryIndicator(unittest.TestCase):
         sample_size = 5
 
         S = sample(
-            sampler=trajectory_sampler(
-                time_horizon=cls.time_horizon,
+            sampler=default_trajectory_sampler(
+                state_sampler=random_sampler(sample_space=sample_space),
+                action_sampler=zero_sampler(sample_space=env.action_space),
                 env=env,
-                policy=ZeroPolicy(action_space=env.action_space),
-                sample_space=sample_space,
+                time_horizon=cls.time_horizon,
             ),
             sample_size=sample_size,
         )

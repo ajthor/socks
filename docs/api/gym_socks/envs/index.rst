@@ -18,7 +18,5 @@ Submodules
     obstacle/index.rst
     planar_quad/index.rst
     point_mass/index.rst
-    policy/index.rst
-    sample/index.rst
     tora/index.rst
     world/index.rst

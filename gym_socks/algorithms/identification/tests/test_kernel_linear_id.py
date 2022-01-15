@@ -9,10 +9,24 @@ import numpy as np
 from gym_socks.algorithms.identification.kernel_linear_id import KernelLinearId
 from gym_socks.envs import CWH4DEnv
 from gym_socks.envs import CWH6DEnv
-from gym_socks.envs.policy import RandomizedPolicy
+from gym_socks.policies import RandomizedPolicy
 
-from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import step_sampler
+from gym_socks.sampling import sample
+from gym_socks.sampling import sample_generator
+
+
+def dummy_sampler(env, policy, sample_space):
+    @sample_generator
+    def _sample_generator():
+        state = sample_space.sample()
+        action = policy(time=0, state=state)
+
+        env.state = state
+        next_state, *_ = env.step(action=action)
+
+        yield (state, action, next_state)
+
+    return _sample_generator
 
 
 class TestKernelLinearIdentificationAlgorithm(unittest.TestCase):
@@ -23,7 +37,7 @@ class TestKernelLinearIdentificationAlgorithm(unittest.TestCase):
         env.seed(seed=0)
 
         S = sample(
-            sampler=step_sampler(
+            sampler=dummy_sampler(
                 env=env,
                 policy=RandomizedPolicy(action_space=env.action_space),
                 sample_space=env.state_space,
@@ -46,7 +60,7 @@ class TestKernelLinearIdentificationAlgorithm(unittest.TestCase):
         env.seed(seed=0)
 
         S = sample(
-            sampler=step_sampler(
+            sampler=dummy_sampler(
                 env=env,
                 policy=RandomizedPolicy(action_space=env.action_space),
                 sample_space=env.state_space,

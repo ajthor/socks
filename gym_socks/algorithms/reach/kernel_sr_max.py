@@ -7,13 +7,21 @@ Maximal stochastic reachability.
 from functools import partial
 
 import gym_socks
-from gym_socks.algorithms.algorithm import AlgorithmInterface
-from gym_socks.algorithms.reach.reach_common import _tht_step, _fht_step
-from gym_socks.envs.sample import transpose_sample
-from gym_socks.kernel.metrics import rbf_kernel, regularized_inverse
 
-from gym_socks.utils import normalize, indicator_fn, generate_batches
+from gym_socks.algorithms.algorithm import AlgorithmInterface
+from gym_socks.algorithms.reach.reach_common import _fht_step
+from gym_socks.algorithms.reach.reach_common import _tht_step
+
+from gym_socks.kernel.metrics import rbf_kernel
+from gym_socks.kernel.metrics import regularized_inverse
+
+from gym_socks.sampling.transform import transpose_sample
+
+from gym_socks.utils import indicator_fn
+from gym_socks.utils import normalize
+from gym_socks.utils.batch import generate_batches
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
+
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 import numpy as np
@@ -336,7 +344,7 @@ class KernelMaximalSR(AlgorithmInterface):
             value_functions=value_functions,
             out=value_functions,
             step_fn=self.step_fn,
-            verbose=True,
+            verbose=self.verbose,
         )
 
     def predict(self, T):
@@ -370,7 +378,7 @@ class KernelMaximalSR(AlgorithmInterface):
             target_tube=self.target_tube,
             value_functions=self.value_functions,
             step_fn=self.step_fn,
-            verbose=True,
+            verbose=self.verbose,
         )
 
         return safety_probabilities

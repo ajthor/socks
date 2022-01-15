@@ -9,10 +9,10 @@ from gym_socks.algorithms.algorithm import AlgorithmInterface
 from gym_socks.algorithms.reach.reach_common import _tht_step, _fht_step
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
-from gym_socks.envs.policy import BasePolicy
+from gym_socks.policies import BasePolicy
 
-from gym_socks.envs.sample import sample
-from gym_socks.envs.sample import sample_generator
+from gym_socks.sampling import sample
+from gym_socks.sampling import sample_generator
 
 from gym_socks.utils import indicator_fn
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt

@@ -12,14 +12,15 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
+import shutil
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath("sphinxext"))
 from github_link import make_linkcode_resolve
+from github_link import _get_git_revision
 
 sys.path.insert(0, os.path.abspath(".."))
-sys.path.insert(0, os.path.abspath("../examples"))
 
 # -- Project information -----------------------------------------------------
 
@@ -28,7 +29,7 @@ copyright = "2021, Adam Thorpe"
 author = "Adam Thorpe"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.0-alpha0"
+release = _get_git_revision()
 
 
 # -- General configuration ---------------------------------------------------
@@ -44,7 +45,7 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx.ext.autodoc.typehints",
     "sphinx_copybutton",
-    "sphinx_inline_tabs",
+    "sphinx_design",
     "nbsphinx",
 ]
 
@@ -67,6 +68,8 @@ html_theme = "furo"
 html_theme_options = {
     "sidebar_hide_name": False,
 }
+
+html_title = "SOCKS"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -115,13 +118,18 @@ linkcode_resolve = make_linkcode_resolve(
 
 # nbsphinx configuration options
 nbsphinx_custom_formats = {
-    ".spx.py": ["jupytext.reads", {"fmt": "py:sphinx"}],
+    ".py": ["jupytext.reads", {"fmt": "py:percent"}],
 }
 
+shutil.copytree(
+    os.path.join("..", "examples"),
+    os.path.join("..", "docs/examples"),
+    dirs_exist_ok=True,
+)
 
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
-{% set docname = env.doc2path(env.docname, base='docs') %}
+{% set docname = env.doc2path(env.docname, base=None) %}
 
 .. only:: html
 
@@ -129,12 +137,8 @@ nbsphinx_prolog = r"""
         :format: html
 
     .. nbinfo::
-        This page was generated from `{{ docname }}`__.
-        Interactive online version:
-        :raw-html:`<a href="https://mybinder.org/v2/gh/spatialaudio/nbsphinx/{{ env.config.release }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
-
-    __ https://github.com/spatialaudio/nbsphinx/blob/
-        {{ env.config.release }}/{{ docname }}
+        Open an interactive version of this example on Binder:
+        :raw-html:`<a href="https://mybinder.org/v2/gh/ajthor/socks/{{ env.config.release|e }}?filepath={{ docname|e }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:middle"></a>`
 
 .. raw:: latex
 
@@ -151,3 +155,9 @@ nbsphinx_epilog = r"""
     \textcolor{gray}{\dotfill\ \sphinxcode{\sphinxupquote{\strut
     {{ env.doc2path(env.docname, base='doc') | escape_latex }}}} ends here.}}
 """
+
+rst_epilog = """
+.. |release| replace:: {release}
+""".format(
+    release=release
+)

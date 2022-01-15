@@ -3,11 +3,13 @@ from unittest.mock import Base, patch
 
 import gym
 
-import gym_socks.envs
+from gym_socks.envs import NDIntegratorEnv
 from gym_socks.envs.core import BaseDynamicalObject
-from gym_socks.envs.policy import RandomizedPolicy
-from gym_socks.envs.world import World
+
+from gym_socks.policies import RandomizedPolicy
+
 from gym_socks.envs.obstacle import BaseObstacle
+from gym_socks.envs.world import World
 
 import numpy as np
 
@@ -34,7 +36,7 @@ class TestWorld(unittest.TestCase):
     def test_world(cls):
         """Test world iteration."""
 
-        env = gym_socks.envs.NDIntegratorEnv()
+        env = NDIntegratorEnv()
         policy = RandomizedPolicy(action_space=env.action_space)
 
         obstacle1 = DummyObstacle(identifier="Larry")
