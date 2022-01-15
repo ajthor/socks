@@ -2,18 +2,35 @@
 Benchmarks
 **********
 
-.. note::
+.. toctree::
+    :hidden:
+    :maxdepth: 1
 
-    Benchmarks will be soon be reported in the documentation. However, we are still
-    investigating the best way to implement benchmarks.
+    stoch_reach/index
+    stoch_reach_maximal/index
 
-    See :doc:`/contributing/new_benchmarks` for more information.
+
+:doc:`stoch_reach/index`
+    Stochastic reachability benchmarks.
+
+:doc:`stoch_reach_maximal/index`
+    Maximal stochastic reachability benchmarks.
+
+
+Running Benchmarks
+==================
 
 Several benchmarks are provided for the algorithms in SOCKS using `sacred
 <https://github.com/IDSIA/sacred>`_ as an experimental framework. Sacred enables
 repeatability by specifying a configuration, controlling randomness, and tracking
 experiment runs. It is strongly recommended to read the `sacred documentation
 <https://sacred.readthedocs.io/en/stable/index.html>`_ before using the benchmarks.
+
+.. note::
+
+    We are still investigating the best way to implement benchmarks.
+
+    See :doc:`/contributing/new_benchmarks` for more information.
 
 Quick Start
 ===========
@@ -49,3 +66,36 @@ command alongside the ``with <updates>`` syntax.
 .. code-block:: shell
 
     python -m <benchmark> print_config with seed=0
+
+
+Understanding Benchmarks
+========================
+
+We have implemented a custom runner for benchmarks. It runs the algorithm repeatedly
+until the result returned by the benchmark is within the 95% confidence interval for the
+data. This ensures the results are consistent and statistically accurate.
+
+In addition, we have implemented several caching mechanisms in the code to speed up
+benchmark runs. These are used outside the measured code, so they should have no effect
+on the results presented.
+
+Lastly, the code runs once, without recording the result, in order to initiate the
+caching and to warm up the CPU. The first run of a python script is known to be slow,
+since the code and resources have not yet been loaded into memory by the CPU. The first,
+initial run of the algorithm helps ensure accurate results. For further assurance, we
+run the benchmark suite twice.
+
+Important Points
+^^^^^^^^^^^^^^^^
+
+* The sample generation is **not** included as part of the measured time. Since the
+  algorithms are data-driven, having prior data is generally considered the normal mode
+  of operation. Thus, we do not report the simulated data generation process time in the
+  results.
+* The number of times the algorithms are run varies depending on how long it takes for
+  the results to become statistically accurate. In the worst case, the number of runs is
+  capped at 256.
+* The error bars in the plots display the 95% confidence interval for the data, but are
+  conservative (meaning wider than is probably true). In addition, it is important to
+  understand that the empirical mean displayed by the data may lie outside the
+  confidence interval, which is to be expected in certain cases.
