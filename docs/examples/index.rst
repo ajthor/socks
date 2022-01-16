@@ -109,6 +109,25 @@ Stochastic Reachability
         :bdg-primary-line:`control`
         :bdg-primary-line:`reachability`
 
+Miscellaneous
+=============
+
+.. grid:: 2
+    :gutter: 1 1 2 3
+
+    .. grid-item-card::
+        :link: kernel/maximum_mean_discrepancy
+        :link-type: doc
+
+        **Maximum Mean Discrepancy**
+        ^^^
+
+        Compute the maximum mean discrepancy for two distributions.
+
+        +++
+        :bdg-primary-line:`kernel`
+
+
 Contributing Examples
 =====================
 
