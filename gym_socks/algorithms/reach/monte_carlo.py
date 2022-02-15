@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from gym_socks.algorithms.base import AlgorithmInterface
+from gym_socks.algorithms.base import RegressorMixin
 from gym_socks.algorithms.reach.common import _tht_step, _fht_step
 
 from gym_socks.envs.dynamical_system import DynamicalSystem
@@ -119,7 +119,7 @@ def monte_carlo_sr(
     return alg.fit_predict(env, policy, T)
 
 
-class MonteCarloSR(AlgorithmInterface):
+class MonteCarloSR(RegressorMixin):
     """Stochastic reachability using Monte-Carlo.
 
     Computes an approximation of the safety probabilities of the stochastic reachability
