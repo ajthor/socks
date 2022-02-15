@@ -9,6 +9,6 @@ Submodules
     :titlesonly:
     :maxdepth: 1
 
-    control_common/index.rst
+    common/index.rst
     kernel_control_bwd/index.rst
     kernel_control_fwd/index.rst

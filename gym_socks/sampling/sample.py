@@ -37,10 +37,11 @@ def sample_generator(fun):
 
     @wraps(fun)
     def _wrapper(*args, **kwargs):
-        while True:
-            if isgeneratorfunction(fun):
+        if isgeneratorfunction(fun):
+            while True:
                 yield from fun(*args, **kwargs)
-            else:
+        else:
+            while True:
                 yield fun(*args, **kwargs)
 
     return _wrapper

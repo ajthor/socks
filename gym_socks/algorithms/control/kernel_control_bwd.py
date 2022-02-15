@@ -37,10 +37,10 @@ Note:
 
 from functools import partial
 
-import gym_socks
+import numpy as np
 
 from gym_socks.policies import BasePolicy
-from gym_socks.algorithms.control.control_common import compute_solution
+from gym_socks.algorithms.control.common import compute_solution
 
 from gym_socks.kernel.metrics import rbf_kernel
 from gym_socks.kernel.metrics import regularized_inverse
@@ -48,9 +48,11 @@ from gym_socks.kernel.metrics import regularized_inverse
 from gym_socks.sampling.transform import transpose_sample
 
 from gym_socks.utils.batch import generate_batches
+
+import logging
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
-import numpy as np
+logger = logging.getLogger(__name__)
 
 
 def _compute_backward_recursion(
@@ -66,7 +68,7 @@ def _compute_backward_recursion(
     verbose=False,
 ):
     # Compute beta.
-    gym_socks.logger.debug("Computing beta.")
+    logger.debug("Computing beta.")
     beta = np.einsum("ij,ik->ijk", CXY, CUA)
 
     pbar = ms_tqdm(
@@ -373,7 +375,7 @@ class KernelControlBwd(BasePolicy):
 
         self.A = A
 
-        gym_socks.logger.debug("Computing matrix inverse.")
+        logger.debug("Computing matrix inverse.")
         self.W = regularized_inverse(
             X,
             U=U,
@@ -381,18 +383,18 @@ class KernelControlBwd(BasePolicy):
             regularization_param=self.regularization_param,
         )
 
-        gym_socks.logger.debug("Computing covariance matrices.")
+        logger.debug("Computing covariance matrices.")
         self.CUA = self.kernel_fn(U, A)
         CXY = self.kernel_fn(X, Y)
 
-        gym_socks.logger.debug("Computing cost function.")
+        logger.debug("Computing cost function.")
         self.cost_fn = partial(self.cost_fn, state=Y)
 
-        gym_socks.logger.debug("Computing constraint function.")
+        logger.debug("Computing constraint function.")
         if self.constraint_fn is not None:
             self.constraint_fn = partial(self.constraint_fn, state=Y)
 
-        gym_socks.logger.debug("Computing value functions.")
+        logger.debug("Computing value functions.")
         value_functions = np.empty((self.time_horizon, len(Y)))
         self.value_functions = self._compute_backward_recursion_caller(
             Y,
@@ -432,7 +434,7 @@ class KernelControlBwd(BasePolicy):
             )
 
         # Compute the solution to the LP.
-        gym_socks.logger.debug("Computing solution to the LP.")
+        logger.debug("Computing solution to the LP.")
         sol = compute_solution(C, D, heuristic=self.heuristic)
         idx = np.argmax(sol)
         return np.array(self.A[idx], dtype=np.float32)

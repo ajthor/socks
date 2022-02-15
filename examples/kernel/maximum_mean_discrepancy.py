@@ -16,8 +16,8 @@ To run the example, use the following command:
 
 # %%
 import numpy as np
-from gym_socks.kernel.metrics import maximum_mean_discrepancy
-from gym_socks.kernel.metrics import witness_function
+from gym_socks.kernel.probability import maximum_mean_discrepancy
+from gym_socks.kernel.probability import witness_function
 
 from sklearn.metrics.pairwise import rbf_kernel
 from functools import partial

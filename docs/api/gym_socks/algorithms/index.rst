@@ -21,4 +21,4 @@ Submodules
    :titlesonly:
    :maxdepth: 1
 
-   algorithm/index.rst
+   base/index.rst

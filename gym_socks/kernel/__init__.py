@@ -1,1 +1,1 @@
-__all__ = ["embeddings", "metrics"]
+__all__ = ["metrics", "probability"]
