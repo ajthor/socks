@@ -18,7 +18,7 @@ from gym_socks.sampling import random_sampler
 from gym_socks.sampling import sample_generator
 from gym_socks.sampling.transform import transpose_sample
 
-from gym_socks.algorithms.reach.reach_common import _tht_step, _fht_step
+from gym_socks.algorithms.reach.common import _tht_step, _fht_step
 from gym_socks.algorithms.reach.monte_carlo import MonteCarloSR
 from gym_socks.algorithms.reach.monte_carlo import monte_carlo_sr
 from gym_socks.algorithms.reach.monte_carlo import _trajectory_indicator

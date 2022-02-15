@@ -111,10 +111,21 @@ def rbf_kernel(
 
     """
 
-    if distance_fn is None:
-        distance_fn = euclidean_distance
+    # if distance_fn is None:
+    #     distance_fn = euclidean_distance
 
-    K = distance_fn(X, Y, squared=True)
+    # K = distance_fn(X, Y, squared=True)
+
+    if Y is None:
+        Y = X
+
+    N, M = np.shape(X)
+    T = len(Y)
+
+    K = np.zeros((N, T))
+
+    for i in range(M):
+        K += np.power(np.tile(Y[:, i], (N, 1)) - np.tile(X[:, i], (T, 1)).T, 2)
 
     if sigma is None:
         sigma = np.median(K)
@@ -127,16 +138,6 @@ def rbf_kernel(
     return K
 
 
-def rbf_kernel_rff_transform(X, num_features=None, sigma=None):
-
-    D = np.shape(X)[1]
-    w = (1 / sigma) * np.random.standard_normal(size=(D, num_features))
-    b = np.random.uniform(low=0, high=2 * np.pi, size=(num_features,))
-    Z = (np.sqrt(2) / np.sqrt(num_features)) * np.cos(X @ w + b)
-
-    return Z
-
-
 def rbf_kernel_derivative(
     X: np.ndarray,
     Y: np.ndarray = None,
@@ -144,17 +145,30 @@ def rbf_kernel_derivative(
     distance_fn=None,
 ) -> np.ndarray:
 
-    if distance_fn is None:
-        distance_fn = euclidean_distance
+    # if distance_fn is None:
+    #     distance_fn = euclidean_distance
 
-    D = distance_fn(X, Y, squared=False)
+    # D = distance_fn(X, Y, squared=False)
+
+    if Y is None:
+        Y = X
+
+    N, M = np.shape(X)
+    T = len(Y)
+
+    D = np.zeros((N, T))
+
+    for i in range(M):
+        D += np.tile(Y[:, i], (N, 1)) - np.tile(X[:, i], (T, 1)).T
 
     if sigma is None:
         sigma = np.median(D)
     else:
         assert sigma > 0, "sigma must be a strictly positive real valued."
 
-    D *= 2 / (2 * (sigma ** 2))
+    D *= 2 / (2 * sigma ** 2)
+
+    return D
 
 
 def abel_kernel(

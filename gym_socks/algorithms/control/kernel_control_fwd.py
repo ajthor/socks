@@ -33,21 +33,20 @@ Note:
 
 from functools import partial
 
-import gym_socks
+import numpy as np
 
 from gym_socks.policies import BasePolicy
-from gym_socks.algorithms.control.control_common import compute_solution
+from gym_socks.algorithms.control.common import compute_solution
 
 from gym_socks.kernel.metrics import rbf_kernel
 from gym_socks.kernel.metrics import regularized_inverse
 
 from gym_socks.sampling.transform import transpose_sample
 
+import logging
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
-import numpy as np
-
-from tqdm.auto import tqdm
+logger = logging.getLogger(__name__)
 
 
 def kernel_control_fwd(
@@ -189,7 +188,7 @@ class KernelControlFwd(BasePolicy):
 
         self.A = A
 
-        gym_socks.logger.debug("Computing matrix inverse.")
+        logger.debug("Computing matrix inverse.")
         self.W = regularized_inverse(
             X,
             U=U,
@@ -197,13 +196,13 @@ class KernelControlFwd(BasePolicy):
             regularization_param=self.regularization_param,
         )
 
-        gym_socks.logger.debug("Computing covariance matrix.")
+        logger.debug("Computing covariance matrix.")
         self.CUA = self.kernel_fn(U, A)
 
-        gym_socks.logger.debug("Computing cost function.")
+        logger.debug("Computing cost function.")
         self.cost_fn = partial(self.cost_fn, state=Y)
 
-        gym_socks.logger.debug("Computing constraint function.")
+        logger.debug("Computing constraint function.")
         if self.constraint_fn is not None:
             self.constraint_fn = partial(self.constraint_fn, state=Y)
 
@@ -233,7 +232,7 @@ class KernelControlFwd(BasePolicy):
             )
 
         # Compute the solution to the LP.
-        gym_socks.logger.debug("Computing solution to the LP.")
+        logger.debug("Computing solution to the LP.")
         sol = compute_solution(C, D, heuristic=self.heuristic)
         idx = np.argmax(sol)
         return np.array(self.A[idx], dtype=np.float32)

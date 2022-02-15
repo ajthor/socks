@@ -31,7 +31,7 @@ What is Stochastic Optimal Control?
 A dynamical system is an object that changes through time. For example, a dynamical
 system could be a vehicle such as a car, plane, or spacecraft, an electrical circuit or
 power grid, or a biological system or chemical reaction. We use a set of mathematical
-equations and variables to describe how the the system evolves over time, and in control
+equations and variables to describe how the system evolves over time, and in control
 theory, we typically have the ability to manipulate some of these variables in order to
 affect the future evolution of the system.
 
@@ -42,7 +42,7 @@ where the system will end up with a certain probability or likelihood.
 
 Optimal control seeks to compute the inputs to a system that guide the system to a
 desired state while minimizing (or maximizing) a pre-specified cost function. A simple
-example could be reaching a goal in the shortest amount of time, or by using the least
+example could be reaching a goal in the shortest amount of time or by using the least
 amount of fuel. In stochastic optimal control, we must also account for the stochastic
 effects which are present in the system. For instance, we may need to account for wind
 in order to safely land a plane.

@@ -10,3 +10,4 @@ Submodules
     :maxdepth: 1
 
     metrics/index.rst
+    probability/index.rst

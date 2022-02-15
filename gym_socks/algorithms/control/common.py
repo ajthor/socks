@@ -8,10 +8,14 @@ as a single entrypoint, and the unconstrained version is chosen if the constrain
 
 """
 
-import gym_socks
 import numpy as np
 
 from scipy.optimize import linprog
+
+import logging
+from gym_socks.utils.logging import ms_tqdm, _progress_fmt
+
+logger = logging.getLogger(__name__)
 
 
 def _check_constraint_matrix(D):
@@ -69,14 +73,14 @@ def _compute_unconstrained_solution(C: np.ndarray, heuristic=False) -> np.ndarra
         # Bounds are automatically set so that decision variables are nonnegative.
         # bounds = [(0, None)] * len(C)
 
-        gym_socks.logger.debug("Computing solution via scipy LP solver.")
+        logger.debug("Computing solution via scipy LP solver.")
         sol = linprog(
             obj,
             A_eq=A_eq,
             b_eq=b_eq,
         )
 
-        gym_socks.logger.debug(f"Solver completed with status code: {sol.status}")
+        logger.debug(f"Solver completed with status code: {sol.status}")
         # 0 : Optimization terminated successfully.
         # 1 : Iteration limit reached.
         # 2 : Problem appears to be infeasible.
@@ -86,10 +90,10 @@ def _compute_unconstrained_solution(C: np.ndarray, heuristic=False) -> np.ndarra
         if sol.success is True:
             return sol.x
         else:
-            gym_socks.logger.warn("No solution found via scipy.optimize.linprog.")
-            gym_socks.logger.warn("Returning heuristic solution.")
+            logger.warn("No solution found via scipy.optimize.linprog.")
+            logger.warn("Returning heuristic solution.")
 
-    gym_socks.logger.debug("Computing heuristic solution.")
+    logger.debug("Computing heuristic solution.")
     heuristic_sol = np.zeros((len(C),))
     idx = np.argmin(C)
     heuristic_sol[idx] = 1
@@ -137,7 +141,7 @@ def _compute_constrained_solution(
         # Bounds are automatically set so that decision variables are nonnegative.
         # bounds = [(0, None)] * len(C)
 
-        gym_socks.logger.debug("Computing solution via scipy LP solver.")
+        logger.debug("Computing solution via scipy LP solver.")
         sol = linprog(
             obj,
             A_ub=A_ub,
@@ -146,7 +150,7 @@ def _compute_constrained_solution(
             b_eq=b_eq,
         )
 
-        gym_socks.logger.debug(f"Solver completed with status code: {sol.status}")
+        logger.debug(f"Solver completed with status code: {sol.status}")
         # 0 : Optimization terminated successfully.
         # 1 : Iteration limit reached.
         # 2 : Problem appears to be infeasible.
@@ -156,14 +160,14 @@ def _compute_constrained_solution(
         if sol.success is True:
             return sol.x
         else:
-            gym_socks.logger.debug("No solution found via scipy.optimize.linprog.")
-            gym_socks.logger.debug("Returning heuristic solution.")
+            logger.debug("No solution found via scipy.optimize.linprog.")
+            logger.debug("Returning heuristic solution.")
 
     heuristic_sol = np.zeros((len(C),))
     satisfies_constraints = np.where(D <= 0)
     if len(satisfies_constraints[0]) == 0:
-        gym_socks.logger.warn("No feasible solution found!")
-        gym_socks.logger.debug("Returning minimal unconstrained solution.")
+        logger.warn("No feasible solution found!")
+        logger.debug("Returning minimal unconstrained solution.")
         idx = C.argmin()
     else:
         idx = satisfies_constraints[0][C[satisfies_constraints].argmin()]

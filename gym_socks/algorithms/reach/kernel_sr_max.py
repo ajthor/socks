@@ -6,11 +6,11 @@ Maximal stochastic reachability.
 
 from functools import partial
 
-import gym_socks
+import numpy as np
 
-from gym_socks.algorithms.algorithm import AlgorithmInterface
-from gym_socks.algorithms.reach.reach_common import _fht_step
-from gym_socks.algorithms.reach.reach_common import _tht_step
+from gym_socks.algorithms.base import RegressorMixin
+from gym_socks.algorithms.reach.common import _fht_step
+from gym_socks.algorithms.reach.common import _tht_step
 
 from gym_socks.kernel.metrics import rbf_kernel
 from gym_socks.kernel.metrics import regularized_inverse
@@ -20,11 +20,11 @@ from gym_socks.sampling.transform import transpose_sample
 from gym_socks.utils import indicator_fn
 from gym_socks.utils import normalize
 from gym_socks.utils.batch import generate_batches
+
+import logging
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
-from tqdm.contrib.logging import logging_redirect_tqdm
-
-import numpy as np
+logger = logging.getLogger(__name__)
 
 
 def _compute_backward_recursion(
@@ -41,7 +41,7 @@ def _compute_backward_recursion(
     verbose=False,
 ):
     # Compute beta.
-    gym_socks.logger.debug("Computing beta.")
+    logger.debug("Computing beta.")
     betaXY = normalize(
         np.einsum("ii,ij,ik->ijk", W, CXY, CUA, optimize=["einsum_path", (0, 1, 2)])
     )
@@ -199,7 +199,7 @@ def kernel_sr_max(
     return alg.predict(T)
 
 
-class KernelMaximalSR(AlgorithmInterface):
+class KernelMaximalSR(RegressorMixin):
     """Stochastic reachability using kernel distribution embeddings.
 
     Computes an approximation of the maximal safety probabilities of the stochastic
@@ -319,7 +319,7 @@ class KernelMaximalSR(AlgorithmInterface):
 
         A = np.array(A)
 
-        gym_socks.logger.debug("Computing matrix inverse.")
+        logger.debug("Computing matrix inverse.")
         self.W = regularized_inverse(
             X,
             U=U,
@@ -327,11 +327,11 @@ class KernelMaximalSR(AlgorithmInterface):
             regularization_param=self.regularization_param,
         )
 
-        gym_socks.logger.debug("Computing covariance matrices.")
+        logger.debug("Computing covariance matrices.")
         CXY = self.kernel_fn(X, Y)
         self.CUA = self.kernel_fn(U, A)
 
-        gym_socks.logger.debug("Computing value functions.")
+        logger.debug("Computing value functions.")
         value_functions = np.empty((self.time_horizon, len(Y)))
         self.value_functions = self._compute_backward_recursion_caller(
             Y,
@@ -364,10 +364,10 @@ class KernelMaximalSR(AlgorithmInterface):
         self._validate_data(T)
         T = np.array(T)
 
-        gym_socks.logger.debug("Computing covariance matrix.")
+        logger.debug("Computing covariance matrix.")
         CXT = self.kernel_fn(self.X, T)
 
-        gym_socks.logger.debug("Computing safety probabilities.")
+        logger.debug("Computing safety probabilities.")
         safety_probabilities = self._compute_backward_recursion_caller(
             T,
             self.W,
@@ -382,3 +382,6 @@ class KernelMaximalSR(AlgorithmInterface):
         )
 
         return safety_probabilities
+
+    def score(self):
+        raise NotImplementedError

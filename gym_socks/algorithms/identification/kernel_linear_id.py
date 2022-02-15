@@ -8,12 +8,15 @@ and a linear kernel to compute the linear relationship between observations.
 
 from functools import partial
 
-import gym_socks
-from gym_socks.algorithms.algorithm import AlgorithmInterface
+import numpy as np
 
+from gym_socks.algorithms.base import RegressorMixin
 from gym_socks.sampling.transform import transpose_sample
 
-import numpy as np
+import logging
+from gym_socks.utils.logging import ms_tqdm, _progress_fmt
+
+logger = logging.getLogger(__name__)
 
 
 def kernel_linear_id(
@@ -46,7 +49,7 @@ def kernel_linear_id(
     return alg
 
 
-class KernelLinearId(AlgorithmInterface):
+class KernelLinearId(RegressorMixin):
     """Stochastic linear system identification using kernel distribution embeddings.
 
     Computes an approximation of the state and input matrices, as well as an estimate of
@@ -133,13 +136,13 @@ class KernelLinearId(AlgorithmInterface):
 
         if len_sample < z_dim:
             msg = f"The sample size is less than the dim of H: {len_sample} < {z_dim}."
-            gym_socks.logger.warn(msg)
+            logger.warn(msg)
 
-        gym_socks.logger.debug("Computing covariance matrices.")
+        logger.debug("Computing covariance matrices.")
         CZZ = (Z.T @ Z) + self.regularization_param * len_sample * np.identity(z_dim)
         CYZ = Y.T @ Z
 
-        gym_socks.logger.debug("Computing estimates.")
+        logger.debug("Computing estimates.")
         H = np.linalg.solve(
             CZZ.T,
             CYZ.T,
@@ -180,3 +183,6 @@ class KernelLinearId(AlgorithmInterface):
         result += np.squeeze(self._disturbance_mean.T)
 
         return result
+
+    def score(self):
+        raise NotImplementedError
