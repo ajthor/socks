@@ -2,27 +2,18 @@
 
 Separating kernel classifier, useful for forward stochastic reachability analysis.
 
-References:
-    .. [1] `Learning sets with separating kernels, 2014
-            De Vito, Ernesto, Lorenzo Rosasco, and Alessandro Toigo.
-            Applied and Computational Harmonic Analysis 37(2)`_
-
-    .. [2] `Learning Approximate Forward Reachable Sets Using Separating Kernels, 2021
-            Adam J. Thorpe, Kendric R. Ortiz, Meeko M. K. Oishi
-            Learning for Dynamics and Control,
-            <https://arxiv.org/abs/2011.09678>`_
-
 """
 
 from functools import partial
 
-from gym_socks.algorithms.algorithm import AlgorithmInterface
-from gym_socks.kernel.metrics import abel_kernel, regularized_inverse
+from gym_socks.algorithms.base import ClassifierMixin
+from gym_socks.kernel.metrics import abel_kernel
+from gym_socks.kernel.metrics import regularized_inverse
 
 import numpy as np
 
 
-class SeparatingKernelClassifier(AlgorithmInterface):
+class SeparatingKernelClassifier(ClassifierMixin):
     """Separating kernel classifier.
 
     A kernel-based support classifier for unknown distributions. Given a set of data taken iid from the distribution, the `SeparatingKernelClassifier` constructs a kernel-based classifier of the support of the distribution based on the theory of separating kernels.
@@ -118,3 +109,6 @@ class SeparatingKernelClassifier(AlgorithmInterface):
         C = np.diagonal((1 / len(self.X)) * K.T @ self.W @ K)
 
         return C >= 1 - self.tau
+
+    def score(self):
+        raise NotImplementedError

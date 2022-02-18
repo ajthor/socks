@@ -9,27 +9,30 @@ import numpy as np
 class TORAEnv(DynamicalSystem):
     """TORA (translational oscillation with rotational actuation) system.
 
+    Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
+
     The TORA system is a mass with an attached pendulum (rotational oscillator) attached via a spring to a surface. This system is useful for modeling a variant of the pendulum system or a cart-pole system. The input is to the pendulum.
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            observation_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-            ),
-            state_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-            ),
-            action_space=gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
-            ),
-            *args,
-            **kwargs
+    # system parameters
+    _damping_coefficient = 0.1
+
+    def __init__(self, seed=None):
+
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+        )
+        self.state_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+        )
+        self.action_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
         )
 
-        # system parameters
-        self._damping_coefficient = 0.1
+        self.state = None
+
+        self.seed(seed=seed)
 
     @property
     def damping_coefficient(self):

@@ -9,8 +9,6 @@ the functions defined here.
 
 To use the sklearn functions, use them like so:
 
-    >>> from sklearn.metrics import pairwise_distances
-    >>> from sklearn.metrics.pairwise import pairwise_kernels
     >>> from sklearn.metrics.pairwise import rbf_kernel
     >>> from sklearn.metrics.pairwise import euclidean_distances
     >>> X = np.arange(4).reshape((2, 2))
@@ -113,10 +111,21 @@ def rbf_kernel(
 
     """
 
-    if distance_fn is None:
-        distance_fn = euclidean_distance
+    # if distance_fn is None:
+    #     distance_fn = euclidean_distance
 
-    K = distance_fn(X, Y, squared=True)
+    # K = distance_fn(X, Y, squared=True)
+
+    if Y is None:
+        Y = X
+
+    N, M = np.shape(X)
+    T = len(Y)
+
+    K = np.zeros((N, T))
+
+    for i in range(M):
+        K += np.power(np.tile(Y[:, i], (N, 1)) - np.tile(X[:, i], (T, 1)).T, 2)
 
     if sigma is None:
         sigma = np.median(K)
@@ -129,16 +138,6 @@ def rbf_kernel(
     return K
 
 
-def rbf_kernel_rff_transform(X, num_features=None, sigma=None):
-
-    D = np.shape(X)[1]
-    w = (1 / sigma) * np.random.standard_normal(size=(D, num_features))
-    b = np.random.uniform(low=0, high=2 * np.pi, size=(num_features,))
-    Z = (np.sqrt(2) / np.sqrt(num_features)) * np.cos(X @ w + b)
-
-    return Z
-
-
 def rbf_kernel_derivative(
     X: np.ndarray,
     Y: np.ndarray = None,
@@ -146,17 +145,30 @@ def rbf_kernel_derivative(
     distance_fn=None,
 ) -> np.ndarray:
 
-    if distance_fn is None:
-        distance_fn = euclidean_distance
+    # if distance_fn is None:
+    #     distance_fn = euclidean_distance
 
-    D = distance_fn(X, Y, squared=False)
+    # D = distance_fn(X, Y, squared=False)
+
+    if Y is None:
+        Y = X
+
+    N, M = np.shape(X)
+    T = len(Y)
+
+    D = np.zeros((N, T))
+
+    for i in range(M):
+        D += np.tile(Y[:, i], (N, 1)) - np.tile(X[:, i], (T, 1)).T
 
     if sigma is None:
         sigma = np.median(D)
     else:
         assert sigma > 0, "sigma must be a strictly positive real valued."
 
-    D *= 2 / (2 * (sigma ** 2))
+    D *= 2 / (2 * sigma ** 2)
+
+    return D
 
 
 def abel_kernel(
@@ -202,10 +214,22 @@ def regularized_inverse(
     regularization_param: float = None,
     kernel_fn=None,
 ) -> np.ndarray:
-    """Regularized inverse.
+    r"""Regularized inverse.
 
-    Computes the regularized matrix inverse (K + lambda * M * I)^-1.
+    Computes the regularized matrix inverse.
 
+    .. math::
+
+        W = (K + \lambda M I)^{-1}, \quad
+        K \in \mathbb{R}^{n \times n}, \quad
+        K_{ij} = k(x_{i}, y_{j})
+
+    Example:
+
+        >>> from gym_socks.kernel.metrics import regularized_inverse
+        >>> X = np.arange(4).reshape((2, 2))
+        >>> Y = np.arange(6).reshape((3, 2))
+        >>> K = regularized_inverse(X, Y)
 
     Args:
         X: The observations are oganized in ROWS.
@@ -217,7 +241,7 @@ def regularized_inverse(
             metrics.pairwise for more info. The default is the RBF kernel.
 
     Returns:
-        np.ndarray: Regularized matrix inverse.
+        Regularized matrix inverse.
 
     """
 

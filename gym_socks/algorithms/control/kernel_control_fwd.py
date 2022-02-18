@@ -1,25 +1,52 @@
-"""Forward in time stochastic optimal control.
+r"""Forward in time stochastic optimal control.
 
-References:
-    .. [1] `Stochastic Optimal Control via
-            Hilbert Space Embeddings of Distributions, 2021
-            Adam J. Thorpe, Meeko M. K. Oishi
-            IEEE Conference on Decision and Control,
-            <https://arxiv.org/abs/2103.12759>`_
+The policy is specified as a sequence of stochastic kernels :math:`\pi = \lbrace
+\pi_{0}, \pi_{1}, \ldots, \pi_{N-1} \rbrace`. At each time step, the problem seeks
+to solve a constrained optimization problem.
+
+.. math::
+    :label: optimization_problem
+
+    \min_{\pi_{t}} \quad & \int_{\mathcal{U}} \int_{\mathcal{X}} f_{0}(y, u)
+    Q(\mathrm{d} y \mid x, u) \pi_{t}(\mathrm{d} u \mid x) \\
+    \textnormal{s.t.} \quad & \int_{\mathcal{U}} \int_{\mathcal{X}} f_{i}(y, u)
+    Q(\mathrm{d} y \mid x, u) \pi_{t}(\mathrm{d} u \mid x), i = 1, \ldots, m
+
+Using kernel embeddings of disrtibutions, assuming the cost and constraint functions
+:math:`f_{0}, \ldots, f_{m}` are in an RKHS, the integral with respect to the stochastic
+kernel :math:`Q` and the policy :math:`\pi_{t}` can be approximated by an inner product,
+i.e. :math:`\int_{\mathcal{X}} f_{0}(y) Q(\mathrm{d} y \mid x, u) \approx \langle f_{0},
+\hat{m}(x, u) \rangle`. We use this to construct an approximate problem to
+:eq:`optimization_problem` and solve for a policy represented as an element in an RKHS.
+
+.. math::
+
+    p_{t}(x) = \sum_{i=1}^{P} \gamma_{i}(x) k(\tilde{u}_{i}, \cdot)
+
+The approximate problem is a linear program (LP), and can be solved efficiently using
+standard optimization solvers.
+
+Note:
+    See :py:mod:`examples.benchmark_tracking_problem` for a complete example.
+
 """
 
 from functools import partial
 
-import gym_socks
-
-from gym_socks.envs.policy import BasePolicy
-from gym_socks.algorithms.control.control_common import compute_solution
-from gym_socks.kernel.metrics import rbf_kernel, regularized_inverse
-from gym_socks.utils.logging import ms_tqdm, _progress_fmt
-
 import numpy as np
 
-from tqdm.auto import tqdm
+from gym_socks.policies import BasePolicy
+from gym_socks.algorithms.control.common import compute_solution
+
+from gym_socks.kernel.metrics import rbf_kernel
+from gym_socks.kernel.metrics import regularized_inverse
+
+from gym_socks.sampling.transform import transpose_sample
+
+import logging
+from gym_socks.utils.logging import ms_tqdm, _progress_fmt
+
+logger = logging.getLogger(__name__)
 
 
 def kernel_control_fwd(
@@ -95,7 +122,6 @@ class KernelControlFwd(BasePolicy):
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
 
         self.cost_fn = cost_fn
         self.constraint_fn = constraint_fn
@@ -143,7 +169,7 @@ class KernelControlFwd(BasePolicy):
             A: Collection of admissible control actions.
 
         Returns:
-            self: An instance of the KernelControlFwd algorithm class.
+            An instance of the KernelControlFwd algorithm class.
 
         """
 
@@ -151,7 +177,7 @@ class KernelControlFwd(BasePolicy):
         self._validate_data(A)
         self._validate_params(S=S, A=A)
 
-        X, U, Y = gym_socks.envs.sample.transpose_sample(S)
+        X, U, Y = transpose_sample(S)
         X = np.array(X)
         U = np.array(U)
         Y = np.array(Y)
@@ -162,7 +188,7 @@ class KernelControlFwd(BasePolicy):
 
         self.A = A
 
-        gym_socks.logger.debug("Computing matrix inverse.")
+        logger.debug("Computing matrix inverse.")
         self.W = regularized_inverse(
             X,
             U=U,
@@ -170,13 +196,13 @@ class KernelControlFwd(BasePolicy):
             regularization_param=self.regularization_param,
         )
 
-        gym_socks.logger.debug("Computing covariance matrix.")
+        logger.debug("Computing covariance matrix.")
         self.CUA = self.kernel_fn(U, A)
 
-        gym_socks.logger.debug("Computing cost function.")
+        logger.debug("Computing cost function.")
         self.cost_fn = partial(self.cost_fn, state=Y)
 
-        gym_socks.logger.debug("Computing constraint function.")
+        logger.debug("Computing constraint function.")
         if self.constraint_fn is not None:
             self.constraint_fn = partial(self.constraint_fn, state=Y)
 
@@ -206,7 +232,7 @@ class KernelControlFwd(BasePolicy):
             )
 
         # Compute the solution to the LP.
-        gym_socks.logger.debug("Computing solution to the LP.")
+        logger.debug("Computing solution to the LP.")
         sol = compute_solution(C, D, heuristic=self.heuristic)
         idx = np.argmax(sol)
         return np.array(self.A[idx], dtype=np.float32)

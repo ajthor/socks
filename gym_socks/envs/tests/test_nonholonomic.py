@@ -3,14 +3,14 @@ from unittest.mock import patch
 
 import gym
 
-import gym_socks.envs
+from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
 
 import numpy as np
 
 
 class TestNonholonomicSystem(unittest.TestCase):
     def test_corrects_angle(cls):
-        system = gym_socks.envs.NonholonomicVehicleEnv()
+        system = NonholonomicVehicleEnv()
         system.disturbance_space = gym.spaces.Box(
             low=0, high=0, shape=(3,), dtype=np.float32
         )

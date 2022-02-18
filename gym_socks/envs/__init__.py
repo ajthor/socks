@@ -8,7 +8,6 @@ __all__ = [
     "tora",
     # Classes
     "policy",
-    "sample",
 ]
 
 from gym_socks.envs.cwh import CWH4DEnv

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import gym
 
-import gym_socks.envs
+from gym_socks.envs.integrator import NDIntegratorEnv
 
 import numpy as np
 
@@ -11,14 +11,15 @@ import numpy as np
 class TestIntegratorSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = gym_socks.envs.NDIntegratorEnv(2)
+        cls.env = NDIntegratorEnv(2)
 
-    @patch.object(gym_socks.envs.NDIntegratorEnv, "generate_disturbance")
+    @patch.object(NDIntegratorEnv, "generate_disturbance")
     def test_known_trajectory(cls, mock_generate_disturbance):
         """Test against specific known trajectory. Sanity check."""
         mock_generate_disturbance.return_value = np.zeros((2,))
 
         env = cls.env
+        env.sampling_time = 0.25
 
         env.state = np.array([0.1, 0.1], dtype=np.float32)
         action = np.array([0], dtype=np.float32)
@@ -26,8 +27,8 @@ class TestIntegratorSystem(unittest.TestCase):
         trajectory = []
         trajectory.append(env.state)
 
-        for i in range(env.num_time_steps):
-            obs, cost, done, _ = env.step(action)
+        for t in range(16):
+            obs, cost, done, _ = env.step(time=t, action=action)
             trajectory.append(obs)
 
         trajectory = np.array(trajectory)
@@ -56,13 +57,14 @@ class TestIntegratorSystem(unittest.TestCase):
 
         cls.assertTrue(np.allclose(trajectory, groundTruth))
 
-    @patch.object(gym_socks.envs.NDIntegratorEnv, "generate_disturbance")
+    @patch.object(NDIntegratorEnv, "generate_disturbance")
     def test_euler_approximation(cls, mock_generate_disturbance):
         """Test against specific known trajectory (Euler). Sanity check."""
         mock_generate_disturbance.return_value = np.zeros((2,))
 
         env = cls.env
         env._euler = True
+        env.sampling_time = 0.25
 
         env.state = np.array([0.1, 0.1], dtype=np.float32)
         action = np.array([0], dtype=np.float32)
@@ -70,8 +72,8 @@ class TestIntegratorSystem(unittest.TestCase):
         trajectory = []
         trajectory.append(env.state)
 
-        for i in range(env.num_time_steps):
-            obs, cost, done, _ = env.step(action)
+        for t in range(16):
+            obs, cost, done, _ = env.step(time=t, action=action)
             trajectory.append(obs)
 
         trajectory = np.array(trajectory)

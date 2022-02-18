@@ -1,0 +1,11 @@
+include *.rst
+include README.md
+include pyproject.toml
+include MANIFEST.in
+recursive-include gym_socks *.c *.h *.pyx *.pxd *.pxi *.tp
+
+# exclude from sdist
+recursive-exclude .jupyter *
+recursive-exclude benchmarks *
+recursive-exclude examples *
+recursive-exclude tests *

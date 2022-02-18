@@ -1,0 +1,2 @@
+# Specifically ignore python files in this directory.
+*.py
