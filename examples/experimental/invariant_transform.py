@@ -7,6 +7,12 @@ nonholonomic vehicle system (unicycle dynamics), and seeks to track a v-shaped
 trajectory. In this example, we exploit the properties of the dynamical system to more
 efficiently sample from the state space.
 
+To run the example, use the following command:
+
+```shell
+    python examples/control/tracking.py
+```
+
 The main problem is that the kernel function measures similarity based on the entire
 state vector. Given two systems that are separated by some distance, but otherwise
 identical, we might expect the sample information from one system to be useful in
@@ -31,12 +37,6 @@ By exploiting these properties, we can collect a sample from a smaller region of
 state space, and then using translations and rotations, we can "move" the sample to the
 region we are currently operating in. In effect, this serves to reduce the overall
 amount of sample information needed to characterize the dynamics.
-
-To run the example, use the following command:
-
-```shell
-    python examples/control/tracking.py
-```
 
 """
 
@@ -162,7 +162,7 @@ plt.show()
 # Thus, we can use a random sample that is translated and rotated in order to
 # approximate the dynamics more globally.
 #
-# ## Configuration Variables
+# ## Generate the Sample
 
 # %%
 sigma = 1.5  # Kernel bandwidth parameter.
@@ -175,14 +175,12 @@ time_horizon = 20
 seed = 12345
 
 # %% [markdown]
-# ## Generate the Sample
-#
 # We generate a random sample from the system, and choose random control actions from a
 # single initial condition (the origin). Alternatively, we could translate the sample
 # information while we generate it from random initial conditions.
 #
-# *NOTE*: We use significantly less sample information to obtain a similar result to the
-# `tracking` example. Here, since we can translate and roteate the sample, we use 100
+# _NOTE_: We use significantly less sample information to obtain a similar result to the
+# `tracking` example. Here, since we can translate and rotate the sample, we use 50
 # sample points, wehre in the other example we use 1,500 by default to obtain similar
 # behavior.
 
@@ -246,7 +244,7 @@ b = np.linalg.solve(
 )
 
 # %% [markdown]
-# ## Generate the Target Trajectory & Cost
+# ## Generate the Target Trajectory
 #
 # We define the cost as the norm distance to the target at each time step.
 
