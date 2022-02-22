@@ -1,4 +1,15 @@
-"""Nonholonomic vehicle system."""
+r"""Nonholonomic vehicle system.
+
+.. math::
+    :nowrap:
+
+    \begin{align}
+        x_{1} &= x & \dot{x}_{1} &= \dot{x} = u_{1} \sin(x_{3}) \\
+        x_{2} &= y & \dot{x}_{2} &= \dot{y} = u_{1} \cos(x_{3}) \\
+        x_{3} &= \theta & \dot{x}_{3} &= \dot{\theta} = u_{2}
+    \end{align}
+
+"""
 
 import gym
 from gym_socks.envs.dynamical_system import DynamicalSystem

@@ -176,6 +176,25 @@ Kernel Methods
         +++
         :bdg-primary-line:`kernel`
 
+Experimental
+============
+
+.. grid:: 2
+    :gutter: 1 1 2 3
+
+    .. grid-item-card::
+        :link: experimental/invariant_transform
+        :link-type: doc
+
+        **Target Tracking (Side Information)**
+        ^^^
+
+        Target tracking problem using side information to reduce the amount of sample
+        information needed.
+
+        +++
+        :bdg-primary-line:`control`
+        :bdg-primary-line:`experimental`
 
 Contributing Examples
 =====================
