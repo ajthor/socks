@@ -127,7 +127,7 @@ Sampling Function Examples
                 state = next(state_sampler)
                 action = next(action_sampler)
 
-                env.state = state
+                env.reset(state)
                 next_state, *_ = env.step(action=action)
 
                 yield (state, action, next_state)
@@ -144,7 +144,7 @@ Sampling Function Examples
                 state = next(state_sampler)
                 action = policy()
 
-                env.state = state
+                env.reset(state)
                 next_state, *_ = env.step(action=action)
 
                 yield (state, action, next_state)

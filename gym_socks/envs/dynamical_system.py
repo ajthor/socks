@@ -293,10 +293,14 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
         return observation, cost, done, info
 
-    def reset(self):
+    def reset(self, state=None):
         """Reset the system to a random initial condition."""
-        self.state = self.state_space.sample()
-        return np.asarray(self.state, dtype=np.float32)
+        if state is None:
+            self.state = self.state_space.sample()
+        else:
+            self.state = np.atleast_1d(np.asarray(state, dtype=np.float32))
+
+        return self.state
 
     def render(self, mode="human"):
         raise NotImplementedError
@@ -315,3 +319,42 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
     def seed(self, seed=None):
         self._np_random, seed = seeding.np_random(seed)
         return [seed]
+
+
+def simulate(env, N, x0=None, policy=None, full_sequence=False):
+    """Helper function to simulate a dynamical system.
+
+    Args:
+        env: Environment to simulate.
+        N: The time horizon for the simulation.
+        x0: The initial condition of the system.
+        policy: The policy.
+
+    Returns:
+        A tuple with 2 elements containing the state sequence and the action sequence.
+
+    """
+
+    state_sequence = []
+    action_sequence = []
+
+    env.reset(x0)
+
+    if full_sequence is True:
+        state_sequence.append(env.state)
+
+    for t in range(N):
+        if policy is not None:
+            action = policy(time=t, state=env.state)
+        else:
+            action = env.action_space.sample()
+
+        action_sequence.append(action)
+
+        env.step(time=t, action=action)
+        state_sequence.append(env.state)
+
+    return (
+        np.array(state_sequence, dtype=np.float32),
+        np.array(action_sequence, dtype=np.float32),
+    )

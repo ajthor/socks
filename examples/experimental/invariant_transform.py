@@ -97,14 +97,14 @@ random_actions = list(islice(action_sampler, 100))
 resulting_states1 = []
 initial_condition1 = [0, 0, 0]
 for action in random_actions:
-    deterministic_env.state = initial_condition1
+    deterministic_env.reset(initial_condition1)
     deterministic_env.step(action=action)
     resulting_states1.append(deterministic_env.state)
 
 resulting_states2 = []
 initial_condition2 = [0.2, 0, 0]
 for action in random_actions:
-    deterministic_env.state = initial_condition2
+    deterministic_env.reset(initial_condition2)
     deterministic_env.step(action=action)
     resulting_states2.append(deterministic_env.state)
 
@@ -133,14 +133,14 @@ plt.show()
 resulting_states1 = []
 initial_condition1 = [0, 0, 0]
 for action in random_actions:
-    deterministic_env.state = initial_condition1
+    deterministic_env.reset(initial_condition1)
     deterministic_env.step(action=action)
     resulting_states1.append(deterministic_env.state)
 
 resulting_states2 = []
 initial_condition2 = [0, 0, np.pi / 2]
 for action in random_actions:
-    deterministic_env.state = initial_condition2
+    deterministic_env.reset(initial_condition2)
     deterministic_env.step(action=action)
     resulting_states2.append(deterministic_env.state)
 
@@ -205,7 +205,7 @@ def custom_sampler():
     state = [0, 0, 0]
     action = next(action_sampler)
 
-    env.state = state
+    env.reset(state)
     env.step(action=action)
     next_state = env.state
 
@@ -311,7 +311,7 @@ def _tracking_cost(time: int = 0, state: np.ndarray = None) -> float:
 # %%
 env.reset()
 initial_condition = [-0.8, 0, 0]
-env.state = initial_condition
+env.reset(initial_condition)
 trajectory = [initial_condition]
 
 for t in range(time_horizon):

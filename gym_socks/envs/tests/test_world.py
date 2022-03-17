@@ -54,5 +54,5 @@ class TestWorld(unittest.TestCase):
         for t in range(world.time_horizon):
             world.step()
 
-            action = policy(time=t, state=[env.state])
+            action = policy(time=t, state=env.state)
             env.step(time=t, action=action)

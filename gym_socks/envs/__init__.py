@@ -1,13 +1,11 @@
 __all__ = [
-    # Systems
     "cwh",
     "integrator",
     "nonholonomic",
+    "planar_quad",
     "point_mass",
     "QUAD20",
     "tora",
-    # Classes
-    "policy",
 ]
 
 from gym_socks.envs.cwh import CWH4DEnv

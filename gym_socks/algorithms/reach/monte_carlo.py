@@ -60,7 +60,7 @@ def _monte_carlo_trajectory_sampler(
         state_sequence = []
         state_sequence.append(state)
 
-        env.state = state
+        env.reset(state)
 
         time = 0
         for t in range(time_horizon):

@@ -146,11 +146,11 @@ policy.train(S=S, A=A)
 # Simulate the controlled system.
 env.reset()
 initial_condition = [-0.8, 0, 0]
-env.state = initial_condition
+env.reset(initial_condition)
 trajectory = [initial_condition]
 
 for t in range(time_horizon):
-    action = policy(time=t, state=[env.state])
+    action = policy(time=t, state=env.state)
     state, *_ = env.step(time=t, action=action)
 
     trajectory.append(list(state))

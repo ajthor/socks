@@ -21,7 +21,7 @@ def dummy_sampler(env, policy, sample_space):
         state = sample_space.sample()
         action = policy(time=0, state=state)
 
-        env.state = state
+        env.reset(state)
         next_state, *_ = env.step(action=action)
 
         yield (state, action, next_state)

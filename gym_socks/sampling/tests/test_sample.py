@@ -227,7 +227,7 @@ class TestSample(unittest.TestCase):
             state = cls.sample_space.sample()
             action = cls.env.action_space.sample()
 
-            cls.env.state = state
+            cls.env.reset(state)
             next_state, *_ = cls.env.step(action=action)
 
             return (state, action, next_state)
@@ -254,7 +254,7 @@ class TestSample(unittest.TestCase):
             state = cls.sample_space.sample()
             action = cls.env.action_space.sample()
 
-            cls.env.state = state
+            cls.env.reset(state)
             next_state, *_ = cls.env.step(action=action)
 
             yield (state, action, next_state)
@@ -284,7 +284,7 @@ class TestSample(unittest.TestCase):
             state = next(state_sampler)
             action = policy()
 
-            cls.env.state = state
+            cls.env.reset(state)
             next_state, *_ = cls.env.step(action=action)
 
             yield (state, action, next_state)

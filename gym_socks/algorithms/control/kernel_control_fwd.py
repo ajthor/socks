@@ -214,6 +214,8 @@ class KernelControlFwd(BasePolicy):
             print("Must supply a state to the policy.")
             return None
 
+        state = np.atleast_2d(np.asarray(state, dtype=np.float32))
+
         T = np.array(state)
 
         # Compute covariance matrix.

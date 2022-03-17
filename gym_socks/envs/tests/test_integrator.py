@@ -5,6 +5,9 @@ import gym
 
 from gym_socks.envs.integrator import NDIntegratorEnv
 
+from gym_socks.policies import ZeroPolicy
+from gym_socks.envs.dynamical_system import simulate
+
 import numpy as np
 
 
@@ -21,17 +24,20 @@ class TestIntegratorSystem(unittest.TestCase):
         env = cls.env
         env.sampling_time = 0.25
 
-        env.state = np.array([0.1, 0.1], dtype=np.float32)
-        action = np.array([0], dtype=np.float32)
+        # env.reset([0.1, 0.1])
+        # action = np.array([0], dtype=np.float32)
 
-        trajectory = []
-        trajectory.append(env.state)
+        # trajectory = []
+        # trajectory.append(env.state)
 
-        for t in range(16):
-            obs, cost, done, _ = env.step(time=t, action=action)
-            trajectory.append(obs)
+        # for t in range(16):
+        #     obs, cost, done, _ = env.step(time=t, action=action)
+        #     trajectory.append(obs)
 
-        trajectory = np.array(trajectory)
+        # trajectory = np.array(trajectory)
+
+        policy = ZeroPolicy(env.action_space)
+        trajectory, _ = simulate(env, 16, [0.1, 0.1], policy, True)
 
         groundTruth = np.array(
             [
@@ -66,17 +72,20 @@ class TestIntegratorSystem(unittest.TestCase):
         env._euler = True
         env.sampling_time = 0.25
 
-        env.state = np.array([0.1, 0.1], dtype=np.float32)
-        action = np.array([0], dtype=np.float32)
+        # env.reset([0.1, 0.1])
+        # action = np.array([0], dtype=np.float32)
 
-        trajectory = []
-        trajectory.append(env.state)
+        # trajectory = []
+        # trajectory.append(env.state)
 
-        for t in range(16):
-            obs, cost, done, _ = env.step(time=t, action=action)
-            trajectory.append(obs)
+        # for t in range(16):
+        #     obs, cost, done, _ = env.step(time=t, action=action)
+        #     trajectory.append(obs)
 
-        trajectory = np.array(trajectory)
+        # trajectory = np.array(trajectory)
+
+        policy = ZeroPolicy(env.action_space)
+        trajectory, _ = simulate(env, 16, [0.1, 0.1], policy, True)
 
         groundTruth = np.array(
             [

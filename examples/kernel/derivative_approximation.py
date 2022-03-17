@@ -56,7 +56,7 @@ kernel_fn = partial(rbf_kernel, gamma=gamma)
 regularization_param = 1 / (sample_size ** 2)
 
 # %% [markdown]
-# ## Compute the Appromation
+# ## Compute the Approximation
 
 #  %%
 start = perf_counter()

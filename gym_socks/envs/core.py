@@ -53,7 +53,7 @@ class BaseDynamicalObject(gym.Env, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def reset(self):
+    def reset(self, state=None):
         """Reset the object to an initial state.
 
         Resets the object to an initial state (which may be random).
@@ -137,42 +137,3 @@ class BaseWrapper(object):
         self.__dict__ = env.__dict__
 
         self.env = env
-
-
-# class HookWrapper(BaseWrapper):
-#     def __getattr__(self, attr):
-#         """Wrapped __getattr__."""
-#         _attr = self.env.__getattribute__(attr)
-
-#         if callable(_attr):
-
-#             @wraps(callable)
-#             def _wrapper(*args, **kwargs):
-#                 self.pre_hook()
-#                 result = _attr(*args, **kwargs)
-#                 self.post_hook()
-
-#                 # prevent unwrapping
-#                 if result is self.env:
-#                     return self
-
-#                 return result
-
-#             return _wrapper
-
-#         else:
-#             return _attr
-
-#     # @abstractmethod
-#     def pre_hook(self):
-#         raise NotImplementedError
-
-#     # @abstractmethod
-#     def post_hook(self):
-#         raise NotImplementedError
-
-#     # def reset(self):
-#     #     self.pre_hook()
-#     #     result = self.env.reset()
-#     #     self.post_hook()
-#     #     return result

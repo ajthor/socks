@@ -59,7 +59,7 @@ def sampler():
     state = next(state_sampler)
     action = next(action_sampler)
 
-    env.state = state
+    env.reset(state)
     next_state, *_ = env.step(action=action)
 
     yield (state, action, next_state)
@@ -93,10 +93,10 @@ env.reset()
 initial_condition = [-0.75, -0.75, 0, 0]
 
 # Simulate the system using the actual dynamics.
-env.state = initial_condition
+env.reset(initial_condition)
 actual_trajectory = [env.state]
 for t in range(time_horizon):
-    action = np.array(policy(time=t, state=[env.state]), dtype=np.float32)
+    action = policy(time=t, state=env.state)
     obs, *_ = env.step(time=t, action=action)
     next_state = env.state
 
@@ -105,7 +105,7 @@ for t in range(time_horizon):
 # Simulate the system using the approximated dynamics.
 estimated_trajectory = [initial_condition]
 for t in range(time_horizon):
-    action = policy(time=t, state=[env.state])
+    action = policy(time=t, state=env.state)
     state = alg.predict(T=estimated_trajectory[t], U=action)
 
     estimated_trajectory.append(state)

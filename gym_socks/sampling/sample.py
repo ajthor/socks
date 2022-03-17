@@ -27,7 +27,7 @@ def sample_generator(fun):
         >>> from gym_socks.envs.sample import sample_generator
         >>> @sample_generator
         ... def custom_sampler(env, policy, sample_space):
-        ...     env.state = sample_space.sample()
+        ...     env.reset()
         ...     action = policy(state=state)
         ...     next_state, *_ = env.step(action)
         ...     yield (env.state, action, next_state)
@@ -127,7 +127,7 @@ def default_sampler(
         state = next(state_sampler)
         action = next(action_sampler)
 
-        env.state = state
+        env.reset(state)
         next_state, *_ = env.step(action=action)
 
         yield (state, action, next_state)
@@ -161,7 +161,7 @@ def default_trajectory_sampler(
         state_sequence = []
         action_sequence = []
 
-        env.state = state
+        env.reset(state)
 
         time = 0
         for t in range(time_horizon):
