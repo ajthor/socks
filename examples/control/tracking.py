@@ -32,7 +32,7 @@ from gym_socks.sampling import default_sampler
 from gym_socks.sampling import random_sampler
 from gym_socks.sampling import grid_sampler
 
-from gym_socks.utils.grid import make_grid_from_ranges
+from gym_socks.utils.grid import cartesian
 
 # %% [markdown]
 # Configuration variables.
@@ -85,7 +85,7 @@ S = sample(
     sample_size=sample_size,
 )
 
-A = make_grid_from_ranges([np.linspace(0.1, 1.1, 10), np.linspace(-10.1, 10.1, 21)])
+A = cartesian(np.linspace(0.1, 1.1, 10), np.linspace(-10.1, 10.1, 21))
 
 # %% [markdown]
 # We define the cost as the norm distance to the target at each time step.

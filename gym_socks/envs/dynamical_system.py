@@ -222,7 +222,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
         """
 
-        return np.array(state, dtype=np.float32)
+        return np.asarray(state, dtype=np.float32)
 
     def cost(self, time, state, action):
         """Cost function for the system.
@@ -257,7 +257,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
         """
 
-        action = np.asarray(action, dtype=np.float32)
+        action = np.atleast_1d(np.asarray(action, dtype=np.float32))
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
@@ -296,7 +296,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
     def reset(self):
         """Reset the system to a random initial condition."""
         self.state = self.state_space.sample()
-        return np.array(self.state, dtype=np.float32)
+        return np.asarray(self.state, dtype=np.float32)
 
     def render(self, mode="human"):
         raise NotImplementedError

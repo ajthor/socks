@@ -18,8 +18,8 @@ from gym_socks.sampling.sample import repeat
 from gym_socks.sampling.transform import transpose_sample
 from gym_socks.sampling.transform import flatten_sample
 
-from gym_socks.utils.grid import make_grid_from_ranges
-from gym_socks.utils.grid import make_grid_from_space
+from gym_socks.utils.grid import boxgrid
+from gym_socks.utils.grid import cartesian
 
 import numpy as np
 
@@ -65,8 +65,8 @@ class TestSample(unittest.TestCase):
 
         state_sampler = repeat(
             grid_sampler(
-                make_grid_from_space(
-                    sample_space=gym.spaces.Box(
+                boxgrid(
+                    space=gym.spaces.Box(
                         low=-1,
                         high=1,
                         shape=cls.env.state_space.shape,
@@ -78,7 +78,7 @@ class TestSample(unittest.TestCase):
             num=3,
         )
 
-        action_sampler = grid_sampler(make_grid_from_ranges([np.linspace(-1, 1, 3)]))
+        action_sampler = grid_sampler(cartesian(np.linspace(-1, 1, 3)))
 
         S = sample(
             sampler=default_sampler(

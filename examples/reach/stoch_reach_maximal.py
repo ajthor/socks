@@ -32,8 +32,8 @@ from gym_socks.sampling import default_sampler
 from gym_socks.sampling import grid_sampler
 from gym_socks.sampling import repeat
 
-from gym_socks.utils.grid import make_grid_from_space
-from gym_socks.utils.grid import make_grid_from_ranges
+from gym_socks.utils.grid import boxgrid
+from gym_socks.utils.grid import cartesian
 
 # %% [markdown]
 # Configuration variables.
@@ -61,11 +61,9 @@ sample_space = gym.spaces.Box(
     low=-1.1, high=1.1, shape=env.state_space.shape, dtype=env.state_space.dtype
 )
 
-state_sampler = repeat(
-    grid_sampler(make_grid_from_space(sample_space=sample_space, resolution=25)), num=5
-)
+state_sampler = repeat(grid_sampler(boxgrid(space=sample_space, resolution=25)), num=5)
 
-action_sampler = grid_sampler(make_grid_from_ranges([np.linspace(-1, 1, 5)]))
+action_sampler = grid_sampler(cartesian(np.linspace(-1, 1, 5)))
 
 S = sample(
     sampler=default_sampler(
@@ -75,7 +73,7 @@ S = sample(
 )
 
 # Generate a set of admissible control actions.
-A = make_grid_from_ranges([np.linspace(-1, 1, 5)])
+A = cartesian(np.linspace(-1, 1, 5))
 
 # %% [markdown]
 #
@@ -95,7 +93,7 @@ constraint_tube = [
 # Generate test points.
 x1 = np.linspace(-1, 1, 50)
 x2 = np.linspace(-1, 1, 50)
-T = make_grid_from_ranges([x1, x2])
+T = cartesian(x1, x2)
 
 # %% [markdown]
 # ## Algorithm

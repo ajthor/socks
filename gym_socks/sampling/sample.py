@@ -69,8 +69,8 @@ def random_sampler(sample_space: gym.Space):
 def grid_sampler(grid: list):
     """Grid sampler.
 
-    Returns a sample arranged on a uniformly-spaced grid. Use
-    :py:func:`make_grid_from_ranges` or :py:func:`make_grid_from_space` from
+    Returns a sample arranged on a uniformly-spaced grid.
+    Use :py:func:`boxgrid` or :py:func:`cartesian` from
     :py:mod:`gym_socks.utils.grid` to generate a grid of points.
 
     Args:

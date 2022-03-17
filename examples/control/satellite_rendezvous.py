@@ -31,7 +31,7 @@ from gym_socks.sampling import sample
 from gym_socks.sampling import default_sampler
 from gym_socks.sampling import random_sampler
 
-from gym_socks.utils.grid import make_grid_from_space
+from gym_socks.utils.grid import boxgrid
 
 
 # %% [markdown]
@@ -85,7 +85,7 @@ S = sample(
     sample_size=sample_size,
 )
 
-A = make_grid_from_space(sample_space=action_sample_space, resolution=[20, 20])
+A = boxgrid(space=action_sample_space, resolution=[20, 20])
 
 
 # %% [markdown]

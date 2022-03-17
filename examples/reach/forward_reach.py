@@ -27,7 +27,7 @@ from gym_socks.algorithms.reach.separating_kernel import SeparatingKernelClassif
 from functools import partial
 from sklearn.metrics.pairwise import euclidean_distances
 
-from gym_socks.utils.grid import make_grid_from_ranges
+from gym_socks.utils.grid import cartesian
 
 from gym_socks.policies import ConstantPolicy
 from gym_socks.sampling import sample
@@ -87,7 +87,7 @@ alg = SeparatingKernelClassifier(
 )
 
 # Generate test points.
-T = make_grid_from_ranges([np.linspace(-1, 1, 50), np.linspace(-1, 1, 50)])
+T = cartesian(np.linspace(-1, 1, 50), np.linspace(-1, 1, 50))
 
 # Train the classifier and classify the points.
 labels = alg.fit(S).predict(T)
