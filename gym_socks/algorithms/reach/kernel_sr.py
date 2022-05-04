@@ -20,7 +20,7 @@ from gym_socks.sampling.transform import transpose_sample
 
 from gym_socks.utils import indicator_fn
 from gym_socks.utils import normalize
-from gym_socks.utils.batch import generate_batches
+from gym_socks.utils.batch import batch_generator
 
 import logging
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
@@ -98,7 +98,7 @@ def _compute_backward_recursion_batch(
     # Backward recursion.
     for t in range(time_horizon - 2, -1, -1):
 
-        for batch in generate_batches(len(Y), batch_size=batch_size):
+        for batch in batch_generator(Y, size=batch_size):
 
             # Compute beta.
             betaXY = normalize(np.einsum("ii,ij->ij", W, CXY[:, batch]))

@@ -47,7 +47,7 @@ from gym_socks.kernel.metrics import regularized_inverse
 
 from gym_socks.sampling.transform import transpose_sample
 
-from gym_socks.utils.batch import generate_batches
+from gym_socks.utils.batch import batch_generator
 
 import logging
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
@@ -160,7 +160,7 @@ def _compute_backward_recursion_batch(
         # D = np.empty((1, len(Y)))
         D = np.empty_like(CUA)
 
-        for batch in generate_batches(num_elements=len(Y), batch_size=batch_size):
+        for batch in batch_generator(Y, size=batch_size):
 
             beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
             C[batch, :] = np.einsum("i,ijk->jk", Z, beta)
@@ -192,7 +192,7 @@ def _compute_backward_recursion_batch(
 
         #     #     C = np.zeros_like(CUA)
 
-        #     #     for batch in generate_batches(num_elements=len(Y), batch_size=batch_size):
+        #     #     for batch in batch_generator(Y, size=batch_size):
 
         #     #         beta = np.einsum("ij,ik->ijk", CXY[:, batch], CUA)
         #     #         C[batch, :] = np.einsum("i,ijk->jk", Z, beta)
