@@ -1,7 +1,7 @@
 """Control policies.
 
 Note:
-    Policies ccan be either time-invariant or time-varying, and can be either open- or
+    Policies can be either time-invariant or time-varying, and can be either open- or
     closed-loop. Thus, the arguments to the :py:meth:`__call__` method should allow for
     ``time`` and ``state`` to be specified (if needed), and should be optional kwargs::
 
@@ -24,7 +24,7 @@ class BasePolicy(ABC):
     Instead, define a new class that inherits from :py:class:`BasePolicy`.
 
     The :py:meth:`__call__` method is the main point of entry for the policy classes.
-    All subclasses must implement a py:meth:`__call__` method. This makes the class
+    All subclasses must implement a :py:meth:`__call__` method. This makes the class
     callable, so that policies can be evaluated as::
 
         action = policy(state)

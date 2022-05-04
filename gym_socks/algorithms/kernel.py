@@ -87,4 +87,3 @@ class ConditionalEmbedding(RegressorMixin):
 
     def score(self, y_test: np.ndarray, K: np.ndarray, y_train: np.ndarray):
         return _regression_score(y_test, self.predict(y_train, K))
-

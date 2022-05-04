@@ -78,6 +78,7 @@ def kernel_control_fwd(
 
     Returns:
         The policy.
+
     """
 
     alg = KernelControlFwd(
