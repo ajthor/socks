@@ -37,8 +37,8 @@ def euclidean_distance(
     data sets, such as state trajectories over a long time horizon.
 
     Args:
-        X: The observations are oganized in ROWS.
-        Y: The observations are oganized in ROWS.
+        X: The observations oganized in ROWS.
+        Y: The observations oganized in ROWS.
         squared: Whether or not the result is the squared Euclidean distance.
 
     Returns:
@@ -101,8 +101,8 @@ def rbf_kernel(
     specify a different distance metric in the event the data is non-Euclidean.
 
     Args:
-        X: The observations are oganized in ROWS.
-        Y: The observations are oganized in ROWS.
+        X: The observations oganized in ROWS.
+        Y: The observations oganized in ROWS.
         sigma: Strictly positive real-valued kernel parameter.
         distance_fn: Distance function to use in the kernel evaluation.
 
@@ -180,8 +180,8 @@ def abel_kernel(
     """Abel kernel function.
 
     Args:
-        X: The observations are oganized in ROWS.
-        Y: The observations are oganized in ROWS.
+        X: The observations oganized in ROWS.
+        Y: The observations oganized in ROWS.
         sigma: Strictly positive real-valued kernel parameter.
         distance_fn: Distance function to use in the kernel evaluation.
 
@@ -204,6 +204,55 @@ def abel_kernel(
     np.exp(K, K)
 
     return K
+
+
+def delta_kernel(X: np.ndarray, Y: np.ndarray = None):
+    """Delta (discrete) kernel function.
+
+    The delta kernel is defined as :math:`k(x_{i}, x_{j}) = \delta_{ij}`, meaning the
+    kernel returns a 1 if the vectors are the same, and a 0 otherwise. The vectors in
+    `X` and `Y` should have discrete values, meaning each element in the vector should
+    be a natural number or integer value.
+
+    Args:
+        X: A 2D ndarray with the observations oganized in ROWS.
+        Y: A 2D ndarray with the observations oganized in ROWS.
+
+    Returns:
+        np.ndarray: Gram matrix of pairwise evaluations of the kernel function.
+
+    """
+
+    if X.ndim == 1:
+        raise ValueError(
+            "Expected 2D array for X, got 1D array instead. \n"
+            "Reshape the data using array.reshape(-1, 1) "
+            "if the data has only a single dimension "
+            "or array.reshape(1, -1) if there is only a single sample."
+        )
+
+    if Y is None:
+        Y = X
+
+    else:
+
+        if Y.ndim == 1:
+            raise ValueError(
+                "Expected 2D array for Y, got 1D array instead. \n"
+                "Reshape the data using array.reshape(-1, 1) "
+                "if the data has only a single dimension "
+                "or array.reshape(1, -1) if there is only a single sample."
+            )
+
+    N, M = np.shape(X)
+    T = len(Y)
+
+    D = np.ones((N, T), dtype=int)
+
+    for i in range(M):
+        D &= np.tile(Y[:, i], (N, 1)) == np.tile(X[:, i], (T, 1)).T
+
+    return D
 
 
 def regularized_inverse(
@@ -232,8 +281,8 @@ def regularized_inverse(
         >>> K = regularized_inverse(X, Y)
 
     Args:
-        X: The observations are oganized in ROWS.
-        Y: The observations are oganized in ROWS.
+        X: The observations oganized in ROWS.
+        Y: The observations oganized in ROWS.
         regularization_param: Regularization parameter, which is a strictly positive
             real value.
         kernel_fn: The kernel function is a function that returns an ndarray where

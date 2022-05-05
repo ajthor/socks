@@ -4,7 +4,11 @@ from functools import partial
 
 import gym
 
-import gym_socks.kernel.metrics
+from gym_socks.kernel.metrics import euclidean_distance
+from gym_socks.kernel.metrics import rbf_kernel as rbf_kernel_socks
+from gym_socks.kernel.metrics import regularized_inverse
+from gym_socks.kernel.metrics import delta_kernel
+from gym_socks.kernel.probability import probability_matrix
 
 import numpy as np
 
@@ -27,18 +31,18 @@ class TestEuclideanDistance(unittest.TestCase):
 
         groundTruth = np.array([[0.0, 8.0], [8.0, 0.0]], dtype=np.float32)
 
-        distance = gym_socks.kernel.metrics.euclidean_distance(Y, squared=True)
+        distance = euclidean_distance(Y, squared=True)
         cls.assertTrue(np.allclose(distance, groundTruth))
 
-        distance = gym_socks.kernel.metrics.euclidean_distance(X, Y, squared=True)
+        distance = euclidean_distance(X, Y, squared=True)
         cls.assertTrue(np.allclose(distance, groundTruth))
 
         groundTruth = euclidean_distances(X, Y, squared=True)
 
-        distance = gym_socks.kernel.metrics.euclidean_distance(Y, squared=True)
+        distance = euclidean_distance(Y, squared=True)
         cls.assertTrue(np.allclose(distance, groundTruth))
 
-        distance = gym_socks.kernel.metrics.euclidean_distance(X, Y, squared=True)
+        distance = euclidean_distance(X, Y, squared=True)
         cls.assertTrue(np.allclose(distance, groundTruth))
 
 
@@ -53,16 +57,16 @@ class TestRBFKernel(unittest.TestCase):
             dtype=np.float32,
         )
 
-        K = gym_socks.kernel.metrics.rbf_kernel(Y)
+        K = rbf_kernel_socks(Y)
         cls.assertTrue(np.allclose(K, groundTruth))
 
-        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y)
+        K = rbf_kernel_socks(Y, Y)
         cls.assertTrue(np.allclose(K, groundTruth))
 
-        K = gym_socks.kernel.metrics.rbf_kernel(Y, distance_fn=euclidean_distances)
+        K = rbf_kernel_socks(Y, distance_fn=euclidean_distances)
         cls.assertTrue(np.allclose(K, groundTruth))
 
-        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y, distance_fn=euclidean_distances)
+        K = rbf_kernel_socks(Y, Y, distance_fn=euclidean_distances)
         cls.assertTrue(np.allclose(K, groundTruth))
 
     def test_rbf_kernel_different_size(cls):
@@ -82,10 +86,10 @@ class TestRBFKernel(unittest.TestCase):
             dtype=np.float32,
         )
 
-        K = gym_socks.kernel.metrics.rbf_kernel(Y)
+        K = rbf_kernel_socks(Y)
         cls.assertTrue(np.allclose(K, groundTruth))
 
-        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y)
+        K = rbf_kernel_socks(Y, Y)
         cls.assertTrue(np.allclose(K, groundTruth))
 
         groundTruth = np.array(
@@ -93,10 +97,10 @@ class TestRBFKernel(unittest.TestCase):
             dtype=np.float32,
         )
 
-        K = gym_socks.kernel.metrics.rbf_kernel(X, Y)
+        K = rbf_kernel_socks(X, Y)
         cls.assertTrue(np.allclose(K, groundTruth))
 
-        K = gym_socks.kernel.metrics.rbf_kernel(X, Y, distance_fn=euclidean_distances)
+        K = rbf_kernel_socks(X, Y, distance_fn=euclidean_distances)
         cls.assertTrue(np.allclose(K, groundTruth))
 
     def test_close_to_sklearn(cls):
@@ -104,14 +108,14 @@ class TestRBFKernel(unittest.TestCase):
 
         Y = np.arange(4).reshape((2, 2))
 
-        D = gym_socks.kernel.metrics.euclidean_distance(Y, squared=True)
+        D = euclidean_distance(Y, squared=True)
 
         groundTruth = rbf_kernel(Y, gamma=1 / (2 * np.median(D) ** 2))
 
-        K = gym_socks.kernel.metrics.rbf_kernel(Y)
+        K = rbf_kernel_socks(Y)
         cls.assertTrue(np.allclose(K, groundTruth))
 
-        K = gym_socks.kernel.metrics.rbf_kernel(Y, Y)
+        K = rbf_kernel_socks(Y, Y)
         cls.assertTrue(np.allclose(K, groundTruth))
 
 
@@ -126,7 +130,7 @@ class TestRegularizedInverse(unittest.TestCase):
             dtype=np.float32,
         )
 
-        W = gym_socks.kernel.metrics.regularized_inverse(Y)
+        W = regularized_inverse(Y)
         cls.assertTrue(np.allclose(W, groundTruth))
 
     def test_sklearn_kernels(cls):
@@ -139,9 +143,111 @@ class TestRegularizedInverse(unittest.TestCase):
 
                 try:
 
-                    W = gym_socks.kernel.metrics.regularized_inverse(
-                        Y, Y, kernel_fn=kernel_fn
-                    )
+                    W = regularized_inverse(Y, Y, kernel_fn=kernel_fn)
 
                 except Exception as e:
                     cls.fail(f"Kernel {type(kernel_fn)} raised an exception.")
+
+
+class TestDeltaKernel(unittest.TestCase):
+    def test_delta_kernel(cls):
+        """Test that delta kernel computes correctly."""
+
+        X = np.array(
+            [
+                [0, 1],
+                [1, 1],
+                [1, 0],
+            ],
+            dtype=int,
+        )
+
+        G = delta_kernel(X)
+
+        cls.assertTrue(np.allclose(G, np.identity(3)))
+
+        Y = np.array(
+            [
+                [1, 1],
+                [2, 0],
+                [1, 0],
+                [1, 3],
+            ],
+            dtype=int,
+        )
+
+        G = delta_kernel(X, Y)
+
+        groundTruth = np.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0]], dtype=int)
+
+        cls.assertTrue(np.allclose(G, groundTruth))
+
+
+class TestProbabilityMatrix(unittest.TestCase):
+    def test_probability_matrix_1D(cls):
+        """Test that the probability matrix is correct for 1D discrete data."""
+
+        # A list of all possible states.
+        states = np.array([[0], [1], [2]], dtype=int)
+
+        # Mock data. X represents the FROM state, Y represents the TO state.
+        X = np.array([[0], [0], [0], [1], [2]], dtype=int)
+        Y = np.array([[1], [1], [2], [1], [2]], dtype=int)
+
+        P = probability_matrix(states, X, Y)
+
+        groundTruth = np.array(
+            [
+                [0, 2 / 3, 1 / 3],
+                [0, 1, 0],
+                [0, 0, 1],
+            ],
+            dtype=float,
+        )
+
+        cls.assertTrue(np.allclose(P, groundTruth))
+
+    def test_probability_matrix_multi_dim(cls):
+        """Test that the probability matrix is correct for 2D discrete data."""
+
+        # A list of all possible states.
+        states = np.array(
+            [
+                [0, 0],
+                [0, 1],
+                [1, 0],
+                [1, 1],
+            ],
+            dtype=int,
+        )
+
+        # Mock data. X represents the FROM state, Y represents the TO state.
+        X = np.array([[0, 0], [0, 0], [0, 1], [1, 0], [1, 0], [1, 1]], dtype=int)
+        Y = np.array([[0, 1], [1, 1], [0, 1], [1, 0], [1, 1], [1, 1]], dtype=int)
+
+        groundTruth = np.array(
+            [
+                [0, 0.5, 0, 0.5],
+                [0, 1, 0, 0],
+                [0, 0, 0.5, 0.5],
+                [0, 0, 0, 1],
+            ],
+            dtype=float,
+        )
+
+        # Compute manually for sanity.
+        Gx = delta_kernel(states, X)
+        Gy = delta_kernel(states, Y)
+
+        Sx = np.sum(Gx, axis=1, keepdims=True)
+
+        transitions = Gx @ Gy.T
+        totals = Sx * transitions
+
+        P = totals / np.sum(totals, axis=1, keepdims=True)
+
+        cls.assertTrue(np.allclose(P, groundTruth))
+
+        P = probability_matrix(states, X, Y)
+
+        cls.assertTrue(np.allclose(P, groundTruth))
