@@ -4,6 +4,7 @@ from functools import partial
 
 from gym_socks.kernel.metrics import regularized_inverse
 from gym_socks.kernel.metrics import rbf_kernel
+from gym_socks.kernel.metrics import delta_kernel
 
 
 def maximum_mean_discrepancy(
@@ -99,7 +100,7 @@ def kernel_sum_rule(
     alpha,
     regularization_param: float = None,
 ):
-    """Computes the kernel sum rule using Gram matrices.
+    r"""Computes the kernel sum rule using Gram matrices.
 
     The kernel sum rule computes the marginal of a conditional distribution by
     integrating out the conditioning variables.
@@ -135,7 +136,7 @@ def kernel_chain_rule(
     alpha,
     regularization_param: float = None,
 ):
-    """Computes the kernel chain rule using Gram matrices.
+    r"""Computes the kernel chain rule using Gram matrices.
 
     The kernel chain rule computes the joint distribution embedding by taking the
     product of conditional and marginal distribution embeddings.
@@ -182,7 +183,7 @@ def kernel_bayes_rule(
         \quad P(x) = \int_{\Omega} P(x \mid y) P(d y)
 
     Args:
-        G: The gram matrix of Y. Typically computed as `G = kernel_fn(Y)`.
+        G: The Gram matrix of Y. Typically computed as `G = kernel_fn(Y)`.
         K: The Gram matrix of X. Typically computed as `K = kernel_fn(X)`.
         Kx: The feature vector of x. Typically computed as `Kx = kernel_fn(X, x)`.
         alpha: The coefficient vector corresponding to the marginal embedding of P(X).
@@ -211,3 +212,68 @@ def kernel_bayes_rule(
         D,
         Kx,
     )
+
+
+def probability_matrix(states: np.ndarray, X: np.ndarray, Y: np.ndarray):
+    r"""Compute the probability matrix for discrete state space transitions.
+
+    Use the delta kernel to compute the transition probability matrix.
+
+    Args:
+        states: An array containing the states of the Markov chain.
+        X: The observations oganized in ROWS.
+        Y: The observations oganized in ROWS.
+
+    Returns:
+        The transition probability matrix `P`. Each row and column corresponds to a
+        state, e.g. for states :math:`[0, 1, 2]`, the matrix `P` is :math:`3 \times 3`
+        and the first element in `P` in the upper left corner corresponds to the
+        probability of state `0` transitioning to state `0`. The sum of each row is 1,
+        within rounding errors.
+
+    Example:
+
+        >>> import numpy as np
+        >>> from gym_socks.kernel.probability import probability_matrix
+        >>> X = np.array([[0], [0], [1], [2]], dtype=int)
+        >>> Y = np.array([[1], [2], [1], [2]], dtype=int)
+        >>> probability_matrix(np.array([[0], [1], [2]], dtype=int), X, Y)
+        array([[0. , 0.5, 0.5],
+               [0. , 1. , 0. ],
+               [0. , 0. , 1. ]])
+
+    """
+
+    if states.ndim == 1:
+        raise ValueError(
+            "Expected 2D array for states, got 1D array instead. \n"
+            "Reshape the data using array.reshape(-1, 1) "
+            "if the data has only a single dimension "
+            "or array.reshape(1, -1) if there is only a single sample."
+        )
+
+    if X.ndim == 1:
+        raise ValueError(
+            "Expected 2D array for X, got 1D array instead. \n"
+            "Reshape the data using array.reshape(-1, 1) "
+            "if the data has only a single dimension "
+            "or array.reshape(1, -1) if there is only a single sample."
+        )
+
+    if Y.ndim == 1:
+        raise ValueError(
+            "Expected 2D array for Y, got 1D array instead. \n"
+            "Reshape the data using array.reshape(-1, 1) "
+            "if the data has only a single dimension "
+            "or array.reshape(1, -1) if there is only a single sample."
+        )
+
+    Gx = delta_kernel(states, X)
+    Gy = delta_kernel(states, Y)
+
+    transitions = Gx @ Gy.T
+    totals = np.sum(Gx, axis=1, keepdims=True) * transitions
+
+    P = totals / np.sum(totals, axis=1, keepdims=True)
+
+    return P
