@@ -125,12 +125,14 @@ class TestRegularizedInverse(unittest.TestCase):
 
         Y = np.arange(4).reshape((2, 2))
 
+        G = rbf_kernel_socks(Y, sigma=1)
+
         groundTruth = np.array(
             [[0.66676608, -0.0081415], [-0.0081415, 0.66676608]],
             dtype=np.float32,
         )
 
-        W = regularized_inverse(Y)
+        W = regularized_inverse(G, regularization_param=1 / 4)
         cls.assertTrue(np.allclose(W, groundTruth))
 
     def test_sklearn_kernels(cls):
