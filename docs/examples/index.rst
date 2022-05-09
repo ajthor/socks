@@ -44,8 +44,8 @@ Control
         +++
         :bdg-primary-line:`control`
 
-Identification
-==============
+Identification & Estimation
+===========================
 
 .. grid:: 2
     :gutter: 1 1 2 3
@@ -61,6 +61,18 @@ Identification
 
         +++
         :bdg-primary-line:`identification`
+
+    .. grid-item-card::
+        :link: estimation/bayes_filter
+        :link-type: doc
+
+        **Bayes' Filter**
+        ^^^
+
+        Nonparametric estimation of the state of a partially observable system.
+
+        +++
+        :bdg-primary-line:`estimation`
 
 Stochastic Reachability
 =======================

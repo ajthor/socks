@@ -1,9 +1,13 @@
 """Kernel Bayes filter for partially observable state estimation.
 
-The algorithm uses kernel distribution embeddings and kernel-based probability rules to compute an estimate of the state of the system based on received actions and observations.
+The algorithm uses kernel distribution embeddings and kernel-based probability rules to
+compute an estimate of the state of the system based on received actions and
+observations.
 
 Note:
-    This algorithm implements an `update` function, which is used to update the estimate of the internal belief state. It should be used as part of the simulation loop, after the action and observation are generated.
+    This algorithm implements an `update` function, which is used to update the estimate
+    of the internal belief state. It should be used as part of the simulation loop,
+    after the action and observation are generated.
 
 Example:
 
@@ -20,15 +24,17 @@ Example:
 
 from functools import partial
 
-import gym_socks
-from gym_socks.algorithms.algorithm import AlgorithmInterface
+import numpy as np
 
 from gym_socks.kernel.metrics import rbf_kernel
 from gym_socks.kernel.metrics import regularized_inverse
 
-from gym_socks.envs.sample import transpose_sample
+from gym_socks.sampling.transform import transpose_sample
 
-import numpy as np
+import logging
+from gym_socks.utils.logging import ms_tqdm, _progress_fmt
+
+logger = logging.getLogger(__name__)
 
 
 def kernel_bayes_filter(
@@ -60,7 +66,7 @@ def kernel_bayes_filter(
     return alg
 
 
-class KernelBayesFilter(AlgorithmInterface):
+class KernelBayesFilter(object):
     """Kernel bayes filter.
 
     Args:
@@ -118,7 +124,7 @@ class KernelBayesFilter(AlgorithmInterface):
         """Run the algorithm.
 
         Args:
-            S : Sample of (x, u, y) tuples taken iid from the system evolution. The
+            S : Sample of (x, u, y, z) tuples taken iid from the system evolution. The
                 sample should be in the form of a list of tuples.
 
         Returns:
@@ -166,7 +172,7 @@ class KernelBayesFilter(AlgorithmInterface):
 
         return self
 
-    def update(self, action: np.ndarray, observation: np.ndarray):
+    def predict(self, action: np.ndarray, observation: np.ndarray):
         """Update the belief state.
 
         Args:
@@ -174,35 +180,28 @@ class KernelBayesFilter(AlgorithmInterface):
             observation : The observation received from the system.
 
         Returns:
-            Instance of KernelBayesFilter class.
+            The predicted state of the system.
 
         """
 
         CUU = self.CUu(action)
 
         a = self.W1 @ (self.CXX * CUU) @ self._belief_coeffs
+        a = np.squeeze(a)
 
         D = np.diag(self.W2 @ (self.CYY * CUU) @ a)
         DK = D @ self.K
 
-        self._belief_coeffs = DK @ np.linalg.solve(
-            (
+        self._belief_coeffs = (
+            DK
+            @ np.linalg.inv(
                 np.linalg.matrix_power(DK, 2)
                 + self.regularization_param
                 * self.len_sample
                 * np.identity(self.len_sample)
-            ),
-            D @ self.Kz(observation),
+            )
+            @ D
+            @ self.Kz(observation)
         )
 
-        return self
-
-    def predict(self) -> np.ndarray:
-        """Predict.
-
-        Returns:
-            The predicted state of the system.
-
-        """
-
-        return self.B @ self._belief_data
+        return (self._belief_coeffs.T @ self._belief_data)[0]
