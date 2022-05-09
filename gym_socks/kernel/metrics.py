@@ -20,7 +20,6 @@ To use the sklearn functions, use them like so:
 from functools import partial, reduce
 
 import numpy as np
-from numpy.linalg import inv
 
 
 def euclidean_distance(
@@ -256,10 +255,7 @@ def delta_kernel(X: np.ndarray, Y: np.ndarray = None):
 
 
 def regularized_inverse(
-    X: np.ndarray,
-    Y: np.ndarray = None,
-    U: np.ndarray = None,
-    V: np.ndarray = None,
+    G: np.ndarray,
     regularization_param: float = None,
     kernel_fn=None,
 ) -> np.ndarray:
@@ -269,61 +265,24 @@ def regularized_inverse(
 
     .. math::
 
-        W = (K + \lambda M I)^{-1}, \quad
-        K \in \mathbb{R}^{n \times n}, \quad
-        K_{ij} = k(x_{i}, y_{j})
-
-    Example:
-
-        >>> from gym_socks.kernel.metrics import regularized_inverse
-        >>> X = np.arange(4).reshape((2, 2))
-        >>> Y = np.arange(6).reshape((3, 2))
-        >>> K = regularized_inverse(X, Y)
+        W = (G + \lambda M I)^{-1}, \quad
+        G \in \mathbb{R}^{n \times n}, \quad
+        G_{ij} = k(x_{i}, y_{j})
 
     Args:
-        X: The observations oganized in ROWS.
-        Y: The observations oganized in ROWS.
+        G: The Gram (kernel) matrix.
         regularization_param: Regularization parameter, which is a strictly positive
             real value.
-        kernel_fn: The kernel function is a function that returns an ndarray where
-            each element is the pairwise evaluation of a kernel function. See sklearn.
-            metrics.pairwise for more info. The default is the RBF kernel.
 
     Returns:
         Regularized matrix inverse.
 
     """
 
-    if Y is None:
-        Y = X
+    m, n = np.shape(G)
+    assert m == n, "Gram matrix must be square."
 
-    if regularization_param is None:
-        regularization_param = 1 / (X.shape[0] ** 2)
-    else:
-        assert (
-            regularization_param > 0
-        ), "regularization_param must be a strictly positive real value."
+    I = np.empty_like(G)
+    np.fill_diagonal(I, regularization_param * m)
 
-    if kernel_fn is None:
-        kernel_fn = partial(rbf_kernel, sigma=1)
-
-    err_msg = "Parameters %r, %r must have the same shape." % (X, Y)
-    assert X.shape == Y.shape, err_msg
-
-    num_rows, num_cols = X.shape
-
-    K = kernel_fn(X, Y)
-
-    if U is not None:
-        err_msg = "Parameters %r, %r must have the same sample size." % (X, U)
-        assert X.shape[0] == U.shape[0], err_msg
-
-        if V is not None:
-            err_msg = "Parameters %r, %r must have the same shape." % (U, V)
-            assert U.shape == V.shape, err_msg
-
-        K = np.multiply(kernel_fn(U, V), K)
-
-    I = np.identity(num_rows)
-
-    return inv(K + regularization_param * num_rows * I)
+    return np.linalg.inv(G + I)

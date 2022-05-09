@@ -287,7 +287,7 @@ class KernelSR(RegressorMixin):
 
         logger.debug("Computing matrix inverse.")
         self.W = regularized_inverse(
-            X, kernel_fn=self.kernel_fn, regularization_param=self.regularization_param
+            self.kernel_fn(X), regularization_param=self.regularization_param
         )
 
         logger.debug("Computing covariance matrix.")

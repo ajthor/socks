@@ -377,9 +377,7 @@ class KernelControlBwd(BasePolicy):
 
         logger.debug("Computing matrix inverse.")
         self.W = regularized_inverse(
-            X,
-            U=U,
-            kernel_fn=self.kernel_fn,
+            self.kernel_fn(X) * self.kernel_fn(U),
             regularization_param=self.regularization_param,
         )
 
