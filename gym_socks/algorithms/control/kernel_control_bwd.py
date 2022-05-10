@@ -378,7 +378,8 @@ class KernelControlBwd(BasePolicy):
         logger.debug("Computing matrix inverse.")
         self.W = regularized_inverse(
             self.kernel_fn(X) * self.kernel_fn(U),
-            regularization_param=self.regularization_param,
+            self.regularization_param,
+            copy=False,
         )
 
         logger.debug("Computing covariance matrices.")

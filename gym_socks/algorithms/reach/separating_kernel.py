@@ -83,7 +83,9 @@ class SeparatingKernelClassifier(ClassifierMixin):
         K = self.kernel_fn(X)
 
         self.W = regularized_inverse(
-            self.kernel_fn(X), regularization_param=self.regularization_param
+            self.kernel_fn(X),
+            self.regularization_param,
+            copy=False,
         )
 
         self.tau = 1 - np.min(np.diagonal((1 / len(X)) * K.T @ self.W @ K))

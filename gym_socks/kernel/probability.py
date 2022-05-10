@@ -3,8 +3,11 @@ import numpy as np
 from functools import partial
 
 from gym_socks.kernel.metrics import regularized_inverse
-from gym_socks.kernel.metrics import rbf_kernel
 from gym_socks.kernel.metrics import delta_kernel
+
+from sklearn.metrics.pairwise import rbf_kernel
+
+from gym_socks.utils.validation import check_gram_matrix
 
 
 def maximum_mean_discrepancy(
@@ -243,30 +246,6 @@ def probability_matrix(states: np.ndarray, X: np.ndarray, Y: np.ndarray):
                [0. , 0. , 1. ]])
 
     """
-
-    if states.ndim == 1:
-        raise ValueError(
-            "Expected 2D array for states, got 1D array instead. \n"
-            "Reshape the data using array.reshape(-1, 1) "
-            "if the data has only a single dimension "
-            "or array.reshape(1, -1) if there is only a single sample."
-        )
-
-    if X.ndim == 1:
-        raise ValueError(
-            "Expected 2D array for X, got 1D array instead. \n"
-            "Reshape the data using array.reshape(-1, 1) "
-            "if the data has only a single dimension "
-            "or array.reshape(1, -1) if there is only a single sample."
-        )
-
-    if Y.ndim == 1:
-        raise ValueError(
-            "Expected 2D array for Y, got 1D array instead. \n"
-            "Reshape the data using array.reshape(-1, 1) "
-            "if the data has only a single dimension "
-            "or array.reshape(1, -1) if there is only a single sample."
-        )
 
     Gx = delta_kernel(states, X)
     Gy = delta_kernel(states, Y)
