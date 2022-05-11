@@ -16,22 +16,18 @@ To run the example, use the following command:
 """
 
 # %%
-import gym_socks
-
 import numpy as np
+from functools import partial
 
-from gym.envs.registration import make
+import matplotlib
+import matplotlib.pyplot as plt
 
 from gym_socks.algorithms.reach.separating_kernel import SeparatingKernelClassifier
 
-from functools import partial
-
-from gym_socks.utils.grid import cartesian
-
-from gym_socks.policies import ConstantPolicy
+from gym_socks.kernel.metrics import abel_kernel
 from gym_socks.sampling import sample
 from gym_socks.sampling import sample_generator
-from gym_socks.sampling import random_sampler
+from gym_socks.utils.grid import cartesian
 
 # %% [markdown]
 # ## Generate The Sample
@@ -40,12 +36,6 @@ from gym_socks.sampling import random_sampler
 # uniformly within a toroidal region centered around the origin.
 
 # %%
-sigma = 0.1
-sample_size = 1000
-
-regularization_param = 1 / sample_size
-
-
 @sample_generator
 def sampler() -> tuple:
     """Sample generator.
@@ -66,7 +56,8 @@ def sampler() -> tuple:
 
 
 # Sample the distribution.
-S = sample(sampler=sampler, sample_size=sample_size)
+S = sample(sampler=sampler, sample_size=1000)
+S = np.array(S)
 
 # %% [markdown]
 # ## Algorithm
@@ -76,13 +67,12 @@ S = sample(sampler=sampler, sample_size=sample_size)
 
 # %%
 # Construct the algorithm.
-alg = SeparatingKernelClassifier(
-    kernel_fn=partial(gym_socks.kernel.metrics.abel_kernel, sigma=sigma),
-    regularization_param=regularization_param,
-)
+alg = SeparatingKernelClassifier(kernel_fn=partial(abel_kernel, sigma=0.1))
 
-# Generate test points.
-T = cartesian(np.linspace(-1, 1, 50), np.linspace(-1, 1, 50))
+# Generate evaluation (test) points.
+x1 = np.linspace(-1, 1, 50)
+x2 = np.linspace(-1, 1, 50)
+T = cartesian(x1, x2)
 
 # Train the classifier and classify the points.
 labels = alg.fit(S).predict(T)
@@ -96,18 +86,16 @@ labels = alg.fit(S).predict(T)
 # countour plot that relies upon a convex hull.
 
 # %%
-import matplotlib
-import matplotlib.pyplot as plt
+# Reshape data.
+XX, YY = np.meshgrid(x1, x2, indexing="ij")
+Z = labels.reshape(XX.shape)
 
+# Plot original data and classified points.
 fig = plt.figure()
 ax = plt.axes()
 
-points_in = T[labels == True]
-
-size = (300.0 / fig.dpi) ** 2
-plt.scatter(points_in[:, 0], points_in[:, 1], color="C0", marker=",", s=size)
-S = np.array(S)
-plt.scatter(S[:, 0], S[:, 1], color="r", marker=".", s=1)
+plt.pcolor(XX, YY, Z, cmap="Blues", shading="auto")
+plt.scatter(S[:, 0], S[:, 1], color="r", marker=".", s=5)
 
 # Plot support region.
 plt.gca().add_patch(plt.Circle((0, 0), 0.5, fc="none", ec="blue"))
