@@ -7,7 +7,7 @@ from gym_socks.kernel.metrics import delta_kernel
 
 from gym_socks.kernel.metrics import rbf_kernel
 
-from gym_socks.utils.validation import check_gram_matrix
+from gym_socks.utils.validation import check_matrix
 
 
 def maximum_mean_discrepancy(

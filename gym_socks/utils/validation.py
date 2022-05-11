@@ -69,30 +69,30 @@ def check_array(
     return array
 
 
-def check_gram_matrix(
-    G: np.ndarray,
-    ensure_square: bool = True,
+def check_matrix(
+    A: np.ndarray,
+    ensure_square: bool = False,
     copy: bool = False,
 ):
-    """Validate the Gram (kernel) matrix.
+    """Validate a matrix.
 
-    Performs checks to ensure that the matrix is valid.
+    Performs checks to ensure that a matrix is valid.
 
     Args:
-        G: The Gram (kernel) matrix.
-        ensure_square: Whether to raise an error if the kernel matrix is not square.
-        copy: Whether to create a forced copy of ``G``.
+        A: The matrix to validate.
+        ensure_square: Whether to raise an error if the matrix is not square.
+        copy: Whether to create a forced copy of ``A``.
 
     Returns:
         The validated matrix.
 
     """
 
-    G = check_array(G, copy=copy)
+    A = check_array(A, copy=copy)
 
-    if ensure_square:
-        m, n = np.shape(G)
-        if G.ndim != 2 and m != n:
-            raise ValueError("Gram matrix must be square.")
+    if ensure_square is True:
+        m, n = np.shape(A)
+        if m != n:
+            raise ValueError("Matrix must be square.")
 
-    return G
+    return A

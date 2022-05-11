@@ -11,8 +11,8 @@ Attention:
 
     In Matlab, data is typically ordered differently than in Python. In Matlab, data is
     ordered in columns, whereas in Python, data is ordered in **rows**. If you import
-    data from a Matlab file, be sure to transpose it to follow Python formatting, i.e.
-    ``X = X.T``.
+    data from a Matlab file, be sure to transpose it if needed to follow Python
+    formatting, i.e. ``X = X.T``.
 
     For example, the data in ``X`` and ``Y`` should be organized as::
 
@@ -33,7 +33,7 @@ from functools import partial, reduce
 import numpy as np
 
 from gym_socks.utils.validation import check_array
-from gym_socks.utils.validation import check_gram_matrix
+from gym_socks.utils.validation import check_matrix
 
 
 def check_pairwise_arrays(
@@ -396,7 +396,7 @@ def regularized_inverse(
 
     """
 
-    G = check_gram_matrix(G, copy=copy)
+    G = check_matrix(G, ensure_square=True, copy=copy)
 
     if l is None:
         l = 1 / (len(G) ** 2)
@@ -406,3 +406,87 @@ def regularized_inverse(
     G[np.diag_indices_from(G)] += l * len(G)
 
     return np.linalg.inv(G)
+
+
+def woodbury_inverse(
+    A: np.ndarray,
+    U: np.ndarray,
+    C: np.ndarray,
+    V: np.ndarray,
+    precomputed: bool = False,
+) -> np.ndarray:
+    r"""Computes the matrix inverse using the Woodbury matrix identity.
+
+    .. math::
+
+        W = (A + U C V)^{-1} = A^{-1} - A^{-1} U (C^{-1} + V A^{-1} U)^{-1} V A^{-1}
+
+    where :math:`A` is :math:`n \times n`, :math:`C` is :math:`k \times k`, :math:`U` is
+    :math:`n \times k`, and :math:`V` is :math:`k \times n`.
+
+    This function is useful for computing the regularized inverse in a more
+    computationally efficient manner. This happens because the matrices :math:`A` and
+    :math:`C` are typically easy to invert manually, either because they are known a
+    priori, are constant matrices, or identity, leading to a smaller matrix inversion in
+    the calculations.
+
+    Example:
+
+        >>> import numpy as np
+        >>> from gym_socks.kernel.metrics import regularized_inverse
+        >>> from gym_socks.kernel.metrics import woodbury_inverse
+        >>> X = np.random.randn(100, 2)
+        >>> G = X @ X.T
+        >>> timeit regularized_inverse(G, 1)
+        184 µs ± 7.14 µs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+        >>> A = (1 / 100) * np.identity(100)
+        >>> C = np.identity(2)
+        >>> timeit woodbury_inverse(A, X, C, X.T, precomputed=True)
+        78.9 µs ± 1.67 µs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+        >>> W1 = regularized_inverse(G, 1)
+        >>> W2 = woodbury_inverse(A, X, C, X.T, precomputed=True)
+        >>> np.allclose(W1, W2)
+        True
+
+    Args:
+        A: A conformable square matrix. Must be nonsingular.
+        U: A conformable matrix.
+        C: A conformable square matrix. Must be nonsingular.
+        V: A conformable matrix.
+        precomputed: Whether ``A`` and ``C`` are the precomputed inverses.
+
+    Returns:
+        The resulting inverse matrix :math:`W`.
+
+    """
+
+    A = check_matrix(A, ensure_square=True)
+    C = check_matrix(C, ensure_square=True)
+
+    U = check_matrix(U)
+    V = check_matrix(V)
+
+    m, n = np.shape(A)
+    k, l = np.shape(C)
+
+    assert U.shape == (n, k), f"Expected U to be {(n, k)}, instead got: {U.shape}"
+    assert V.shape == (k, n), f"Expected V to be {(k, n)}, instead got: {V.shape}"
+
+    if precomputed is False:
+        A_inv = np.linalg.inv(A)
+        C_inv = np.linalg.inv(C)
+    else:
+        A_inv = A
+        C_inv = C
+
+    VA = V @ A_inv
+    D = C_inv + VA @ U
+    if np.isscalar(D):
+        np.reciprocal(D, out=D)
+
+        W = A_inv - D * A_inv @ U @ VA
+
+    else:
+        W = A_inv - A_inv @ U @ np.linalg.solve(D, VA)
+
+    return W

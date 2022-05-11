@@ -14,6 +14,7 @@ from gym_socks.kernel.metrics import _hybrid_distances
 from gym_socks.kernel.metrics import hybrid_kernel
 from gym_socks.kernel.metrics import euclidean_distances
 from gym_socks.kernel.metrics import regularized_inverse
+from gym_socks.kernel.metrics import woodbury_inverse
 
 from gym_socks.kernel.probability import probability_matrix
 
@@ -93,9 +94,9 @@ class TestRegularizedInverse(unittest.TestCase):
     def test_regularized_inverse(cls):
         """Test that regularized inverse computes correctly."""
 
-        Y = np.arange(4).reshape((2, 2))
+        X = np.arange(4).reshape((2, 2))
 
-        G = rbf_kernel(Y, sigma=1)
+        G = rbf_kernel(X, sigma=1)
 
         groundTruth = np.array(
             [[0.66676608, -0.0081415], [-0.0081415, 0.66676608]],
@@ -103,6 +104,50 @@ class TestRegularizedInverse(unittest.TestCase):
         )
 
         W = regularized_inverse(G, 1 / 4)
+
+        cls.assertTrue(np.allclose(W, groundTruth))
+
+
+class TestWoodburyInverse(unittest.TestCase):
+    def test_woodbury_inverse(cls):
+        """Test that the Woodbury matrix identity computes correctly."""
+
+        X = np.arange(12).reshape(6, 2)
+        groundTruth = regularized_inverse(X @ X.T, 1)
+
+        A = 6 * np.identity(6)
+        C = np.identity(2)
+        W = woodbury_inverse(A, X, C, X.T)
+
+        cls.assertTrue(np.allclose(W, groundTruth))
+
+        X = np.arange(12).reshape(-1, 1)
+        groundTruth = regularized_inverse(X @ X.T, 1)
+
+        A = 12 * np.identity(12)
+        C = np.identity(1)
+        W = woodbury_inverse(A, X, C, X.T)
+
+        cls.assertTrue(np.allclose(W, groundTruth))
+
+    def test_woodbury_inverse_precomputed(cls):
+        """Test that the Woodbury matrix identity computes correctly."""
+
+        X = np.arange(12).reshape(6, 2)
+        groundTruth = regularized_inverse(X @ X.T, 1)
+
+        A = (1 / 6) * np.identity(6)
+        C = np.identity(2)
+        W = woodbury_inverse(A, X, C, X.T, precomputed=True)
+
+        cls.assertTrue(np.allclose(W, groundTruth))
+
+        X = np.arange(12).reshape(-1, 1)
+        groundTruth = regularized_inverse(X @ X.T, 1)
+
+        A = (1 / 12) * np.identity(12)
+        C = np.identity(1)
+        W = woodbury_inverse(A, X, C, X.T, precomputed=True)
 
         cls.assertTrue(np.allclose(W, groundTruth))
 
