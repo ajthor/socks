@@ -5,7 +5,7 @@ from functools import partial
 from gym_socks.kernel.metrics import regularized_inverse
 from gym_socks.kernel.metrics import delta_kernel
 
-from sklearn.metrics.pairwise import rbf_kernel
+from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.utils.validation import check_gram_matrix
 
@@ -39,8 +39,9 @@ def maximum_mean_discrepancy(
         X: The observations from distribution P organized in ROWS.
         Y: The observations from distribution Q organized in ROWS.
         kernel_fn: The kernel function is a function that returns an ndarray where
-            each element is the pairwise evaluation of a kernel function. See sklearn.
-            metrics.pairwise for more info. The default is the RBF kernel.
+            each element is the pairwise evaluation of a kernel function. See
+            :py:mod:`sklearn.metrics.pairwise` for more info. The default is the RBF
+            kernel.
         biased: Whether to use the biased MMD.
         squared: Whether or not the result is squared.
 

@@ -49,7 +49,8 @@ from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
 
 from functools import partial
 from itertools import islice
-from sklearn.metrics.pairwise import rbf_kernel
+
+from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.sampling import sample
 from gym_socks.sampling import random_sampler
@@ -167,7 +168,7 @@ plt.show()
 # %%
 sigma = 1.5  # Kernel bandwidth parameter.
 regularization_param = 1e-5  # Regularization parameter.
-kernel_fn = partial(rbf_kernel, gamma=1 / (2 * sigma ** 2))
+kernel_fn = partial(rbf_kernel, sigma=sigma)
 
 time_horizon = 20
 

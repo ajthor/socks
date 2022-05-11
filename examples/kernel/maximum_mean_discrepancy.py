@@ -19,7 +19,7 @@ import numpy as np
 from gym_socks.kernel.probability import maximum_mean_discrepancy
 from gym_socks.kernel.probability import witness_function
 
-from sklearn.metrics.pairwise import rbf_kernel
+from gym_socks.kernel.metrics import rbf_kernel
 from functools import partial
 
 # %% [markdown]
@@ -33,7 +33,7 @@ from functools import partial
 
 # %%
 sigma = 0.25
-kernel_fn = partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2)))
+kernel_fn = partial(rbf_kernel, sigma=sigma)
 
 m = 5000  # sample size for P
 n = 5000  # sample size for Q

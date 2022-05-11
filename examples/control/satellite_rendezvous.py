@@ -25,7 +25,7 @@ from gym.envs.registration import make
 
 from gym_socks.algorithms.control.kernel_control_fwd import KernelControlFwd
 
-from sklearn.metrics.pairwise import rbf_kernel
+from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.sampling import sample
 from gym_socks.sampling import default_sampler

@@ -25,7 +25,6 @@ from gym.envs.registration import make
 from gym_socks.algorithms.reach.separating_kernel import SeparatingKernelClassifier
 
 from functools import partial
-from sklearn.metrics.pairwise import euclidean_distances
 
 from gym_socks.utils.grid import cartesian
 
@@ -78,11 +77,7 @@ S = sample(sampler=sampler, sample_size=sample_size)
 # %%
 # Construct the algorithm.
 alg = SeparatingKernelClassifier(
-    kernel_fn=partial(
-        gym_socks.kernel.metrics.abel_kernel,
-        sigma=sigma,
-        distance_fn=euclidean_distances,
-    ),
+    kernel_fn=partial(gym_socks.kernel.metrics.abel_kernel, sigma=sigma),
     regularization_param=regularization_param,
 )
 

@@ -2,18 +2,29 @@
 Kernel functions and helper utilities for kernel-based calculations.
 
 Most of the commonly-used kernel functions are already implemented in
-sklearn.metrics.pairwise. The RBF kernel and pairwise Euclidean distance function is
-re-implemented here as an alternative, in case sklearn is unavailable. Most, if not all
-of the kernel functions defined in sklearn.metrics.pairwise should be compatible with
-the functions defined here.
+:py:mod:`sklearn.metrics.pairwise`. The RBF kernel and pairwise Euclidean distance
+function is re-implemented here as an alternative, in case :py:mod:`sklearn` is
+unavailable. Most, if not all of the kernel functions defined in
+:py:mod:`sklearn.metrics.pairwise` should be compatible with the functions defined here.
 
-To use the sklearn functions, use them like so:
+Attention:
 
-    >>> from sklearn.metrics.pairwise import rbf_kernel
-    >>> from sklearn.metrics.pairwise import euclidean_distances
-    >>> X = np.arange(4).reshape((2, 2))
-    >>> Y = np.arange(6).reshape((3, 2))
-    >>> K = gym_socks.kernel.metrics.rbf_kernel(X, Y, distance_fn=euclidean_distances)
+    In Matlab, data is typically ordered differently than in Python. In Matlab, data is
+    ordered in columns, whereas in Python, data is ordered in **rows**. If you import
+    data from a Matlab file, be sure to transpose it to follow Python formatting, i.e.
+    ``X = X.T``.
+
+    For example, the data in ``X`` and ``Y`` should be organized as::
+
+        X = [[--- x1 ---],
+             [--- x2 ---],
+             ...
+             [--- xn ---]]
+
+        Y = [[--- y1 ---],
+             [--- y2 ---],
+             ...
+             [--- ym ---]]
 
 """
 
@@ -21,20 +32,94 @@ from functools import partial, reduce
 
 import numpy as np
 
-from sklearn.metrics.pairwise import euclidean_distances
-from sklearn.metrics.pairwise import check_pairwise_arrays
-from sklearn.utils import check_array
-
+from gym_socks.utils.validation import check_array
 from gym_socks.utils.validation import check_gram_matrix
+
+
+def check_pairwise_arrays(
+    X,
+    Y=None,
+    dtype: np.dtype = np.float64,
+    ensure_finite: bool = True,
+    copy: bool = False,
+):
+    """Check pairwise arrays.
+
+    Note:
+
+        This function is intended as a simple replacement for the
+        :py:func:`sklearn.metrics.pairwise.check_pairwise_arrays` function. Unlike
+        :py:mod:`sklearn`, this function does not check sparse input data, and does not
+        do sophisticated type checking or upcasting.
+
+    Args:
+        X: A 2D array with observations oganized in ROWS.
+        Y: A 2D array with observations oganized in ROWS.
+        dtype: The data type of the resulting array.
+        copy: Whether to create a forced copy of ``array``.
+        ensure_finite: Whether to raise an error if the array is not finite.
+
+    Returns:
+        The validated arrays ``X`` and ``Y``.
+
+    """
+
+    if Y is None:
+        X = check_array(X, dtype=dtype, ensure_finite=ensure_finite, copy=copy)
+        Y = X
+
+    else:
+        X = check_array(X, dtype=dtype, ensure_finite=ensure_finite, copy=copy)
+        Y = check_array(Y, dtype=dtype, ensure_finite=ensure_finite, copy=copy)
+
+    return X, Y
+
+
+def euclidean_distances(X, Y=None, squared: bool = False):
+    """Compute the pairwise Euclidean distance matrix between points.
+
+    Note:
+
+        This function is intended as a simple replacement for the
+        :py:func:`sklearn.metrics.pairwise.euclidean_distances` function. Unlike
+        :py:mod:`sklearn`, this function does not check sparse input data, and does not
+        do sophisticated type checking or upcasting.
+
+    Args:
+        X: A 2D array with observations oganized in ROWS.
+        Y: A 2D array with observations oganized in ROWS.
+        squared: Whether the result is squared before returning.
+
+    Returns:
+        The matrix of pairwise Euclidean distances between points.
+
+    """
+
+    X, Y = check_pairwise_arrays(X, Y)
+
+    XX = np.einsum("ij,ij->i", X, X)[:, np.newaxis]
+    YY = np.einsum("ij,ij->i", Y, Y)[np.newaxis, :]
+
+    distances = -2 * (X @ Y.T)
+    distances += XX
+    distances += YY
+
+    np.maximum(distances, 0, out=distances)
+    if X is Y:
+        np.fill_diagonal(distances, 0)
+
+    return distances if squared else np.sqrt(distances, out=distances)
 
 
 def check_pairwise_distances(D: np.ndarray, shape: tuple, copy: bool = True):
     """Validate the pairwise distance matrix.
 
+    Performs checks to ensure the pairwise distance matrix is valid.
+
     Args:
         D: Pairwise distance matrix.
         shape: The desired shape of the array.
-        copy: Whether to create a forced copy of `D`.
+        copy: Whether to create a forced copy of ``D``.
 
     Returns:
         The validated matrix.
@@ -60,10 +145,10 @@ def rbf_kernel(
 ) -> np.ndarray:
     r"""RBF kernel function.
 
-    Computes the pairwise evaluation of the RBF kernel on each vector in `X` and `Y`.
-
-    For example, if `X` has :math:`m` vecotrs, and `Y` has :math:`n` vectors, then the
-    result is an :math:`m \times n` matrix :math:`K` where :math:`K_{ij} = k(x_i, y_j)`.
+    Computes the pairwise evaluation of the RBF kernel on each vector in ``X`` and
+    ``Y``. For example, if ``X`` has :math:`m` vecotrs, and ``Y`` has :math:`n` vectors,
+    then the result is an :math:`m \times n` matrix :math:`K` where :math:`K_{ij} =
+    k(x_i, y_j)`.
 
     .. math::
 
@@ -74,21 +159,28 @@ def rbf_kernel(
             k(x_m,y_1) & \cdots & k(x_m,y_n)
         \end{bmatrix}
 
-    The data in `X` and `Y` should be organized as::
+    Note:
 
-        X = [[--- x1 ---],
-             [--- x2 ---],
-             ...
-             [--- xn ---]]
+        This function is intended as a simple replacement for the
+        :py:func:`sklearn.metrics.pairwise.rbf_kernel` function. Unlike
+        :py:mod:`sklearn`, this function does not check sparse input data, and does not
+        do sophisticated type checking or upcasting.
 
-        Y = [[--- y1 ---],
-             [--- y2 ---],
-             ...
-             [--- ym ---]]
+        The main difference between this implementation and the
+        :py:func:`sklearn.metrics.pairwise.rbf_kernel` in
+        :py:mod:`sklearn.metrics.pairwise` is that this function optionally allows you
+        to specify a different distance metric in the event the data is non-Euclidean.
 
-    The main difference between this implementation and the `rbf_kernel` in
-    `sklearn.metrics.pairwise` is that this function optionally allows you to
-    specify a different distance metric in the event the data is non-Euclidean.
+    Attention:
+
+        If you are familiar with :py:func:`sklearn.metrics.pairwise.rbf_kernel`, note
+        that the parameter :py:attr:`sigma` is *not* the same as the ``gamma`` parameter
+        used by :py:func:`sklearn.metrics.pairwise.rbf_kernel`. However, they are
+        related:
+
+        .. math::
+
+            \gamma = \frac{1}{2 \sigma^{2}}
 
     Args:
         X: A 2D array with observations oganized in ROWS.
@@ -185,7 +277,7 @@ def delta_kernel(X: np.ndarray, Y: np.ndarray = None):
 
     The delta kernel is defined as :math:`k(x_{i}, x_{j}) = \delta_{ij}`, meaning the
     kernel returns a 1 if the vectors are the same, and a 0 otherwise. The vectors in
-    `X` and `Y` should have discrete values, meaning each element in the vector should
+    ``X`` and ``Y`` should have discrete values, meaning each element in the vector should
     be a natural number or integer value.
 
     Args:
@@ -243,10 +335,9 @@ def hybrid_kernel(
 ):
     r"""Hybrid systems kernel.
 
-    In a hybrid system, we split the sample according to the mode `Q`. The vectors in
-    `Q` and `R` should have discrete values, meaning each element in the vector should
-    be a natural number or integer value.
-
+    In a hybrid system, we split the sample according to the mode ``Q``. The vectors in
+    ``Q`` and ``R`` should have discrete values, meaning each element in the vector
+    should be a natural number or integer value.
 
     .. math::
 
@@ -298,7 +389,7 @@ def regularized_inverse(
     Args:
         G: The Gram (kernel) matrix.
         l: The regularization parameter :math:`\lambda > 0`.
-        copy: Whether to create a forced copy of `G`.
+        copy: Whether to create a forced copy of ``G``.
 
     Returns:
         Regularized matrix inverse.

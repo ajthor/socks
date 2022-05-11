@@ -25,7 +25,8 @@ from gym_socks.algorithms.control.kernel_control_fwd import KernelControlFwd
 from gym_socks.algorithms.control.kernel_control_bwd import KernelControlBwd
 
 from functools import partial
-from sklearn.metrics.pairwise import rbf_kernel
+
+from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.sampling import sample
 from gym_socks.sampling import default_sampler
@@ -136,7 +137,7 @@ def _tracking_cost(time: int = 0, state: np.ndarray = None) -> float:
 policy = KernelControlFwd(
     time_horizon=time_horizon,
     cost_fn=_tracking_cost,
-    kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+    kernel_fn=partial(rbf_kernel, sigma=sigma),
     regularization_param=regularization_param,
     verbose=False,
 )

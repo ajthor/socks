@@ -8,8 +8,6 @@ from functools import partial
 
 from gym_socks.algorithms.base import RegressorMixin
 
-from sklearn.preprocessing import normalize
-
 
 def _regression_score(y_true, y_pred):
     return np.abs(np.asarray(y_true) - np.asarray(y_pred)).mean()

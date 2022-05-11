@@ -3,26 +3,19 @@ import unittest
 
 from functools import partial
 
+import numpy as np
+
 import gym
 
 from gym_socks.kernel.metrics import abel_kernel
 from gym_socks.kernel.metrics import delta_kernel
+from gym_socks.kernel.metrics import rbf_kernel
 from gym_socks.kernel.metrics import _hybrid_distances
 from gym_socks.kernel.metrics import hybrid_kernel
+from gym_socks.kernel.metrics import euclidean_distances
 from gym_socks.kernel.metrics import regularized_inverse
 
 from gym_socks.kernel.probability import probability_matrix
-
-import numpy as np
-
-from sklearn.metrics.pairwise import linear_kernel
-from sklearn.metrics.pairwise import polynomial_kernel
-from sklearn.metrics.pairwise import rbf_kernel
-from sklearn.metrics.pairwise import laplacian_kernel
-
-from sklearn.metrics.pairwise import euclidean_distances
-
-sklearn_kernel_list = [linear_kernel, polynomial_kernel, rbf_kernel, laplacian_kernel]
 
 
 class TestAbelKernel(unittest.TestCase):
@@ -102,7 +95,7 @@ class TestRegularizedInverse(unittest.TestCase):
 
         Y = np.arange(4).reshape((2, 2))
 
-        G = rbf_kernel(Y, gamma=1 / 2)
+        G = rbf_kernel(Y, sigma=1)
 
         groundTruth = np.array(
             [[0.66676608, -0.0081415], [-0.0081415, 0.66676608]],

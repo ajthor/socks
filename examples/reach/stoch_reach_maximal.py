@@ -23,7 +23,7 @@ import numpy as np
 from functools import partial
 
 from gym.envs.registration import make
-from sklearn.metrics.pairwise import rbf_kernel
+from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.algorithms.reach.kernel_sr_max import kernel_sr_max
 
@@ -112,7 +112,7 @@ safety_probabilities = kernel_sr_max(
     target_tube=target_tube,
     problem="FHT",
     regularization_param=regularization_param,
-    kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+    kernel_fn=partial(rbf_kernel, sigma=sigma),
     verbose=False,
 )
 
