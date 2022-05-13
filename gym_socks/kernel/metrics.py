@@ -373,7 +373,7 @@ def hybrid_kernel(
 
 def regularized_inverse(
     G: np.ndarray,
-    l: float = None,
+    regularization_param: float = None,
     copy: bool = True,
 ) -> np.ndarray:
     r"""Regularized inverse.
@@ -388,7 +388,7 @@ def regularized_inverse(
 
     Args:
         G: The Gram (kernel) matrix.
-        l: The regularization parameter :math:`\lambda > 0`.
+        regularization_param: The regularization parameter :math:`\lambda > 0`.
         copy: Whether to create a forced copy of ``G``.
 
     Returns:
@@ -398,12 +398,14 @@ def regularized_inverse(
 
     G = check_matrix(G, ensure_square=True, copy=copy)
 
-    if l is None:
-        l = 1 / (len(G) ** 2)
+    if regularization_param is None:
+        regularization_param = 1 / (len(G) ** 2)
     else:
-        assert l > 0, "l must be a strictly positive real value."
+        assert (
+            regularization_param > 0
+        ), "regularization_param must be a strictly positive real value."
 
-    G[np.diag_indices_from(G)] += l * len(G)
+    G[np.diag_indices_from(G)] += regularization_param * len(G)
 
     return np.linalg.inv(G)
 
@@ -426,9 +428,9 @@ def woodbury_inverse(
 
     This function is useful for computing the regularized inverse in a more
     computationally efficient manner. This happens because the matrices :math:`A` and
-    :math:`C` are typically easy to invert manually, either because they are known a
-    priori, are constant matrices, or identity, leading to a smaller matrix inversion in
-    the calculations.
+    :math:`C` are typically easy to invert manually, either because the inverses are
+    known a priori, are scalar matrices, or identity, leading to a smaller matrix
+    inversion in the calculations.
 
     Example:
 

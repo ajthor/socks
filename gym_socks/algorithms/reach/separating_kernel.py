@@ -25,8 +25,8 @@ class SeparatingKernelClassifier(ClassifierMixin):
 
     Args:
         kernel_fn: The kernel function used by the algorithm.
-        l: The regularization parameter :math:`\lambda > 0`. Determines the smoothness
-            of the solution.
+        regularization_param: The regularization parameter :math:`\lambda > 0`.
+            Determines the smoothness of the solution.
 
     Example:
         >>> from gym_socks.algorithms.reach import SeparatingKernelClassifier
@@ -42,14 +42,14 @@ class SeparatingKernelClassifier(ClassifierMixin):
     def __init__(
         self,
         kernel_fn=None,
-        l: float = None,
+        regularization_param: float = None,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
 
         self.kernel_fn = kernel_fn
-        self.l = l
+        self.regularization_param = regularization_param
 
     def fit(self, X: np.ndarray):
         """Fit separating kernel classifier.
@@ -73,12 +73,12 @@ class SeparatingKernelClassifier(ClassifierMixin):
 
         self._X = check_array(X)
 
-        if self.l is None:
-            self.l = 1 / len(self._X)
+        if self.regularization_param is None:
+            self.regularization_param = 1 / len(self._X)
 
         # Precompute matrices which are used in prediction.
         K = self.kernel_fn(X)
-        self._W = regularized_inverse(K, self.l, copy=True)
+        self._W = regularized_inverse(K, self.regularization_param, copy=True)
 
         self._tau = 1 - np.min(np.diagonal(K.T @ self._W @ K))
 
