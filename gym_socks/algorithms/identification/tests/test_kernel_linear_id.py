@@ -11,22 +11,18 @@ from gym_socks.envs import CWH4DEnv
 from gym_socks.envs import CWH6DEnv
 from gym_socks.policies import RandomizedPolicy
 
-from gym_socks.sampling import sample
-from gym_socks.sampling import sample_generator
+from gym_socks.sampling import sample_fn
 
 
+@sample_fn
 def dummy_sampler(env, policy, sample_space):
-    @sample_generator
-    def _sample_generator():
-        state = sample_space.sample()
-        action = policy(time=0, state=state)
+    state = sample_space.sample()
+    action = policy(time=0, state=state)
 
-        env.reset(state)
-        next_state, *_ = env.step(action=action)
+    env.reset(state)
+    next_state, *_ = env.step(action=action)
 
-        yield (state, action, next_state)
-
-    return _sample_generator
+    yield state, action, next_state
 
 
 class TestKernelLinearIdentificationAlgorithm(unittest.TestCase):
@@ -36,14 +32,9 @@ class TestKernelLinearIdentificationAlgorithm(unittest.TestCase):
         env = CWH4DEnv()
         env.seed(seed=0)
 
-        S = sample(
-            sampler=dummy_sampler(
-                env=env,
-                policy=RandomizedPolicy(action_space=env.action_space),
-                sample_space=env.state_space,
-            ),
-            sample_size=1000,
-        )
+        S = dummy_sampler(
+            env, RandomizedPolicy(action_space=env.action_space), env.state_space
+        ).sample(size=1000)
 
         regularization_param = 1e-9
 
@@ -59,14 +50,9 @@ class TestKernelLinearIdentificationAlgorithm(unittest.TestCase):
         env = CWH6DEnv()
         env.seed(seed=0)
 
-        S = sample(
-            sampler=dummy_sampler(
-                env=env,
-                policy=RandomizedPolicy(action_space=env.action_space),
-                sample_space=env.state_space,
-            ),
-            sample_size=1000,
-        )
+        S = dummy_sampler(
+            env, RandomizedPolicy(action_space=env.action_space), env.state_space
+        ).sample(size=1000)
 
         regularization_param = 1e-9
 

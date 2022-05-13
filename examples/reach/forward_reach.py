@@ -25,8 +25,7 @@ import matplotlib.pyplot as plt
 from gym_socks.algorithms.reach.separating_kernel import SeparatingKernelClassifier
 
 from gym_socks.kernel.metrics import abel_kernel
-from gym_socks.sampling import sample
-from gym_socks.sampling import sample_generator
+from gym_socks.sampling import sample_fn
 from gym_socks.utils.grid import cartesian
 
 # %% [markdown]
@@ -36,7 +35,7 @@ from gym_socks.utils.grid import cartesian
 # uniformly within a toroidal region centered around the origin.
 
 # %%
-@sample_generator
+@sample_fn
 def sampler() -> tuple:
     """Sample generator.
 
@@ -56,7 +55,7 @@ def sampler() -> tuple:
 
 
 # Sample the distribution.
-S = sample(sampler=sampler, sample_size=1000)
+S = sampler().sample(size=1000)
 S = np.array(S)
 
 # %% [markdown]

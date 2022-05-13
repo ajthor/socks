@@ -52,9 +52,8 @@ from itertools import islice
 
 from gym_socks.kernel.metrics import rbf_kernel
 
-from gym_socks.sampling import sample
-from gym_socks.sampling import random_sampler
-from gym_socks.sampling import sample_generator
+from gym_socks.sampling import sample_fn
+from gym_socks.sampling import space_sampler
 from gym_socks.sampling.transform import transpose_sample
 
 import matplotlib
@@ -73,15 +72,14 @@ class DeterministicNonholonomicVehicleEnv(NonholonomicVehicleEnv):
 
 deterministic_env = DeterministicNonholonomicVehicleEnv()
 
+# Generate a collection of random actions.
 action_sample_space = gym.spaces.Box(
     low=np.array([0.1, -10.1], dtype=np.float32),
     high=np.array([1.1, 10.1], dtype=np.float32),
     shape=deterministic_env.action_space.shape,
     dtype=deterministic_env.action_space.dtype,
 )
-action_sampler = random_sampler(action_sample_space)
-# Generate a collection of random actions.
-random_actions = list(islice(action_sampler, 100))
+random_actions = space_sampler(action_sample_space).sample(size=100)
 
 
 # %% [markdown]
@@ -181,7 +179,7 @@ seed = 12345
 # information while we generate it from random initial conditions.
 #
 # _NOTE_: We use significantly less sample information to obtain a similar result to the
-# `tracking` example. Here, since we can translate and rotate the sample, we use 50
+# `tracking` example. Here, since we can translate and rotate the sample, we use 100
 # sample points, wehre in the other example we use 1,500 by default to obtain similar
 # behavior.
 
@@ -198,28 +196,23 @@ action_sample_space = gym.spaces.Box(
     dtype=env.action_space.dtype,
     seed=seed,
 )
-action_sampler = random_sampler(action_sample_space)
+action_sampler = space_sampler(action_sample_space)
 
 
-@sample_generator
+@sample_fn
 def custom_sampler():
-    state = [0, 0, 0]
+    state = np.array([0.0, 0.0, 0.0])
     action = next(action_sampler)
 
     env.reset(state)
     env.step(action=action)
     next_state = env.state
 
-    yield (state, action, next_state)
+    yield state, action, next_state
 
 
-@sample_generator
-def custom_action_sampler():
-    yield next(action_sampler)
-
-
-S = sample(sampler=custom_sampler, sample_size=sample_size)
-A = sample(sampler=custom_action_sampler, sample_size=sample_size)
+S = custom_sampler().sample(size=sample_size)
+A = action_sampler.sample(size=sample_size)
 
 X, U, Y = transpose_sample(S)
 

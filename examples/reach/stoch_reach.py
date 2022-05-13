@@ -26,10 +26,8 @@ from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.algorithms.reach.kernel_sr import kernel_sr
 
-from gym_socks.sampling import sample
-from gym_socks.sampling import default_sampler
+from gym_socks.sampling import transition_sampler
 from gym_socks.sampling import grid_sampler
-from gym_socks.sampling import repeat
 
 from gym_socks.utils.grid import boxgrid
 from gym_socks.utils.grid import cartesian
@@ -56,20 +54,13 @@ env = make(system_id)
 
 sample_size = 3125  # This number is chosen based on the values below.
 
-sample_space = gym.spaces.Box(
+state_sample_space = gym.spaces.Box(
     low=-1.1, high=1.1, shape=env.state_space.shape, dtype=env.state_space.dtype
 )
 
-state_sampler = repeat(grid_sampler(boxgrid(space=sample_space, resolution=25)), num=5)
-
+state_sampler = grid_sampler(boxgrid(space=state_sample_space, resolution=25)).repeat(5)
 action_sampler = grid_sampler(cartesian(np.linspace(-1, 1, 5)))
-
-S = sample(
-    sampler=default_sampler(
-        state_sampler=state_sampler, action_sampler=action_sampler, env=env
-    ),
-    sample_size=sample_size,
-)
+S = transition_sampler(env, state_sampler, action_sampler).sample(size=sample_size)
 
 # %% [markdown]
 #

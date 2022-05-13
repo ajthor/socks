@@ -28,10 +28,8 @@ from functools import partial
 
 from gym_socks.kernel.metrics import rbf_kernel
 
-from gym_socks.sampling import sample
-from gym_socks.sampling import default_sampler
-from gym_socks.sampling import random_sampler
-from gym_socks.sampling import grid_sampler
+from gym_socks.sampling import space_sampler
+from gym_socks.sampling import transition_sampler
 
 from gym_socks.utils.grid import cartesian
 
@@ -59,7 +57,17 @@ seed = 12345
 env = make(system_id)
 env.sampling_time = 0.1
 env.seed(seed)
-env.action_space = gym.spaces.Box(
+sample_size = 1500
+
+state_sample_space = gym.spaces.Box(
+    low=np.array([-1.2, -1.2, -2 * np.pi], dtype=np.float32),
+    high=np.array([1.2, 1.2, 2 * np.pi], dtype=np.float32),
+    shape=(3,),
+    dtype=np.float32,
+    seed=seed,
+)
+
+action_sample_space = gym.spaces.Box(
     low=np.array([0.1, -10.1], dtype=np.float32),
     high=np.array([1.1, 10.1], dtype=np.float32),
     shape=(2,),
@@ -67,24 +75,9 @@ env.action_space = gym.spaces.Box(
     seed=seed,
 )
 
-sample_size = 1500
-
-sample_space = gym.spaces.Box(
-    low=np.array([-1.2, -1.2, -2 * np.pi], dtype=np.float32),
-    high=np.array([1.2, 1.2, 2 * np.pi], dtype=np.float32),
-    shape=(3,),
-    dtype=np.float32,
-    seed=seed,
-)
-state_sampler = random_sampler(sample_space=sample_space)
-action_sampler = random_sampler(sample_space=env.action_space)
-
-S = sample(
-    sampler=default_sampler(
-        state_sampler=state_sampler, action_sampler=action_sampler, env=env
-    ),
-    sample_size=sample_size,
-)
+state_sampler = space_sampler(state_sample_space)
+action_sampler = space_sampler(action_sample_space)
+S = transition_sampler(env, state_sampler, action_sampler).sample(size=sample_size)
 
 A = cartesian(np.linspace(0.1, 1.1, 10), np.linspace(-10.1, 10.1, 21))
 

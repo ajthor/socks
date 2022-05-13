@@ -1,3 +1,5 @@
+from gym_socks.sampling import sample_fn
+
 """Stochastic reachability using Monte-Carlo."""
 
 import numpy as np
@@ -8,8 +10,7 @@ from gym_socks.algorithms.reach.common import _tht_step, _fht_step
 from gym_socks.envs.dynamical_system import DynamicalSystem
 from gym_socks.policies import BasePolicy
 
-from gym_socks.sampling import sample
-from gym_socks.sampling import sample_generator
+from gym_socks.sampling import sample_fn
 
 from gym_socks.utils import indicator_fn
 
@@ -36,6 +37,7 @@ def _trajectory_indicator(
     return result
 
 
+@sample_fn
 def _monte_carlo_trajectory_sampler(
     time_horizon: int = None,
     env: DynamicalSystem = None,
@@ -54,26 +56,21 @@ def _monte_carlo_trajectory_sampler(
 
     """
 
-    @sample_generator
-    def _sample_generator():
+    state_sequence = []
+    state_sequence.append(state)
 
-        state_sequence = []
-        state_sequence.append(state)
+    env.reset(state)
 
-        env.reset(state)
+    time = 0
+    for t in range(time_horizon):
+        action = policy(time=time, state=env.state)
+        next_state, *_ = env.step(time=t, action=action)
 
-        time = 0
-        for t in range(time_horizon):
-            action = policy(time=time, state=env.state)
-            next_state, cost, done, _ = env.step(time=t, action=action)
+        state_sequence.append(next_state)
 
-            state_sequence.append(next_state)
+        time += 1
 
-            time += 1
-
-        yield state_sequence
-
-    return _sample_generator
+    yield state_sequence
 
 
 def monte_carlo_sr(
@@ -236,12 +233,9 @@ class MonteCarloSR(RegressorMixin):
         for i, state in enumerate(T):
 
             # For each point, generate a collection of trajectories.
-            S = sample(
-                sampler=_monte_carlo_trajectory_sampler(
-                    time_horizon=self.time_horizon, env=env, state=state, policy=policy
-                ),
-                sample_size=self.num_iterations,
-            )
+            S = _monte_carlo_trajectory_sampler(
+                time_horizon=self.time_horizon, env=env, state=state, policy=policy
+            ).sample(size=self.num_iterations)
 
             # Working backwards in time, compute the "likelihood" that the trajectories
             # will satisfy the constraints set up by the constraint tube and target
