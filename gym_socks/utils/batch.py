@@ -1,4 +1,4 @@
-from collections import Sequence
+from collections.abc import Sequence
 
 
 def batch_generator(s: Sequence, size: int):

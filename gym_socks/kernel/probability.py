@@ -53,8 +53,7 @@ def maximum_mean_discrepancy(
     m = len(X)
     n = len(Y)
 
-    if kernel_fn is None:
-        kernel_fn = partial(rbf_kernel, sigma=1)
+    kernel_fn = rbf_kernel if kernel_fn is None else kernel_fn
 
     GX = kernel_fn(X)
     GY = kernel_fn(Y)
@@ -87,8 +86,7 @@ def witness_function(X, Y, t, kernel_fn=None):
     m = len(X)
     n = len(Y)
 
-    if kernel_fn is None:
-        kernel_fn = partial(rbf_kernel, sigma=1)
+    kernel_fn = rbf_kernel if kernel_fn is None else kernel_fn
 
     c1 = 1 / m
     c2 = 1 / n

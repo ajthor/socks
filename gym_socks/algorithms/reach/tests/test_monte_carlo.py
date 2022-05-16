@@ -5,7 +5,7 @@ from unittest.mock import patch
 import gym
 import gym_socks
 
-from scipy.constants.codata import unit
+from scipy.constants import unit
 
 from gym_socks.envs.integrator import NDIntegratorEnv
 from gym_socks.envs.dynamical_system import DynamicalSystem
