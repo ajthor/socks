@@ -179,7 +179,7 @@ It is recommended to use the following templates when defining new systems
                     v = self.np_random.standard_normal(
                         size=self.observation_space.shape
                     )
-                    return np.array(state, dtype=np.float32) + np.array(v)
+                    return np.array(state, dtype=np.float32) + np.asarray(v)
 
                 def dynamics(self, time, state, action, disturbance):
                     ...
@@ -232,7 +232,7 @@ implements a custom :py:meth:`~gym_socks.envs.policy.BasePolicy.__call__` functi
     The main thing to know when defining custom policies is that functions in SOCKS
     which sample from systems pass all relevant information to the policy for the
     purpose of computing a control action. Since the policy can be either time-varying
-    or time-invariant or open- or closed-lopp, it may require the time and state of the
+    or time-invariant or open- or closed-loop, it may require the time and state of the
     system in order to compute the control action. Thus, custom policies should
     explicitly name these variables as parameters if they are required, and should use
     ``*args, **kwargs`` to capture additional, unneeded arguments.
@@ -254,3 +254,99 @@ algorithms.
 
         def __call__(self, *args, **kwargs):
             return self.action_space.sample()
+
+
+Custom Sampling Functions
+=========================
+
+Very simply, a sampling function returns a random sample. In python, this can either be
+a regular function that returns a value or a generator that yields a value. SOCKS
+implements a wrapper function, :py:func:`~gym_socks.sampling.sample.sample_fn`, which
+converts a regular function into an infinite generator.
+
+In order to create a custom sampling function, we need a function that returns or yields
+a single observation, and then we can use the
+:py:func:`~gym_socks.sampling.sample.sample_fn` decorator to convert it into a sample
+function.
+
+Sampling Function Templates
+---------------------------
+
+It is recommended to use the following templates when defining a new sampling function.
+
+.. tab-set::
+
+    .. tab-item:: Basic
+
+        .. code-block:: python
+
+            from gym_socks.sampling import sample_fn
+
+            @sample_fn
+            def custom_sampler():
+
+                # Generate observation here.
+
+                return obs
+
+    .. tab-item:: Generator
+
+        .. code-block:: python
+            :emphasize-lines: 8
+
+            from gym_socks.sampling import sample_fn
+
+            @sample_fn
+            def custom_sampler():
+
+                # Generate observation here.
+
+                yield obs
+
+    .. tab-item:: Partially Observable Sampler
+
+        .. code-block:: python
+
+            from gym_socks.sampling import sample_fn
+            from gym_socks.sampling import space_sampler
+
+            from gym_socks.envs.integrator import NDIntegrator
+            from gym_socks.policies import RandomizedPolicy
+
+            # Partially observable ND integrator system.
+            # Replace this with your own system.
+            class PartiallyObservableNDIntegrator(NDIntegratorEnv):
+                def generate_observation(self, time, state, action):
+                    v = self.np_random.standard_normal(
+                        size=self.observation_space.shape
+                    )
+                    return np.array(state, dtype=np.float32) + np.asarray(v)
+
+            env = PartiallyObservableNDIntegrator(dim=2)
+
+            state_sampler = space_sampler(space=env.state_space)
+            action_sampler = space_sampler(space=env.action_space)
+
+            @sample_fn
+            def custom_sampler():
+                state = next(state_sampler)
+                action = next(action_space)
+
+                env.reset(state)
+                observation, *_ = env.step(action=action)
+                next_state = env.state
+
+                return state, action, next_state, observation
+
+.. hint::
+
+    The main reason to use a generator instead of a regular function is if you have
+    internal variables or arguments that are passed to the generator whose value should
+    be preserved or "remembered" between calls.
+
+.. note::
+
+    Behind the scenes, the :py:func:`~gym_socks.sampling.sample.sample_fn` decorator
+    wraps the sample function in a helper class that provides several useful functions
+    that allow us to generate a finite sample and manipulate the generator, for instance
+    to repeat outputs multiple times.

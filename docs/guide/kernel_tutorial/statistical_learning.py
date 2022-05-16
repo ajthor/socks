@@ -80,9 +80,35 @@ plt.show()
 # well), but we need to raise the regularization parameter to keep the solution
 # "smooth". Clearly, the quality of the approximation depends on the data. If we have
 # too much noise in a particular region, or not enough data, the approximation will be
-# poor.
-#
-# However, it is important to ask, *what exactly are we learning here?*
+# poor. We can improve the quality of the approximation by increasing the sample size.
+
+# %%
+sample_size = 500
+x_data = 8 * np.random.rand(sample_size, 1) - 4  # Random data in (-4, 4)
+# Add Gaussian noise to the data.
+y_data = f(x_data) + 10 * np.random.randn(sample_size, 1)
+
+# Points to evaluate our kernel approximation at.
+x_eval = np.linspace(-5, 5, 200).reshape(-1, 1)
+
+# Compute the kernel-based approximation.
+G = rbf_kernel(x_data, sigma=1)
+y_pred = (
+    y_data.T
+    @ regularized_inverse(G, regularization_param=1e-3)
+    @ rbf_kernel(x_data, x_eval, sigma=1)
+)
+
+plt.figure()
+plt.axis()
+plt.scatter(x_data, y_data, s=5, c="red", label="Data")
+plt.plot(X, Y, ":k", label="Actual Function")
+plt.plot(x_eval, y_pred.T, label="Kernel Approximation")
+plt.legend()
+plt.show()
+
+# %% [markdown]
+# Now, it is important to ask, *what exactly are we learning here?*
 #
 # Since the function outputs are corrupted by noise, we are working with a *stochastic
 # function*, meaning it incorporates some randomness. The answer, then, is that we are
@@ -101,8 +127,8 @@ plt.show()
 # ## Probability Distributions
 #
 # When we are dealing with random variables and stochasticity, we have what is called a
-# *distribution*, which maps probabilities to random outcomes. The distribution also
-# tells us which outcome is the most likely, and this is effectively the expectation.
+# *distribution*, which maps probabilities to outcomes. The distribution also tells us
+# which outcome is the most likely, and this is effectively the expectation.
 #
 # Mathematically, we write this as,
 #
