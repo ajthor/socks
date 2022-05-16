@@ -31,6 +31,7 @@ environments.
     :caption: User Guide
 
     guide/fundamentals
+    guide/kernel_tutorial/tutorial
     guide/using_socks
     guide/templates
     contributing/index

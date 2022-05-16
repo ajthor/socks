@@ -105,7 +105,10 @@ autodoc_mock_imports = [
 ]
 
 # bibtex
-bibtex_bibfiles = ["bibliography.bib"]
+bibtex_bibfiles = [
+    "bibliography.bib",
+    "guide/kernel_tutorial/bibliography-embeddings.bib",
+]
 
 # Code block and signature options.
 copybutton_prompt_text = r">>> |\.\.\. "

@@ -1,0 +1,84 @@
+@inproceedings{10.1007/978-3-540-75225-7_5,
+  author    = {Smola, Alex and Gretton, Arthur and Song, Le and Sch\"{o}lkopf, Bernhard},
+  title     = {A {Hilbert} Space Embedding for Distributions},
+  year      = {2007},
+  isbn      = {9783540752240},
+  publisher = {Springer-Verlag},
+  address   = {Berlin, Heidelberg},
+  doi       = {10.1007/978-3-540-75225-7_5},
+  abstract  = {We describe a technique for comparing distributions without the need for density estimation as an intermediate step. Our approach relies on mapping the distributions into a reproducing kernel Hilbert space. Applications of this technique can be found in two-sample tests, which are used for determining whether two sets of observations arise from the same distribution, covariate shift correction, local learning, measures of independence, and density estimation.},
+  booktitle = {Proceedings of the 18th International Conference on Algorithmic Learning Theory},
+  pages     = {13–31},
+  numpages  = {19},
+  location  = {Sendai, Japan},
+  series    = {ALT '07}
+}
+
+@inproceedings{10.1145/1553374.1553497,
+  author    = {Song, Le and Huang, Jonathan and Smola, Alex and Fukumizu, Kenji},
+  title     = {{Hilbert} Space Embeddings of Conditional Distributions with Applications to Dynamical Systems},
+  year      = {2009},
+  isbn      = {9781605585161},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  doi       = {10.1145/1553374.1553497},
+  abstract  = {In this paper, we extend the Hilbert space embedding approach to handle conditional distributions. We derive a kernel estimate for the conditional embedding, and show its connection to ordinary embeddings. Conditional embeddings largely extend our ability to manipulate distributions in Hilbert spaces, and as an example, we derive a nonparametric method for modeling dynamical systems where the belief state of the system is maintained as a conditional embedding. Our method is very general in terms of both the domains and the types of distributions that it can handle, and we demonstrate the effectiveness of our method in various dynamical systems. We expect that conditional embeddings will have wider applications beyond modeling dynamical systems.},
+  booktitle = {Proceedings of the 26th Annual International Conference on Machine Learning},
+  pages     = {961–968},
+  numpages  = {8},
+  location  = {Montreal, Quebec, Canada},
+  series    = {ICML '09}
+}
+
+@article{MAL-060,
+  year    = {2017},
+  volume  = {10},
+  journal = {Foundations and Trends® in Machine Learning},
+  title   = {Kernel Mean Embedding of Distributions: A Review and Beyond},
+  doi     = {10.1561/2200000060},
+  issn    = {1935-8237},
+  number  = {1-2},
+  pages   = {1-141},
+  author  = {Krikamol Muandet and Kenji Fukumizu and Bharath Sriperumbudur and Bernhard Schölkopf}
+}
+
+@inproceedings{10.5555/3042573.3042778,
+  author    = {Gr\"{u}new\"{a}lder, Steffen and Lever, Guy and Baldassarre, Luca and Pontil, Massimilano and Gretton, Arthur},
+  title     = {Modelling Transition Dynamics in MDPs with RKHS Embeddings},
+  year      = {2012},
+  isbn      = {9781450312851},
+  publisher = {Omnipress},
+  address   = {Madison, WI, USA},
+  abstract  = {We propose a new, nonparametric approach to learning and representing transition dynamics in Markov decision processes (MDPs), which can be combined easily with dynamic programming methods for policy optimisation and value estimation. This approach makes use of a recently developed representation of conditional distributions as embeddings in a reproducing kernel Hilbert space (RKHS). Such representations bypass the need for estimating transition probabilities or densities, and apply to any domain on which kernels can be defined. This avoids the need to calculate intractable integrals, since expectations are represented as RKHS inner products whose computation has linear complexity in the number of points used to represent the embedding. We provide guarantees for the proposed applications in MDPs: in the context of a value iteration algorithm, we prove convergence to either the optimal policy, or to the closest projection of the optimal policy in our model class (an RKHS), under reasonable assumptions. In experiments, we investigate a learning task in a typical classical control setting (the under-actuated pendulum), and on a navigation problem where only images from a sensor are observed. For policy optimisation we compare with least-squares policy iteration where a Gaussian process is used for value function estimation. For value estimation we also compare to the NPDP method. Our approach achieves better performance in all experiments.},
+  booktitle = {Proceedings of the 29th International Coference on Machine Learning},
+  pages     = {1603–1610},
+  numpages  = {8},
+  location  = {Edinburgh, Scotland},
+  series    = {ICML'12}
+}
+
+@article{6530747,
+  author  = {Song, Le and Fukumizu, Kenji and Gretton, Arthur},
+  journal = {IEEE Signal Processing Magazine},
+  title   = {Kernel Embeddings of Conditional Distributions: A Unified Kernel Framework for Nonparametric Inference in Graphical Models},
+  year    = {2013},
+  volume  = {30},
+  number  = {4},
+  pages   = {98-111},
+  doi     = {10.1109/MSP.2013.2252713}
+}
+
+@inproceedings{10.5555/3042573.3042803,
+  author    = {Gr\"{u}new\"{a}lder, Steffen and Lever, Guy and Baldassarre, Luca and Patterson, Sam and Gretton, Arthur and Pontil, Massimilano},
+  title     = {Conditional Mean Embeddings as Regressors},
+  year      = {2012},
+  isbn      = {9781450312851},
+  publisher = {Omnipress},
+  address   = {Madison, WI, USA},
+  abstract  = {We demonstrate an equivalence between reproducing kernel Hilbert space (RKHS) embeddings of conditional distributions and vector-valued regressors. This connection introduces a natural regularized loss function which the RKHS embeddings minimise, providing an intuitive understanding of the embeddings and a justification for their use. Furthermore, the equivalence allows the application of vector-valued regression methods and results to the problem of learning conditional distributions. Using this link we derive a sparse version of the embedding by considering alternative formulations. Further, by applying convergence results for vector-valued regression to the embedding problem we derive minimax convergence rates which are O(log(n)/n) - compared to current state of the art rates of O(n-1/4) - and are valid under milder and more intuitive assumptions. These minimax upper rates coincide with lower rates up to a logarithmic factor, showing that the embedding method achieves nearly optimal rates. We study our sparse embedding algorithm in a reinforcement learning task where the algorithm shows significant improvement in sparsity over an incomplete Cholesky decomposition.},
+  booktitle = {Proceedings of the 29th International Conference on Machine Learning},
+  pages     = {1803–1810},
+  numpages  = {8},
+  location  = {Edinburgh, Scotland},
+  series    = {ICML'12}
+}
