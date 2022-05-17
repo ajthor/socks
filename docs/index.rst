@@ -150,6 +150,10 @@ In order to cite the toolbox, use the following bibtex entry:
       booktitle = {Proceedings of the 25th ACM International Conference on Hybrid Systems: Computation and Control}
     }
 
+Or from `ACM <https://doi.org/10.1145/3501710.3519525>`_.
+
+Also check out the live presentation of SOCKS on `YouTube
+<https://youtu.be/EfIPzpHy-YQ>`_.
 
 Indices and Tables
 ==================
