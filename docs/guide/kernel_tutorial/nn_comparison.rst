@@ -165,6 +165,13 @@ requirements, but are trained in a single calculation. Despite this, neural netw
 typically better calibrated for sequential data scenarios when a large amount of data is
 involved.
 
+.. seealso::
+
+    Note that several techniques for reducing the computational complexity of kernel
+    methods have been developed, such as Random Fourier Features, the Nystrom Method,
+    and Gaussian matrix approximations. Check out the :doc:`/examples/index` page for
+    a demonstrations of how these techniques work.
+
 Theoretical Guarantees
 ----------------------
 

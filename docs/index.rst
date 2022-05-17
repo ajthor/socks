@@ -58,6 +58,9 @@ Check out the user guide to use SOCKS in your own projects.
     Describes the basic concepts of SOCKS, and gives a quick overview of data-driven
     control.
 
+:doc:`guide/kernel_tutorial/tutorial`
+    A tutorial on kernel methods to get you started.
+
 :doc:`guide/using_socks`
     Information on how to simulate and generate samples from systems, as well as basic
     information about how to use the algorithms in SOCKS.
@@ -144,7 +147,7 @@ In order to cite the toolbox, use the following bibtex entry:
       title     = {{SOCKS}: A Kernel-Based Stochastic Optimal Control and Reachability Toolbox},
       authors   = {Thorpe, Adam J. and Oishi, Meeko M. K.},
       year      = {2022},
-      booktitle = {Proceedings of the 25th ACM International Conference on Hybrid Systems: Computation and Control (submitted)}
+      booktitle = {Proceedings of the 25th ACM International Conference on Hybrid Systems: Computation and Control}
     }
 
 

@@ -40,6 +40,6 @@ In order to cite the toolbox, use the following bibtex entry:
   title={{SOCKS}: A Kernel-Based Stochastic Optimal Control and Reachability Toolbox},
   authors={Thorpe, Adam J. and Oishi, Meeko M. K.},
   year={2022},
-  booktitle={Proceedings of the 25th ACM International Conference on Hybrid Systems: Computation and Control (to appear)},
+  booktitle={Proceedings of the 25th ACM International Conference on Hybrid Systems: Computation and Control},
 }
 ```

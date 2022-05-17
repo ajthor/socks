@@ -13,7 +13,7 @@ In the first part of the :doc:`tutorial </guide/kernel_tutorial/tutorial>`, we d
 the main idea of a kernel and kernel methods. In this part of the tutorial, we are going
 to give a brief overview of an RKHS, and explain what that means in basic terms.
 
-.. Hint::
+.. admonition:: Did you know?
 
     It might surprise you to know that you have likely been working with Hilbert spaces
     all along without even knowing it. The most common Hilbert space is

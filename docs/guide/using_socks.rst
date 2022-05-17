@@ -2,6 +2,13 @@
 Using SOCKS
 ***********
 
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+
+    for_gym_users
+
+
 In practice, we are typically given a dataset to work with, either from an actual system
 or from historical observations of a system. However, as researchers, we typically need
 to generate a sample via simulation in order to develop and test algorithms.
@@ -37,7 +44,7 @@ have dimensions :math:`M \times n`. Similarly, if the control actions are
     matrices. Be careful when importing data from Matlab, since it may need to be
     transposed in order to fit the correct format.
 
-.. hint::
+.. seealso::
 
     If you have data available in Matlab, and you need to import it into python, check
     out `scipy.io.loadmat`_.
@@ -45,7 +52,7 @@ have dimensions :math:`M \times n`. Similarly, if the control actions are
 .. _scipy.io.loadmat:
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.loadmat.html
 
-.. hint::
+.. tip::
 
     If we are dealing with an uncontrolled system, meaning there are no control actions,
     specify ``U`` as an array of zeros, i.e. ``U = np.zeros(M, 1)``, where ``M`` is the
@@ -213,7 +220,7 @@ tuple in the sample :math:`\mathcal{S}`,
     may be called multiple times to return a sequence of values. In our case, we use it
     to "generate" a sequence of observations.
 
-.. hint::
+.. tip::
 
     An infinite generator can be used directly, since it can be used to generate a
     sample of any length. However, not all generator functions are easily defined as
@@ -251,7 +258,7 @@ samples from a :py:obj:`gym.Space`.
     # Generate a sample of 100 observations.
     X = space_sampler(space=sample_space).sample(100)
 
-.. hint::
+.. seealso::
 
     SOCKS also provides a sampling function which generates points from a pre-specified
     grid, :py:func:`~gym_socks.sampling.sample.grid_sampler`. This can be useful in
@@ -280,7 +287,7 @@ the tuples in :math:`\mathcal{S}`. Continuing from the last code block,
     # Generate a sample of 100 observations.
     S = transition_sampler(env, state_sampler, action_sampler).sample(100)
 
-.. hint::
+.. seealso::
 
     There is also a sampling function,
     :py:func:`~gym_socks.sampling.sample.trajectory_sampler`, which generates samples
@@ -327,6 +334,7 @@ achievable in SOCKS using the :py:func:`~gym_socks.sampling.sample.sample_fn` de
     .. tab-item:: Policy
 
         .. code-block:: python
+            :emphasize-lines: 5, 10, 15
 
             from gym_socks.sampling import sample_fn
             from gym_socks.sampling import space_sampler

@@ -338,7 +338,7 @@ It is recommended to use the following templates when defining a new sampling fu
 
                 return state, action, next_state, observation
 
-.. hint::
+.. note::
 
     The main reason to use a generator instead of a regular function is if you have
     internal variables or arguments that are passed to the generator whose value should
