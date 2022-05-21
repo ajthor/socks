@@ -18,17 +18,18 @@ from functools import partial
 
 import numpy as np
 
-from sklearn.metrics.pairwise import rbf_kernel
-
 from gym.spaces import Box
 
 from gym_socks.algorithms.estimation import kernel_bayes_filter
+from gym_socks.kernel.metrics import rbf_kernel
 
-from gym_socks.sampling import sample_generator
-from gym_socks.sampling import random_sampler
-from gym_socks.sampling import sample
+from gym_socks.sampling import sample_fn
+from gym_socks.sampling import space_sampler
+from gym_socks.sampling.transform import transpose_sample
 
 from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
+
+from sklearn.metrics.pairwise import linear_kernel
 
 # %% [markdown]
 # ## Define the Partially Observable System
@@ -41,11 +42,16 @@ from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
 class PartiallyObservableEnv(NonholonomicVehicleEnv):
     def generate_observation(self, time, state, action):
         v = self.np_random.standard_normal(size=self.observation_space.shape)
-        return np.array(state, dtype=np.float32) + 1e-3 * np.array(v)
+        return np.array(state, dtype=np.float32) + 1e-5 * np.array(v)
+
+    def generate_disturbance(self, time, state, action):
+        w = self.np_random.standard_normal(size=self.state_space.shape)
+        return 1e-3 * np.array(w)
 
 
 # Define the system.
-env = PartiallyObservableEnv()
+seed = 12345
+env = PartiallyObservableEnv(seed=seed)
 
 # %% [markdown]
 # ## Generate a Sample
@@ -57,29 +63,31 @@ env = PartiallyObservableEnv()
 # the system or from high-fidelity simulations.
 
 # %%
-sample_size = 1500
+sample_size = 2000
 
-state_sampler = random_sampler(
-    sample_space=Box(
-        low=np.array([-1.2, -1.2, -2 * np.pi]),
-        high=np.array([1.2, 1.2, 2 * np.pi]),
+state_sampler = space_sampler(
+    space=Box(
+        low=np.array([-0.75, -0.75, -2 * np.pi]),
+        high=np.array([0.75, 0.75, 2 * np.pi]),
         shape=env.state_space.shape,
         dtype=env.state_space.dtype,
+        seed=seed,
     )
 )
 
-action_sampler = random_sampler(
-    sample_space=Box(
+action_sampler = space_sampler(
+    space=Box(
         low=np.array([0.1, -10]),
         high=np.array([1.1, 10]),
         shape=env.action_space.shape,
         dtype=env.action_space.dtype,
+        seed=seed,
     )
 )
 
 
-@sample_generator
-def sampler():
+@sample_fn
+def sampler(env, state_sampler, action_sampler):
     state = next(state_sampler)
     action = next(action_sampler)
 
@@ -87,10 +95,10 @@ def sampler():
     observation, *_ = env.step(action=action)
     next_state = env.state
 
-    yield (state, action, next_state, observation)
+    yield state, action, next_state, observation
 
 
-S = sample(sampler=sampler, sample_size=sample_size)
+S = sampler(env, state_sampler, action_sampler).sample(size=sample_size)
 
 # %% [markdown]
 # ## Fit the Estimator to the Data
@@ -102,24 +110,28 @@ S = sample(sampler=sampler, sample_size=sample_size)
 
 # %%
 sigma = 3
-kernel_fn = partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2)))
+gamma = gamma = 1 / (2 * (sigma ** 2))
+kernel_fn = partial(rbf_kernel, sigma=sigma)
 regularization_param = 1 / (sample_size ** 2)
 
-estimator = kernel_bayes_filter(
-    S, kernel_fn=kernel_fn, regularization_param=regularization_param
-)
-
 # %%
-time_horizon = 20
+time_horizon = 50
 
-initial_condition = [-0.8, -0.8, np.pi / 4]
-env.state = initial_condition
+initial_condition = [-0.5, 0, 0]
+env.reset(initial_condition)
+
+estimator = kernel_bayes_filter(
+    S,
+    initial_condition=initial_condition,
+    kernel_fn=kernel_fn,
+    regularization_param=regularization_param,
+)
 
 actual_trajectory = []
 estimated_trajectory = []
 
 for t in range(time_horizon):
-    action = [0.75, 0]
+    action = [0.5, 1]  # Constant forward velocity and turn rate.
     obs, *_ = env.step(action=action, time=t)
 
     est_state = estimator.predict(action=[action], observation=[obs])
