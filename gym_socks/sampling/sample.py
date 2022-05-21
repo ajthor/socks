@@ -98,8 +98,8 @@ def sample_fn(fn):
         ... def custom_sampler(env, policy):
         ...     state = env.reset()
         ...     action = policy(state=state)
-        ...     next_state, *_ = env.step(action)
-        ...     yield state, action, next_state
+        ...     observation, *_ = env.step(action)
+        ...     yield state, action, observation
         >>> sampler = custom_sampler(env, policy)
         >>> S = sampler.sample(size=100)
 
@@ -137,6 +137,13 @@ def space_sampler(space: gym.spaces.Space):
     Yields:
         A random sample from the space.
 
+    Example:
+
+        >>> from gym.spaces import Box
+        >>> from gym_socks.envs.sample import space_sampler
+        >>> sampler = space_sampler(Box(low=-1, high=1, shape=(2,), dtype=float))
+        >>> S = sampler.sample(size=100)
+
     """
 
     yield space.sample()
@@ -156,6 +163,15 @@ def grid_sampler(grid_points: np.ndarray):
     Yields:
         A point in the grid. Note that points are yielded in the order they are given.
 
+    Example:
+
+        >>> import numpy as np
+        >>> from gym_socks.utils.grid import cartesian
+        >>> from gym_socks.envs.sample import grid_sampler
+        >>> grid = cartesian(np.linspace(-1, 1, 3), np.linspace(-2, 2, 3))
+        >>> sampler = grid_sampler(grid)
+        >>> S = sampler.sample(size=100)
+
     """
 
     for item in grid_points:
@@ -174,9 +190,27 @@ def transition_sampler(
     env.reset(initial_condition)
 
     action = next(action_sampler)
-    state, *_ = env.step(action=action)
+    env.step(action=action)
+    next_state = env.state
 
-    yield initial_condition, action, state
+    yield initial_condition, action, next_state
+
+
+@sample_fn
+def observation_sampler(
+    env: gym.Env,
+    state_sampler,
+    action_sampler,
+):
+    """Observation sampler."""
+
+    initial_condition = next(state_sampler)
+    env.reset(initial_condition)
+
+    action = next(action_sampler)
+    obs, *_ = env.step(action=action)
+
+    yield initial_condition, action, obs
 
 
 @sample_fn
@@ -196,9 +230,10 @@ def trajectory_sampler(
 
     for t in range(time_horizon):
         action = next(action_sampler)
-        state, *_ = env.step(time=t, action=action)
+        env.step(time=t, action=action)
+        next_state = env.state
 
-        state_sequence.append(state)
+        state_sequence.append(next_state)
         action_sequence.append(action)
 
     yield initial_condition, np.array(action_sequence), np.array(state_sequence)
