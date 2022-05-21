@@ -18,7 +18,7 @@ To run the example, use the following command:
 import numpy as np
 from functools import partial
 from gym_socks.algorithms.kernel import ConditionalEmbedding
-from sklearn.metrics.pairwise import rbf_kernel
+from gym_socks.kernel.metrics import rbf_kernel
 
 from time import perf_counter
 
@@ -45,8 +45,7 @@ X_test = np.linspace(-5, 5, 1000).reshape(-1, 1)
 
 # %%
 sigma = 1
-gamma = 1 / (2 * sigma ** 2)
-kernel_fn = partial(rbf_kernel, gamma=gamma)
+kernel_fn = partial(rbf_kernel, sigma=sigma)
 regularization_param = 1 / (sample_size ** 2)
 
 # %% [markdown]

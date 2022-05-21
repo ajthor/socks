@@ -25,8 +25,7 @@ from functools import partial
 from gym_socks.algorithms.kernel import ConditionalEmbedding
 from gym_socks.kernel.metrics import rbf_kernel_derivative
 
-from sklearn.metrics.pairwise import rbf_kernel
-from sklearn.metrics.pairwise import euclidean_distances
+from gym_socks.kernel.metrics import rbf_kernel
 
 from time import perf_counter
 
@@ -51,12 +50,11 @@ X_test = np.linspace(-4, 4, 1000).reshape(-1, 1)
 
 # %%
 sigma = 0.1
-gamma = 1 / (2 * sigma ** 2)
-kernel_fn = partial(rbf_kernel, gamma=gamma)
+kernel_fn = partial(rbf_kernel, sigma=sigma)
 regularization_param = 1 / (sample_size ** 2)
 
 # %% [markdown]
-# ## Compute the Appromation
+# ## Compute the Approximation
 
 #  %%
 start = perf_counter()
@@ -65,8 +63,8 @@ G = kernel_fn(X_train)
 K = kernel_fn(X_train, X_test)
 alg.fit(G)
 
-C = rbf_kernel_derivative(X_train, sigma=sigma, distance_fn=euclidean_distances)
-D = rbf_kernel_derivative(X_train, X_test, sigma=sigma, distance_fn=euclidean_distances)
+C = rbf_kernel_derivative(X_train, sigma=sigma)
+D = rbf_kernel_derivative(X_train, X_test, sigma=sigma)
 
 y_pred = alg.predict(y_train, K)
 y_pred_d1 = -alg.predict(y_train, K * D)

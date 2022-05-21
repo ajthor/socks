@@ -22,17 +22,15 @@ import numpy as np
 from functools import partial
 
 from gym.envs.registration import make
-from sklearn.metrics.pairwise import rbf_kernel
+from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.algorithms.reach.kernel_sr import kernel_sr
 
-from gym_socks.sampling import sample
-from gym_socks.sampling import default_sampler
+from gym_socks.sampling import transition_sampler
 from gym_socks.sampling import grid_sampler
-from gym_socks.sampling import repeat
 
-from gym_socks.utils.grid import make_grid_from_space
-from gym_socks.utils.grid import make_grid_from_ranges
+from gym_socks.utils.grid import boxgrid
+from gym_socks.utils.grid import cartesian
 
 # %% [markdown]
 # Configuration variables.
@@ -56,22 +54,13 @@ env = make(system_id)
 
 sample_size = 3125  # This number is chosen based on the values below.
 
-sample_space = gym.spaces.Box(
+state_sample_space = gym.spaces.Box(
     low=-1.1, high=1.1, shape=env.state_space.shape, dtype=env.state_space.dtype
 )
 
-state_sampler = repeat(
-    grid_sampler(make_grid_from_space(sample_space=sample_space, resolution=25)), num=5
-)
-
-action_sampler = grid_sampler(make_grid_from_ranges([np.linspace(-1, 1, 5)]))
-
-S = sample(
-    sampler=default_sampler(
-        state_sampler=state_sampler, action_sampler=action_sampler, env=env
-    ),
-    sample_size=sample_size,
-)
+state_sampler = grid_sampler(boxgrid(space=state_sample_space, resolution=25)).repeat(5)
+action_sampler = grid_sampler(cartesian(np.linspace(-1, 1, 5)))
+S = transition_sampler(env, state_sampler, action_sampler).sample(size=sample_size)
 
 # %% [markdown]
 #
@@ -91,7 +80,7 @@ constraint_tube = [
 # Generate test points.
 x1 = np.linspace(-1, 1, 50)
 x2 = np.linspace(-1, 1, 50)
-T = make_grid_from_ranges([x1, x2])
+T = cartesian(x1, x2)
 
 # %% [markdown]
 # ## Algorithm
@@ -109,7 +98,7 @@ safety_probabilities = kernel_sr(
     target_tube=target_tube,
     problem="FHT",
     regularization_param=regularization_param,
-    kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+    kernel_fn=partial(rbf_kernel, sigma=sigma),
     verbose=False,
 )
 

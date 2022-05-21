@@ -2,82 +2,19 @@
 Kernel functions and helper utilities for kernel-based calculations.
 
 Most of the commonly-used kernel functions are already implemented in
-sklearn.metrics.pairwise. The RBF kernel and pairwise Euclidean distance function is
-re-implemented here as an alternative, in case sklearn is unavailable. Most, if not all
-of the kernel functions defined in sklearn.metrics.pairwise should be compatible with
-the functions defined here.
+:py:mod:`sklearn.metrics.pairwise`. The RBF kernel and pairwise Euclidean distance
+function is re-implemented here as an alternative, in case :py:mod:`sklearn` is
+unavailable. Most, if not all of the kernel functions defined in
+:py:mod:`sklearn.metrics.pairwise` should be compatible with the functions defined here.
 
-To use the sklearn functions, use them like so:
+Attention:
 
-    >>> from sklearn.metrics.pairwise import rbf_kernel
-    >>> from sklearn.metrics.pairwise import euclidean_distances
-    >>> X = np.arange(4).reshape((2, 2))
-    >>> Y = np.arange(6).reshape((3, 2))
-    >>> K = gym_socks.kernel.metrics.rbf_kernel(X, Y, distance_fn=euclidean_distances)
+    In Matlab, data is typically ordered differently than in Python. In Matlab, data is
+    ordered in columns, whereas in Python, data is ordered in **rows**. If you import
+    data from a Matlab file, be sure to transpose it if needed to follow Python
+    formatting, i.e. ``X = X.T``.
 
-"""
-
-from functools import partial, reduce
-
-import numpy as np
-from numpy.linalg import inv
-
-
-def euclidean_distance(
-    X: np.ndarray,
-    Y: np.ndarray = None,
-    squared: bool = False,
-) -> np.ndarray:
-    """Euclidean distance function.
-
-    The main difference between the way this function calculates euclidean
-    distance over other implementations such as in sklearn.metrics.pairwise is
-    that this implementation is largely agnostic to the dimensionality of the
-    input data, and generally works well for high-dimensional vectors and dense
-    data sets, such as state trajectories over a long time horizon.
-
-    Args:
-        X: The observations oganized in ROWS.
-        Y: The observations oganized in ROWS.
-        squared: Whether or not the result is the squared Euclidean distance.
-
-    Returns:
-        np.ndarray: Matrix of pairwise distances between points.
-
-    """
-
-    if Y is None:
-        Y = X
-
-    num_rows_X, num_cols_X = X.shape
-    num_rows_Y, num_cols_Y = Y.shape
-
-    def calc_dim(prev, next):
-        x, y = next
-        return prev + np.power(
-            np.tile(y, (num_rows_X, 1)) - np.tile(x, (num_rows_Y, 1)).T,
-            2,
-        )
-
-    distances = reduce(
-        calc_dim, zip(X.T, Y.T), np.zeros(shape=(num_rows_X, num_rows_Y))
-    )
-
-    return distances if squared else np.sqrt(distances)
-
-
-def rbf_kernel(
-    X: np.ndarray,
-    Y: np.ndarray = None,
-    sigma: float = None,
-    distance_fn=None,
-) -> np.ndarray:
-    """RBF kernel function.
-
-    Computes the pairwise evaluation of the RBF kernel on each vector in X and
-    Y. For instance, if X has n vecotrs, and Y has m vectors, then the result is
-    an n x m matrix K where K_ij = k(xi, yj).
-    ::
+    For example, the data in ``X`` and ``Y`` should be organized as::
 
         X = [[--- x1 ---],
              [--- x2 ---],
@@ -89,77 +26,204 @@ def rbf_kernel(
              ...
              [--- ym ---]]
 
-    The result is a matrix,
-    ::
+"""
 
-        K = [[k(x1,y1), ..., k(x1,ym)],
-             ...
-             [k(xn,y1), ..., k(xn,ym)]]
+from functools import partial, reduce
 
-    The main difference between this implementation and the rbf_kernel in
-    sklearn.metrics.pairwise is that this function optionally allows you to
-    specify a different distance metric in the event the data is non-Euclidean.
+import numpy as np
+
+from gym_socks.utils.validation import check_array
+from gym_socks.utils.validation import check_matrix
+
+
+def check_pairwise_arrays(
+    X,
+    Y=None,
+    dtype: np.dtype = np.float64,
+    ensure_finite: bool = True,
+    copy: bool = False,
+):
+    """Check pairwise arrays.
+
+    Note:
+
+        This function is intended as a simple replacement for the
+        :py:func:`sklearn.metrics.pairwise.check_pairwise_arrays` function. Unlike
+        :py:mod:`sklearn`, this function does not check sparse input data, and does not
+        do sophisticated type checking or upcasting.
 
     Args:
-        X: The observations oganized in ROWS.
-        Y: The observations oganized in ROWS.
-        sigma: Strictly positive real-valued kernel parameter.
-        distance_fn: Distance function to use in the kernel evaluation.
+        X: A 2D array with observations oganized in ROWS.
+        Y: A 2D array with observations oganized in ROWS.
+        dtype: The data type of the resulting array.
+        copy: Whether to create a forced copy of ``array``.
+        ensure_finite: Whether to raise an error if the array is not finite.
 
     Returns:
-        np.ndarray: Gram matrix of pairwise evaluations of the kernel function.
+        The validated arrays ``X`` and ``Y``.
 
     """
 
-    # if distance_fn is None:
-    #     distance_fn = euclidean_distance
-
-    # K = distance_fn(X, Y, squared=True)
-
     if Y is None:
+        X = check_array(X, dtype=dtype, ensure_finite=ensure_finite, copy=copy)
         Y = X
 
-    N, M = np.shape(X)
-    T = len(Y)
+    else:
+        X = check_array(X, dtype=dtype, ensure_finite=ensure_finite, copy=copy)
+        Y = check_array(Y, dtype=dtype, ensure_finite=ensure_finite, copy=copy)
 
-    K = np.zeros((N, T))
+    return X, Y
 
-    for i in range(M):
-        K += np.power(np.tile(Y[:, i], (N, 1)) - np.tile(X[:, i], (T, 1)).T, 2)
+
+def euclidean_distances(X, Y=None, squared: bool = False):
+    """Compute the pairwise Euclidean distance matrix between points.
+
+    Note:
+
+        This function is intended as a simple replacement for the
+        :py:func:`sklearn.metrics.pairwise.euclidean_distances` function. Unlike
+        :py:mod:`sklearn`, this function does not check sparse input data, and does not
+        do sophisticated type checking or upcasting.
+
+    Args:
+        X: A 2D array with observations oganized in ROWS.
+        Y: A 2D array with observations oganized in ROWS.
+        squared: Whether the result is squared before returning.
+
+    Returns:
+        The matrix of pairwise Euclidean distances between points.
+
+    """
+
+    X, Y = check_pairwise_arrays(X, Y)
+
+    XX = np.einsum("ij,ij->i", X, X)[:, np.newaxis]
+    YY = np.einsum("ij,ij->i", Y, Y)[np.newaxis, :]
+
+    distances = -2 * (X @ Y.T)
+    distances += XX
+    distances += YY
+
+    np.maximum(distances, 0, out=distances)
+    if X is Y:
+        np.fill_diagonal(distances, 0)
+
+    return distances if squared else np.sqrt(distances, out=distances)
+
+
+def check_pairwise_distances(D: np.ndarray, shape: tuple, copy: bool = True):
+    """Validate the pairwise distance matrix.
+
+    Performs checks to ensure the pairwise distance matrix is valid.
+
+    Args:
+        D: Pairwise distance matrix.
+        shape: The desired shape of the array.
+        copy: Whether to create a forced copy of ``D``.
+
+    Returns:
+        The validated matrix.
+
+    """
+
+    D = check_array(D, copy=copy)
+
+    if D.shape != shape:
+        raise ValueError(
+            f"Expected pairwise distances to be of shape {shape}, "
+            f"but got {D.shape} instead."
+        )
+
+    return D
+
+
+def rbf_kernel(
+    X: np.ndarray,
+    Y: np.ndarray = None,
+    sigma: float = None,
+    D: np.ndarray = None,
+) -> np.ndarray:
+    r"""RBF kernel function.
+
+    Computes the pairwise evaluation of the RBF kernel on each vector in ``X`` and
+    ``Y``. For example, if ``X`` has :math:`m` vecotrs, and ``Y`` has :math:`n` vectors,
+    then the result is an :math:`m \times n` matrix :math:`K` where :math:`K_{ij} =
+    k(x_i, y_j)`.
+
+    .. math::
+
+        K =
+        \begin{bmatrix}
+            k(x_1,y_1) & \cdots & k(x_1,y_n) \\
+            \vdots & \ddots & \vdots \\
+            k(x_m,y_1) & \cdots & k(x_m,y_n)
+        \end{bmatrix}
+
+    Note:
+
+        This function is intended as a simple replacement for the
+        :py:func:`sklearn.metrics.pairwise.rbf_kernel` function. Unlike
+        :py:mod:`sklearn`, this function does not check sparse input data, and does not
+        do sophisticated type checking or upcasting.
+
+        The main difference between this implementation and the
+        :py:func:`sklearn.metrics.pairwise.rbf_kernel` in
+        :py:mod:`sklearn.metrics.pairwise` is that this function optionally allows you
+        to specify a different distance metric in the event the data is non-Euclidean.
+
+    Attention:
+
+        If you are familiar with :py:func:`sklearn.metrics.pairwise.rbf_kernel`, note
+        that the parameter :py:attr:`sigma` is *not* the same as the ``gamma`` parameter
+        used by :py:func:`sklearn.metrics.pairwise.rbf_kernel`. However, they are
+        related:
+
+        .. math::
+
+            \gamma = \frac{1}{2 \sigma^{2}}
+
+    Args:
+        X: A 2D array with observations oganized in ROWS.
+        Y: A 2D array with observations oganized in ROWS.
+        sigma: Strictly positive real-valued kernel parameter.
+        D: Pairwise distance matrix.
+
+    Returns:
+        Gram matrix of pairwise evaluations of the kernel function.
+
+    """
+
+    X, Y = check_pairwise_arrays(X, Y)
+
+    if D is None:
+        D = euclidean_distances(X, Y, squared=True)
+    else:
+        D = check_pairwise_distances(D, shape=(X.shape[0], Y.shape[0]))
 
     if sigma is None:
-        sigma = np.median(K)
+        sigma = np.median(D)
     else:
         assert sigma > 0, "sigma must be a strictly positive real value."
 
-    K /= -2 * (sigma ** 2)
-    np.exp(K, K)
+    D /= -2 * (sigma ** 2)
+    np.exp(D, D)
 
-    return K
+    return D
 
 
 def rbf_kernel_derivative(
     X: np.ndarray,
     Y: np.ndarray = None,
     sigma: float = None,
-    distance_fn=None,
+    D: np.ndarray = None,
 ) -> np.ndarray:
 
-    # if distance_fn is None:
-    #     distance_fn = euclidean_distance
+    X, Y = check_pairwise_arrays(X, Y)
 
-    # D = distance_fn(X, Y, squared=False)
-
-    if Y is None:
-        Y = X
-
-    N, M = np.shape(X)
-    T = len(Y)
-
-    D = np.zeros((N, T))
-
-    for i in range(M):
-        D += np.tile(Y[:, i], (N, 1)) - np.tile(X[:, i], (T, 1)).T
+    if D is None:
+        D = euclidean_distances(X, Y, squared=False)
+    else:
+        D = check_pairwise_distances(D, shape=(X.shape[0], Y.shape[0]))
 
     if sigma is None:
         sigma = np.median(D)
@@ -175,93 +239,142 @@ def abel_kernel(
     X: np.ndarray,
     Y: np.ndarray = None,
     sigma: float = None,
-    distance_fn=None,
+    D: np.ndarray = None,
 ) -> np.ndarray:
     """Abel kernel function.
 
     Args:
-        X: The observations oganized in ROWS.
-        Y: The observations oganized in ROWS.
+        X: A 2D array with observations oganized in ROWS.
+        Y: A 2D array with observations oganized in ROWS.
         sigma: Strictly positive real-valued kernel parameter.
-        distance_fn: Distance function to use in the kernel evaluation.
+        D: Pairwise distance matrix.
 
     Returns:
-        np.ndarray: Gram matrix of pairwise evaluations of the kernel function.
+        Gram matrix of pairwise evaluations of the kernel function.
 
     """
 
-    if distance_fn is None:
-        distance_fn = euclidean_distance
+    X, Y = check_pairwise_arrays(X, Y)
 
-    K = distance_fn(X, Y, squared=False)
+    if D is None:
+        D = euclidean_distances(X, Y, squared=False)
+    else:
+        D = check_pairwise_distances(D, shape=(X.shape[0], Y.shape[0]))
 
     if sigma is None:
-        sigma = np.median(K)
+        sigma = np.median(D)
     else:
         assert sigma > 0, "sigma must be a strictly positive real value."
 
-    K /= -sigma
-    np.exp(K, K)
-
-    return K
-
-
-def delta_kernel(X: np.ndarray, Y: np.ndarray = None):
-    """Delta (discrete) kernel function.
-
-    The delta kernel is defined as :math:`k(x_{i}, x_{j}) = \delta_{ij}`, meaning the
-    kernel returns a 1 if the vectors are the same, and a 0 otherwise. The vectors in
-    `X` and `Y` should have discrete values, meaning each element in the vector should
-    be a natural number or integer value.
-
-    Args:
-        X: A 2D ndarray with the observations oganized in ROWS.
-        Y: A 2D ndarray with the observations oganized in ROWS.
-
-    Returns:
-        np.ndarray: Gram matrix of pairwise evaluations of the kernel function.
-
-    """
-
-    if X.ndim == 1:
-        raise ValueError(
-            "Expected 2D array for X, got 1D array instead. \n"
-            "Reshape the data using array.reshape(-1, 1) "
-            "if the data has only a single dimension "
-            "or array.reshape(1, -1) if there is only a single sample."
-        )
-
-    if Y is None:
-        Y = X
-
-    else:
-
-        if Y.ndim == 1:
-            raise ValueError(
-                "Expected 2D array for Y, got 1D array instead. \n"
-                "Reshape the data using array.reshape(-1, 1) "
-                "if the data has only a single dimension "
-                "or array.reshape(1, -1) if there is only a single sample."
-            )
-
-    N, M = np.shape(X)
-    T = len(Y)
-
-    D = np.ones((N, T), dtype=int)
-
-    for i in range(M):
-        D &= np.tile(Y[:, i], (N, 1)) == np.tile(X[:, i], (T, 1)).T
+    D /= -sigma
+    np.exp(D, D)
 
     return D
 
 
+def delta_kernel(X: np.ndarray, Y: np.ndarray = None):
+    r"""Delta (discrete) kernel function.
+
+    The delta kernel is defined as :math:`k(x_{i}, x_{j}) = \delta_{ij}`, meaning the
+    kernel returns a 1 if the vectors are the same, and a 0 otherwise. The vectors in
+    ``X`` and ``Y`` should have discrete values, meaning each element in the vector should
+    be a natural number or integer value.
+
+    Args:
+        X: A 2D array with observations oganized in ROWS.
+        Y: A 2D array with observations oganized in ROWS.
+
+    Returns:
+        Gram matrix of pairwise evaluations of the kernel function.
+
+    """
+
+    X, Y = check_pairwise_arrays(X, Y, dtype=int)
+
+    D = np.all(X[:, :, None] == Y.T, axis=1).astype(int)
+
+    return D
+
+
+def _hybrid_distances(
+    X: np.ndarray, Q: np.ndarray, Y: np.ndarray = None, R: np.ndarray = None
+):
+    r"""Hybrid distance function.
+
+    The hybrid distance function is a distance metric that works for states that are a
+    combination of a continuous state and a discrete mode.
+
+    .. math::
+
+        d((x, q), (x', q')) =
+        \begin{cases}
+            \zeta(x - x'), & q = q' \\
+		    1, & q \neq q'
+        \end{cases}
+
+    .. math::
+
+        \zeta(x) = (2/\pi) \max_{1 \leq i \leq n} \tan^{-1} \vert x_{i} \vert
+
+    """
+
+    X, Y = check_pairwise_arrays(X, Y)
+
+    d = delta_kernel(Q, R)
+
+    diff = np.abs(X[:, :, None] - Y.T)
+    diff = (2 / np.pi) * np.max(np.arctan(diff), axis=1)
+
+    D = np.where(d == 0, 1, diff)
+
+    return D
+
+
+def hybrid_kernel(
+    X: np.ndarray, Q: np.ndarray, Y: np.ndarray = None, R: np.ndarray = None
+):
+    r"""Hybrid systems kernel.
+
+    In a hybrid system, we split the sample according to the mode ``Q``. The vectors in
+    ``Q`` and ``R`` should have discrete values, meaning each element in the vector
+    should be a natural number or integer value.
+
+    .. math::
+
+        d((x, q), (x', q')) =
+        \begin{cases}
+            \zeta(x - x'), & q = q' \\
+		    1, & q \neq q'
+        \end{cases}
+
+    .. math::
+
+        \zeta(x) = (2/\pi) \max_{1 \leq i \leq n} \tan^{-1} \vert x_{i} \vert
+
+    .. math::
+
+        k(x, q, x', q') = 1 - d((x, q), (x', q'))
+
+    Args:
+        X: A 2D array with observations oganized in ROWS.
+        Q: A 2D array with observations oganized in ROWS.
+        Y: A 2D array with observations oganized in ROWS.
+        R: A 2D array with observations oganized in ROWS.
+
+    Returns:
+        Gram matrix of pairwise evaluations of the kernel function.
+
+    """
+
+    D = _hybrid_distances(X, Q, Y, R)
+
+    return 1 - np.sqrt(D)
+
+
 def regularized_inverse(
-    X: np.ndarray,
-    Y: np.ndarray = None,
-    U: np.ndarray = None,
-    V: np.ndarray = None,
+    G: np.ndarray,
     regularization_param: float = None,
-    kernel_fn=None,
+    copy: bool = True,
 ) -> np.ndarray:
     r"""Regularized inverse.
 
@@ -269,61 +382,113 @@ def regularized_inverse(
 
     .. math::
 
-        W = (K + \lambda M I)^{-1}, \quad
-        K \in \mathbb{R}^{n \times n}, \quad
-        K_{ij} = k(x_{i}, y_{j})
-
-    Example:
-
-        >>> from gym_socks.kernel.metrics import regularized_inverse
-        >>> X = np.arange(4).reshape((2, 2))
-        >>> Y = np.arange(6).reshape((3, 2))
-        >>> K = regularized_inverse(X, Y)
+        W = (G + \lambda M I)^{-1}, \quad
+        G \in \mathbb{R}^{n \times n}, \quad
+        G_{ij} = k(x_{i}, y_{j})
 
     Args:
-        X: The observations oganized in ROWS.
-        Y: The observations oganized in ROWS.
-        regularization_param: Regularization parameter, which is a strictly positive
-            real value.
-        kernel_fn: The kernel function is a function that returns an ndarray where
-            each element is the pairwise evaluation of a kernel function. See sklearn.
-            metrics.pairwise for more info. The default is the RBF kernel.
+        G: The Gram (kernel) matrix.
+        regularization_param: The regularization parameter :math:`\lambda > 0`.
+        copy: Whether to create a forced copy of ``G``.
 
     Returns:
         Regularized matrix inverse.
 
     """
 
-    if Y is None:
-        Y = X
+    G = check_matrix(G, ensure_square=True, copy=copy)
 
     if regularization_param is None:
-        regularization_param = 1 / (X.shape[0] ** 2)
+        regularization_param = 1 / (len(G) ** 2)
     else:
         assert (
             regularization_param > 0
         ), "regularization_param must be a strictly positive real value."
 
-    if kernel_fn is None:
-        kernel_fn = partial(rbf_kernel, sigma=1)
+    G[np.diag_indices_from(G)] += regularization_param * len(G)
 
-    err_msg = "Parameters %r, %r must have the same shape." % (X, Y)
-    assert X.shape == Y.shape, err_msg
+    return np.linalg.inv(G)
 
-    num_rows, num_cols = X.shape
 
-    K = kernel_fn(X, Y)
+def woodbury_inverse(
+    A: np.ndarray,
+    U: np.ndarray,
+    C: np.ndarray,
+    V: np.ndarray,
+    precomputed: bool = False,
+) -> np.ndarray:
+    r"""Computes the matrix inverse using the Woodbury matrix identity.
 
-    if U is not None:
-        err_msg = "Parameters %r, %r must have the same sample size." % (X, U)
-        assert X.shape[0] == U.shape[0], err_msg
+    .. math::
 
-        if V is not None:
-            err_msg = "Parameters %r, %r must have the same shape." % (U, V)
-            assert U.shape == V.shape, err_msg
+        W = (A + U C V)^{-1} = A^{-1} - A^{-1} U (C^{-1} + V A^{-1} U)^{-1} V A^{-1}
 
-        K = np.multiply(kernel_fn(U, V), K)
+    where :math:`A` is :math:`n \times n`, :math:`C` is :math:`k \times k`, :math:`U` is
+    :math:`n \times k`, and :math:`V` is :math:`k \times n`.
 
-    I = np.identity(num_rows)
+    This function is useful for computing the regularized inverse in a more
+    computationally efficient manner. This happens because the matrices :math:`A` and
+    :math:`C` are typically easy to invert manually, either because the inverses are
+    known a priori, are scalar matrices, or identity, leading to a smaller matrix
+    inversion in the calculations.
 
-    return inv(K + regularization_param * num_rows * I)
+    Example:
+
+        >>> import numpy as np
+        >>> from gym_socks.kernel.metrics import regularized_inverse
+        >>> from gym_socks.kernel.metrics import woodbury_inverse
+        >>> X = np.random.randn(100, 2)
+        >>> G = X @ X.T
+        >>> timeit regularized_inverse(G, 1)
+        184 µs ± 7.14 µs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+        >>> A = (1 / 100) * np.identity(100)
+        >>> C = np.identity(2)
+        >>> timeit woodbury_inverse(A, X, C, X.T, precomputed=True)
+        78.9 µs ± 1.67 µs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+        >>> W1 = regularized_inverse(G, 1)
+        >>> W2 = woodbury_inverse(A, X, C, X.T, precomputed=True)
+        >>> np.allclose(W1, W2)
+        True
+
+    Args:
+        A: A conformable square matrix. Must be nonsingular.
+        U: A conformable matrix.
+        C: A conformable square matrix. Must be nonsingular.
+        V: A conformable matrix.
+        precomputed: Whether ``A`` and ``C`` are the precomputed inverses.
+
+    Returns:
+        The resulting inverse matrix :math:`W`.
+
+    """
+
+    A = check_matrix(A, ensure_square=True)
+    C = check_matrix(C, ensure_square=True)
+
+    U = check_matrix(U)
+    V = check_matrix(V)
+
+    m, n = np.shape(A)
+    k, l = np.shape(C)
+
+    assert U.shape == (n, k), f"Expected U to be {(n, k)}, instead got: {U.shape}"
+    assert V.shape == (k, n), f"Expected V to be {(k, n)}, instead got: {V.shape}"
+
+    if precomputed is False:
+        A_inv = np.linalg.inv(A)
+        C_inv = np.linalg.inv(C)
+    else:
+        A_inv = A
+        C_inv = C
+
+    VA = V @ A_inv
+    D = C_inv + VA @ U
+    if np.isscalar(D):
+        np.reciprocal(D, out=D)
+
+        W = A_inv - D * A_inv @ U @ VA
+
+    else:
+        W = A_inv - A_inv @ U @ np.linalg.solve(D, VA)
+
+    return W

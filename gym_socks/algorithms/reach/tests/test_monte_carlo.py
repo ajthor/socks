@@ -5,17 +5,16 @@ from unittest.mock import patch
 import gym
 import gym_socks
 
-from scipy.constants.codata import unit
+from scipy.constants import unit
 
 from gym_socks.envs.integrator import NDIntegratorEnv
 from gym_socks.envs.dynamical_system import DynamicalSystem
 from gym_socks.policies import ZeroPolicy
 from gym_socks.policies import RandomizedPolicy
 
-from gym_socks.sampling import sample
-from gym_socks.sampling import default_trajectory_sampler
-from gym_socks.sampling import random_sampler
-from gym_socks.sampling import sample_generator
+from gym_socks.sampling import sample_fn
+from gym_socks.sampling import space_sampler
+from gym_socks.sampling import trajectory_sampler
 from gym_socks.sampling.transform import transpose_sample
 
 from gym_socks.algorithms.reach.common import _tht_step, _fht_step
@@ -44,7 +43,7 @@ def make_tube(
     return tube
 
 
-@sample_generator
+@sample_fn
 def zero_sampler(sample_space):
     yield np.zeros(shape=sample_space.shape, dtype=sample_space.dtype)
 
@@ -88,16 +87,21 @@ class TestTrajectoryIndicator(unittest.TestCase):
         )
 
         sample_size = 5
+        state_sampler = space_sampler(space=sample_space)
+        action_sampler = zero_sampler(sample_space=env.action_space)
+        S = trajectory_sampler(
+            env, state_sampler, action_sampler, cls.time_horizon
+        ).sample(size=sample_size)
 
-        S = sample(
-            sampler=default_trajectory_sampler(
-                state_sampler=random_sampler(sample_space=sample_space),
-                action_sampler=zero_sampler(sample_space=env.action_space),
-                env=env,
-                time_horizon=cls.time_horizon,
-            ),
-            sample_size=sample_size,
-        )
+        # S = sample(
+        #     sampler=default_trajectory_sampler(
+        #         state_sampler=random_sampler(sample_space=sample_space),
+        #         action_sampler=zero_sampler(sample_space=env.action_space),
+        #         env=env,
+        #         time_horizon=cls.time_horizon,
+        #     ),
+        #     sample_size=sample_size,
+        # )
 
         X, _, Y = transpose_sample(S)
         full_trajectories = [(X[i], *Y[i]) for i in range(sample_size)]
@@ -132,15 +136,21 @@ class TestTrajectoryIndicator(unittest.TestCase):
 
         sample_size = 5
 
-        S = sample(
-            sampler=default_trajectory_sampler(
-                state_sampler=random_sampler(sample_space=sample_space),
-                action_sampler=zero_sampler(sample_space=env.action_space),
-                env=env,
-                time_horizon=cls.time_horizon,
-            ),
-            sample_size=sample_size,
-        )
+        state_sampler = space_sampler(space=sample_space)
+        action_sampler = zero_sampler(sample_space=env.action_space)
+        S = trajectory_sampler(
+            env, state_sampler, action_sampler, cls.time_horizon
+        ).sample(size=sample_size)
+
+        # S = sample(
+        #     sampler=default_trajectory_sampler(
+        #         state_sampler=random_sampler(sample_space=sample_space),
+        #         action_sampler=zero_sampler(sample_space=env.action_space),
+        #         env=env,
+        #         time_horizon=cls.time_horizon,
+        #     ),
+        #     sample_size=sample_size,
+        # )
 
         X, _, Y = transpose_sample(S)
         full_trajectories = [(X[i], *Y[i]) for i in range(sample_size)]

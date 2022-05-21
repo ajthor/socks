@@ -3,8 +3,11 @@ import numpy as np
 from functools import partial
 
 from gym_socks.kernel.metrics import regularized_inverse
-from gym_socks.kernel.metrics import rbf_kernel
 from gym_socks.kernel.metrics import delta_kernel
+
+from gym_socks.kernel.metrics import rbf_kernel
+
+from gym_socks.utils.validation import check_matrix
 
 
 def maximum_mean_discrepancy(
@@ -36,8 +39,9 @@ def maximum_mean_discrepancy(
         X: The observations from distribution P organized in ROWS.
         Y: The observations from distribution Q organized in ROWS.
         kernel_fn: The kernel function is a function that returns an ndarray where
-            each element is the pairwise evaluation of a kernel function. See sklearn.
-            metrics.pairwise for more info. The default is the RBF kernel.
+            each element is the pairwise evaluation of a kernel function. See
+            :py:mod:`sklearn.metrics.pairwise` for more info. The default is the RBF
+            kernel.
         biased: Whether to use the biased MMD.
         squared: Whether or not the result is squared.
 
@@ -49,8 +53,7 @@ def maximum_mean_discrepancy(
     m = len(X)
     n = len(Y)
 
-    if kernel_fn is None:
-        kernel_fn = partial(rbf_kernel, sigma=1)
+    kernel_fn = rbf_kernel if kernel_fn is None else kernel_fn
 
     GX = kernel_fn(X)
     GY = kernel_fn(Y)
@@ -83,8 +86,7 @@ def witness_function(X, Y, t, kernel_fn=None):
     m = len(X)
     n = len(Y)
 
-    if kernel_fn is None:
-        kernel_fn = partial(rbf_kernel, sigma=1)
+    kernel_fn = rbf_kernel if kernel_fn is None else kernel_fn
 
     c1 = 1 / m
     c2 = 1 / n
@@ -243,30 +245,6 @@ def probability_matrix(states: np.ndarray, X: np.ndarray, Y: np.ndarray):
                [0. , 0. , 1. ]])
 
     """
-
-    if states.ndim == 1:
-        raise ValueError(
-            "Expected 2D array for states, got 1D array instead. \n"
-            "Reshape the data using array.reshape(-1, 1) "
-            "if the data has only a single dimension "
-            "or array.reshape(1, -1) if there is only a single sample."
-        )
-
-    if X.ndim == 1:
-        raise ValueError(
-            "Expected 2D array for X, got 1D array instead. \n"
-            "Reshape the data using array.reshape(-1, 1) "
-            "if the data has only a single dimension "
-            "or array.reshape(1, -1) if there is only a single sample."
-        )
-
-    if Y.ndim == 1:
-        raise ValueError(
-            "Expected 2D array for Y, got 1D array instead. \n"
-            "Reshape the data using array.reshape(-1, 1) "
-            "if the data has only a single dimension "
-            "or array.reshape(1, -1) if there is only a single sample."
-        )
 
     Gx = delta_kernel(states, X)
     Gy = delta_kernel(states, Y)

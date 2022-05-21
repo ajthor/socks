@@ -25,13 +25,12 @@ from gym.envs.registration import make
 
 from gym_socks.algorithms.control.kernel_control_fwd import KernelControlFwd
 
-from sklearn.metrics.pairwise import rbf_kernel
+from gym_socks.kernel.metrics import rbf_kernel
 
-from gym_socks.sampling import sample
-from gym_socks.sampling import default_sampler
-from gym_socks.sampling import random_sampler
+from gym_socks.sampling import space_sampler
+from gym_socks.sampling import transition_sampler
 
-from gym_socks.utils.grid import make_grid_from_space
+from gym_socks.utils.grid import boxgrid
 
 
 # %% [markdown]
@@ -55,7 +54,6 @@ seed = 123
 # %%
 env = make(system_id)
 env.seed(seed)
-
 sample_size = 2500
 
 state_sample_space = gym.spaces.Box(
@@ -65,7 +63,6 @@ state_sample_space = gym.spaces.Box(
     dtype=np.float32,
     seed=seed,
 )
-state_sampler = random_sampler(sample_space=state_sample_space)
 
 action_sample_space = gym.spaces.Box(
     low=-0.05,
@@ -74,18 +71,12 @@ action_sample_space = gym.spaces.Box(
     dtype=np.float32,
     seed=seed,
 )
-action_sampler = random_sampler(sample_space=action_sample_space)
 
-S = sample(
-    sampler=default_sampler(
-        state_sampler=state_sampler,
-        action_sampler=action_sampler,
-        env=env,
-    ),
-    sample_size=sample_size,
-)
+state_sampler = space_sampler(state_sample_space)
+action_sampler = space_sampler(action_sample_space)
+S = transition_sampler(env, state_sampler, action_sampler).sample(size=sample_size)
 
-A = make_grid_from_space(sample_space=action_sample_space, resolution=[20, 20])
+A = boxgrid(space=action_sample_space, resolution=[20, 20])
 
 
 # %% [markdown]
@@ -186,11 +177,11 @@ policy.train(S=S, A=A)
 # Simulate the controlled system.
 env.reset()
 initial_condition = [-0.8, -0.8, 0, 0]
-env.state = initial_condition
+env.reset(initial_condition)
 trajectory = [initial_condition]
 
 for t in range(time_horizon):
-    action = policy(time=t, state=[env.state])
+    action = policy(time=t, state=env.state)
     state, *_ = env.step(time=t, action=action)
 
     trajectory.append(list(state))

@@ -29,23 +29,19 @@ different structures, e.g.
 
 """
 
-from gym_socks.sampling.sample import sample_generator
+from gym_socks.sampling.sample import sample_fn
 
-from gym_socks.sampling.sample import sample
-
-from gym_socks.sampling.sample import default_sampler
-from gym_socks.sampling.sample import default_trajectory_sampler
+from gym_socks.sampling.sample import space_sampler
 from gym_socks.sampling.sample import grid_sampler
-from gym_socks.sampling.sample import random_sampler
 
-from gym_socks.sampling.sample import repeat
+from gym_socks.sampling.sample import transition_sampler
+from gym_socks.sampling.sample import trajectory_sampler
+
 
 __all__ = [
-    "sample_generator",
-    "sample",
-    "default_sampler",
-    "default_trajectory_sampler",
+    "sample_fn",
+    "space_sampler",
     "grid_sampler",
-    "random_sampler",
-    "repeat",
+    "transition_sampler",
+    "trajectory_sampler",
 ]

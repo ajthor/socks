@@ -7,19 +7,17 @@ from gym_socks.envs import NDIntegratorEnv
 from gym_socks.policies import ConstantPolicy
 from gym_socks.policies import RandomizedPolicy
 
-from gym_socks.sampling.sample import sample_generator
-from gym_socks.sampling.sample import sample
-from gym_socks.sampling.sample import default_sampler
-from gym_socks.sampling.sample import default_trajectory_sampler
-from gym_socks.sampling.sample import random_sampler
+from gym_socks.sampling.sample import sample_fn
+from gym_socks.sampling.sample import space_sampler
 from gym_socks.sampling.sample import grid_sampler
-from gym_socks.sampling.sample import repeat
+from gym_socks.sampling.sample import transition_sampler
+from gym_socks.sampling.sample import trajectory_sampler
 
 from gym_socks.sampling.transform import transpose_sample
 from gym_socks.sampling.transform import flatten_sample
 
-from gym_socks.utils.grid import make_grid_from_ranges
-from gym_socks.utils.grid import make_grid_from_space
+from gym_socks.utils.grid import boxgrid
+from gym_socks.utils.grid import cartesian
 
 import numpy as np
 
@@ -38,17 +36,12 @@ class TestSample(unittest.TestCase):
 
         sample_size = 10
 
-        state_sampler = random_sampler(sample_space=cls.env.state_space)
-        action_sampler = random_sampler(sample_space=cls.env.action_space)
+        state_sampler = space_sampler(space=cls.env.state_space)
+        action_sampler = space_sampler(space=cls.env.action_space)
 
-        S = sample(
-            sampler=default_sampler(
-                state_sampler=state_sampler,
-                action_sampler=action_sampler,
-                env=cls.env,
-            ),
-            sample_size=sample_size,
-        )
+        S = transition_sampler(
+            env=cls.env, state_sampler=state_sampler, action_sampler=action_sampler
+        ).sample(size=sample_size)
 
         X, U, Y = transpose_sample(S)
 
@@ -59,35 +52,24 @@ class TestSample(unittest.TestCase):
     def test_grid_sampler(cls):
         """Grid sampler should output items on a grid of the correct size."""
 
-        # print(np.repeat(np.linspace(-1, 1, 5), 2, axis=0))
-
         sample_size = 27
 
-        state_sampler = repeat(
-            grid_sampler(
-                make_grid_from_space(
-                    sample_space=gym.spaces.Box(
-                        low=-1,
-                        high=1,
-                        shape=cls.env.state_space.shape,
-                        dtype=cls.env.state_space.dtype,
-                    ),
-                    resolution=3,
-                )
-            ),
-            num=3,
+        state_sample_space = gym.spaces.Box(
+            low=-1,
+            high=1,
+            shape=cls.env.state_space.shape,
+            dtype=cls.env.state_space.dtype,
         )
 
-        action_sampler = grid_sampler(make_grid_from_ranges([np.linspace(-1, 1, 3)]))
+        state_grid = boxgrid(space=state_sample_space, resolution=3)
+        action_grid = cartesian(np.linspace(-1, 1, 3))
 
-        S = sample(
-            sampler=default_sampler(
-                state_sampler=state_sampler,
-                action_sampler=action_sampler,
-                env=cls.env,
-            ),
-            sample_size=sample_size,
-        )
+        state_sampler = grid_sampler(grid_points=state_grid).repeat(num=3)
+        action_sampler = grid_sampler(grid_points=action_grid)
+
+        S = transition_sampler(
+            env=cls.env, state_sampler=state_sampler, action_sampler=action_sampler
+        ).sample(size=sample_size)
 
         X, U, Y = transpose_sample(S)
 
@@ -164,17 +146,12 @@ class TestSample(unittest.TestCase):
 
         sample_size = 10
 
-        state_sampler = random_sampler(sample_space=cls.env.state_space)
-        action_sampler = random_sampler(sample_space=cls.env.action_space)
+        state_sampler = space_sampler(space=cls.env.state_space)
+        action_sampler = space_sampler(space=cls.env.action_space)
 
-        S = sample(
-            sampler=default_sampler(
-                state_sampler=state_sampler,
-                action_sampler=action_sampler,
-                env=cls.env,
-            ),
-            sample_size=sample_size,
-        )
+        S = transition_sampler(
+            env=cls.env, state_sampler=state_sampler, action_sampler=action_sampler
+        ).sample(size=sample_size)
 
         X, U, Y = transpose_sample(S)
 
@@ -188,18 +165,15 @@ class TestSample(unittest.TestCase):
         sample_size = 10
         time_horizon = 5
 
-        state_sampler = random_sampler(sample_space=cls.env.state_space)
-        action_sampler = random_sampler(sample_space=cls.env.action_space)
+        state_sampler = space_sampler(space=cls.env.state_space)
+        action_sampler = space_sampler(space=cls.env.action_space)
 
-        S = sample(
-            sampler=default_trajectory_sampler(
-                state_sampler=state_sampler,
-                action_sampler=action_sampler,
-                env=cls.env,
-                time_horizon=5,
-            ),
-            sample_size=sample_size,
-        )
+        S = trajectory_sampler(
+            env=cls.env,
+            state_sampler=state_sampler,
+            action_sampler=action_sampler,
+            time_horizon=5,
+        ).sample(size=sample_size)
 
         cls.assertEqual(np.array(S[0][0]).shape, (2,))
         cls.assertEqual(np.array(S[0][1]).shape, (5, 1))
@@ -222,22 +196,19 @@ class TestSample(unittest.TestCase):
 
         sample_size = 10
 
-        @sample_generator
+        @sample_fn
         def custom_sampler():
             state = cls.sample_space.sample()
             action = cls.env.action_space.sample()
 
-            cls.env.state = state
+            cls.env.reset(state)
             next_state, *_ = cls.env.step(action=action)
 
-            return (state, action, next_state)
+            return state, action, next_state
 
         #   ^^^^^^
 
-        S = sample(
-            sampler=custom_sampler,
-            sample_size=sample_size,
-        )
+        S = custom_sampler().sample(size=sample_size)
 
         X, U, Y = transpose_sample(S)
 
@@ -249,22 +220,19 @@ class TestSample(unittest.TestCase):
 
         sample_size = 10
 
-        @sample_generator
+        @sample_fn
         def custom_sampler():
             state = cls.sample_space.sample()
             action = cls.env.action_space.sample()
 
-            cls.env.state = state
+            cls.env.reset(state)
             next_state, *_ = cls.env.step(action=action)
 
             yield (state, action, next_state)
 
         #   ^^^^^
 
-        S = sample(
-            sampler=custom_sampler,
-            sample_size=sample_size,
-        )
+        S = custom_sampler().sample(size=sample_size)
 
         X, U, Y = transpose_sample(S)
 
@@ -276,23 +244,20 @@ class TestSample(unittest.TestCase):
 
         sample_size = 10
 
-        state_sampler = random_sampler(sample_space=cls.env.state_space)
+        state_sampler = space_sampler(space=cls.env.state_space)
         policy = ConstantPolicy(action_space=cls.env.action_space, constant=-1.0)
 
-        @sample_generator
+        @sample_fn
         def custom_sampler():
             state = next(state_sampler)
             action = policy()
 
-            cls.env.state = state
+            cls.env.reset(state)
             next_state, *_ = cls.env.step(action=action)
 
             yield (state, action, next_state)
 
-        S = sample(
-            sampler=custom_sampler,
-            sample_size=sample_size,
-        )
+        S = custom_sampler().sample(size=sample_size)
 
         X, U, Y = transpose_sample(S)
 

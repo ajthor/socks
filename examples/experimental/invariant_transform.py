@@ -49,11 +49,11 @@ from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
 
 from functools import partial
 from itertools import islice
-from sklearn.metrics.pairwise import rbf_kernel
 
-from gym_socks.sampling import sample
-from gym_socks.sampling import random_sampler
-from gym_socks.sampling import sample_generator
+from gym_socks.kernel.metrics import rbf_kernel
+
+from gym_socks.sampling import sample_fn
+from gym_socks.sampling import space_sampler
 from gym_socks.sampling.transform import transpose_sample
 
 import matplotlib
@@ -72,15 +72,14 @@ class DeterministicNonholonomicVehicleEnv(NonholonomicVehicleEnv):
 
 deterministic_env = DeterministicNonholonomicVehicleEnv()
 
+# Generate a collection of random actions.
 action_sample_space = gym.spaces.Box(
     low=np.array([0.1, -10.1], dtype=np.float32),
     high=np.array([1.1, 10.1], dtype=np.float32),
     shape=deterministic_env.action_space.shape,
     dtype=deterministic_env.action_space.dtype,
 )
-action_sampler = random_sampler(action_sample_space)
-# Generate a collection of random actions.
-random_actions = list(islice(action_sampler, 100))
+random_actions = space_sampler(action_sample_space).sample(size=100)
 
 
 # %% [markdown]
@@ -97,14 +96,14 @@ random_actions = list(islice(action_sampler, 100))
 resulting_states1 = []
 initial_condition1 = [0, 0, 0]
 for action in random_actions:
-    deterministic_env.state = initial_condition1
+    deterministic_env.reset(initial_condition1)
     deterministic_env.step(action=action)
     resulting_states1.append(deterministic_env.state)
 
 resulting_states2 = []
 initial_condition2 = [0.2, 0, 0]
 for action in random_actions:
-    deterministic_env.state = initial_condition2
+    deterministic_env.reset(initial_condition2)
     deterministic_env.step(action=action)
     resulting_states2.append(deterministic_env.state)
 
@@ -133,14 +132,14 @@ plt.show()
 resulting_states1 = []
 initial_condition1 = [0, 0, 0]
 for action in random_actions:
-    deterministic_env.state = initial_condition1
+    deterministic_env.reset(initial_condition1)
     deterministic_env.step(action=action)
     resulting_states1.append(deterministic_env.state)
 
 resulting_states2 = []
 initial_condition2 = [0, 0, np.pi / 2]
 for action in random_actions:
-    deterministic_env.state = initial_condition2
+    deterministic_env.reset(initial_condition2)
     deterministic_env.step(action=action)
     resulting_states2.append(deterministic_env.state)
 
@@ -167,7 +166,7 @@ plt.show()
 # %%
 sigma = 1.5  # Kernel bandwidth parameter.
 regularization_param = 1e-5  # Regularization parameter.
-kernel_fn = partial(rbf_kernel, gamma=1 / (2 * sigma ** 2))
+kernel_fn = partial(rbf_kernel, sigma=sigma)
 
 time_horizon = 20
 
@@ -180,7 +179,7 @@ seed = 12345
 # information while we generate it from random initial conditions.
 #
 # _NOTE_: We use significantly less sample information to obtain a similar result to the
-# `tracking` example. Here, since we can translate and rotate the sample, we use 50
+# `tracking` example. Here, since we can translate and rotate the sample, we use 100
 # sample points, wehre in the other example we use 1,500 by default to obtain similar
 # behavior.
 
@@ -197,28 +196,23 @@ action_sample_space = gym.spaces.Box(
     dtype=env.action_space.dtype,
     seed=seed,
 )
-action_sampler = random_sampler(action_sample_space)
+action_sampler = space_sampler(action_sample_space)
 
 
-@sample_generator
+@sample_fn
 def custom_sampler():
-    state = [0, 0, 0]
+    state = np.array([0.0, 0.0, 0.0])
     action = next(action_sampler)
 
-    env.state = state
+    env.reset(state)
     env.step(action=action)
     next_state = env.state
 
-    yield (state, action, next_state)
+    yield state, action, next_state
 
 
-@sample_generator
-def custom_action_sampler():
-    yield next(action_sampler)
-
-
-S = sample(sampler=custom_sampler, sample_size=sample_size)
-A = sample(sampler=custom_action_sampler, sample_size=sample_size)
+S = custom_sampler().sample(size=sample_size)
+A = action_sampler.sample(size=sample_size)
 
 X, U, Y = transpose_sample(S)
 
@@ -311,7 +305,7 @@ def _tracking_cost(time: int = 0, state: np.ndarray = None) -> float:
 # %%
 env.reset()
 initial_condition = [-0.8, 0, 0]
-env.state = initial_condition
+env.reset(initial_condition)
 trajectory = [initial_condition]
 
 for t in range(time_horizon):

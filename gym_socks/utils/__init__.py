@@ -1,4 +1,4 @@
-__all__ = ["logging", "normalize", "indicator_fn", "generate_batches"]
+__all__ = ["logging", "normalize", "indicator_fn", "batch_generator"]
 
 import gym
 

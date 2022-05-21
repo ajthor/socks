@@ -15,11 +15,9 @@ from gym_socks.sampling import random_sampler
 from gym_socks.sampling import sample
 from gym_socks.sampling import default_sampler
 
-from gym_socks.utils.grid import make_grid_from_ranges
-
 from gym_socks.algorithms.reach import kernel_sr_max
 
-from sklearn.metrics.pairwise import rbf_kernel
+from gym_socks.kernel.metrics import rbf_kernel
 
 
 ex = Experiment()
@@ -166,7 +164,7 @@ def main(
         target_tube=target_tube,
         problem=problem,
         regularization_param=regularization_param,
-        kernel_fn=partial(rbf_kernel, gamma=1 / (2 * (sigma ** 2))),
+        kernel_fn=partial(rbf_kernel, sigma=sigma),
         verbose=False,
     )
 

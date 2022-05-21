@@ -14,7 +14,10 @@ class PlanarQuadrotorEnv(DynamicalSystem):
 
     Bases: :py:class:`gym_socks.envs.dynamical_system.DynamicalSystem`
 
-    A planar quadrotor is quadrotor restricted to two dimensions. Similar to the OpenAI gym lunar lander benchmark, the planar quadrotor is a bar with two independent rotors at either end. Inputs are the trust of the rotors, and apply a torque to the bar. The system is also subject to gravitational forces.
+    A planar quadrotor is quadrotor restricted to two dimensions. Similar to the OpenAI
+    gym lunar lander benchmark, the planar quadrotor is a bar with two independent
+    rotors at either end. Inputs are the trust of the rotors, and apply a torque to the
+    bar. The system is also subject to gravitational forces.
 
     """
 

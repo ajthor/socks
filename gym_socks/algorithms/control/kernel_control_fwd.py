@@ -78,6 +78,7 @@ def kernel_control_fwd(
 
     Returns:
         The policy.
+
     """
 
     alg = KernelControlFwd(
@@ -190,10 +191,9 @@ class KernelControlFwd(BasePolicy):
 
         logger.debug("Computing matrix inverse.")
         self.W = regularized_inverse(
-            X,
-            U=U,
-            kernel_fn=self.kernel_fn,
-            regularization_param=self.regularization_param,
+            self.kernel_fn(X) * self.kernel_fn(U),
+            self.regularization_param,
+            copy=False,
         )
 
         logger.debug("Computing covariance matrix.")
@@ -213,6 +213,8 @@ class KernelControlFwd(BasePolicy):
         if state is None:
             print("Must supply a state to the policy.")
             return None
+
+        state = np.atleast_2d(np.asarray(state, dtype=np.float32))
 
         T = np.array(state)
 

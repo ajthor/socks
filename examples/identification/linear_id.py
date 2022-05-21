@@ -26,9 +26,9 @@ from gym.envs.registration import make
 from gym_socks.algorithms.identification.kernel_linear_id import kernel_linear_id
 
 from gym_socks.policies import ConstantPolicy
-from gym_socks.sampling import sample
-from gym_socks.sampling import sample_generator
-from gym_socks.sampling import random_sampler
+
+from gym_socks.sampling import space_sampler
+from gym_socks.sampling import transition_sampler
 
 # %% [markdown]
 # Configuration variables.
@@ -50,23 +50,9 @@ env = make(system_id)
 
 sample_size = 100
 
-state_sampler = random_sampler(sample_space=env.state_space)
-action_sampler = random_sampler(sample_space=env.action_space)
-
-
-@sample_generator
-def sampler():
-    state = next(state_sampler)
-    action = next(action_sampler)
-
-    env.state = state
-    next_state, *_ = env.step(action=action)
-
-    yield (state, action, next_state)
-
-
-S = sample(sampler=sampler, sample_size=sample_size)
-
+state_sampler = space_sampler(env.state_space)
+action_sampler = space_sampler(env.action_space)
+S = transition_sampler(env, state_sampler, action_sampler).sample(size=sample_size)
 
 # %% [markdown]
 # ## Algorithm
@@ -93,10 +79,10 @@ env.reset()
 initial_condition = [-0.75, -0.75, 0, 0]
 
 # Simulate the system using the actual dynamics.
-env.state = initial_condition
+env.reset(initial_condition)
 actual_trajectory = [env.state]
 for t in range(time_horizon):
-    action = np.array(policy(time=t, state=[env.state]), dtype=np.float32)
+    action = policy(time=t, state=env.state)
     obs, *_ = env.step(time=t, action=action)
     next_state = env.state
 
@@ -105,7 +91,7 @@ for t in range(time_horizon):
 # Simulate the system using the approximated dynamics.
 estimated_trajectory = [initial_condition]
 for t in range(time_horizon):
-    action = policy(time=t, state=[env.state])
+    action = policy(time=t, state=env.state)
     state = alg.predict(T=estimated_trajectory[t], U=action)
 
     estimated_trajectory.append(state)

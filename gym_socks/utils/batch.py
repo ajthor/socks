@@ -1,14 +1,16 @@
-def generate_batches(num_elements, batch_size):
+from collections.abc import Sequence
+
+
+def batch_generator(s: Sequence, size: int):
     """Generate batches.
 
-    Batch generation function to split a list into smaller batches (slices). Generates
-    `slice` objects, which can be iterated over in a for loop.
+    Batch generation function to split a sequence into smaller batches (slices).
+    Generates `slice` objects, which can be iterated over in a for loop.
 
     Args:
-        num_elements: Length of the list.
-        batch_size: Maximum size of the batches. If the last batch is smaller than
-            `batch_size`, then the final batch will be the length of the remaining
-            elements.
+        s: A sequence.
+        size: Size of the batches. If the last batch is smaller than `size`, then the
+            final batch will be the length of the remaining elements.
 
     Yields:
         A slice object.
@@ -17,12 +19,12 @@ def generate_batches(num_elements, batch_size):
 
     start = 0
 
-    for _ in range(num_elements // batch_size):
-        end = start + batch_size
+    for _ in range(len(s) // size):
+        end = start + size
 
         yield slice(start, end)
 
         start = end
 
-    if start < num_elements:
-        yield slice(start, num_elements)
+    if start < len(s):
+        yield slice(start, len(s))
