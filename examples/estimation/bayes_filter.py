@@ -21,6 +21,7 @@ import numpy as np
 from gym.spaces import Box
 
 from gym_socks.algorithms.estimation import kernel_bayes_filter
+from gym_socks.algorithms.estimation import kernel_bayes_sampler
 from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.sampling import sample_fn
@@ -30,6 +31,9 @@ from gym_socks.sampling.transform import transpose_sample
 from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
 
 from sklearn.metrics.pairwise import linear_kernel
+
+import matplotlib
+import matplotlib.pyplot as plt
 
 # %% [markdown]
 # ## Define the Partially Observable System
@@ -42,11 +46,11 @@ from sklearn.metrics.pairwise import linear_kernel
 class PartiallyObservableEnv(NonholonomicVehicleEnv):
     def generate_observation(self, time, state, action):
         v = self.np_random.standard_normal(size=self.observation_space.shape)
-        return np.array(state, dtype=np.float32) + 1e-5 * np.array(v)
+        return np.array(state, dtype=np.float32) + 1e-3 * np.array(v)
 
     def generate_disturbance(self, time, state, action):
         w = self.np_random.standard_normal(size=self.state_space.shape)
-        return 1e-3 * np.array(w)
+        return 1e-5 * np.array(w)
 
 
 # Define the system.
@@ -63,7 +67,7 @@ env = PartiallyObservableEnv(seed=seed)
 # the system or from high-fidelity simulations.
 
 # %%
-sample_size = 2000
+sample_size = 1000
 
 state_sampler = space_sampler(
     space=Box(
@@ -85,20 +89,7 @@ action_sampler = space_sampler(
     )
 )
 
-
-@sample_fn
-def sampler(env, state_sampler, action_sampler):
-    state = next(state_sampler)
-    action = next(action_sampler)
-
-    env.state = state
-    observation, *_ = env.step(action=action)
-    next_state = env.state
-
-    yield state, action, next_state, observation
-
-
-S = sampler(env, state_sampler, action_sampler).sample(size=sample_size)
+S = kernel_bayes_sampler(env, state_sampler, action_sampler).sample(size=sample_size)
 
 # %% [markdown]
 # ## Fit the Estimator to the Data
@@ -131,7 +122,10 @@ actual_trajectory = []
 estimated_trajectory = []
 
 for t in range(time_horizon):
-    action = [0.5, 1]  # Constant forward velocity and turn rate.
+    action = [
+        0.2 * np.random.rand() + 0.4,  # [0.4, 0.6]
+        0.2 * np.random.rand() + 0.9,  # [0.9, 1.1]
+    ]  # Random forward velocity and turn rate.
     obs, *_ = env.step(action=action, time=t)
 
     est_state = estimator.predict(action=[action], observation=[obs])
@@ -146,31 +140,46 @@ for t in range(time_horizon):
 # state trajectory.
 
 # %%
-import matplotlib
-import matplotlib.pyplot as plt
-
 fig = plt.figure()
 ax = plt.axes()
 
-actual_trajectory = np.array(actual_trajectory)
-estimated_trajectory = np.array(estimated_trajectory)
-
-print(actual_trajectory)
-print(estimated_trajectory)
-
+# Plot the actual trajectory of the system.
 actual_trajectory = np.array(actual_trajectory, dtype=np.float32)
 plt.plot(
     actual_trajectory[:, 0],
     actual_trajectory[:, 1],
+    # marker="x",
     label="Actual Trajectory",
 )
 
+paper_airplane = [(0, -0.25), (0.5, -0.5), (0, 1), (-0.5, -0.5), (0, -0.25)]
+
+# Plot the markers as arrows, showing vehicle heading.
+for x in actual_trajectory:
+    angle = -np.rad2deg(x[2])
+
+    t = matplotlib.markers.MarkerStyle(marker=paper_airplane)
+    t._transform = t.get_transform().rotate_deg(angle)
+
+    plt.plot(x[0], x[1], marker=t, markersize=10, linestyle="None", color="C0")
+
+# Plot the estimated trajectory of the system.
 estimated_trajectory = np.array(estimated_trajectory, dtype=np.float32)
 plt.plot(
     estimated_trajectory[:, 0],
     estimated_trajectory[:, 1],
+    # marker="o",
     label="Estimated Trajectory",
 )
+
+# Plot the markers as arrows, showing vehicle heading.
+for x in estimated_trajectory:
+    angle = -np.rad2deg(x[2])
+
+    t = matplotlib.markers.MarkerStyle(marker=paper_airplane)
+    t._transform = t.get_transform().rotate_deg(angle)
+
+    plt.plot(x[0], x[1], marker=t, markersize=10, linestyle="None", color="C1")
 
 plt.legend()
 

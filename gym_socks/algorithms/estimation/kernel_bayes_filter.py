@@ -26,9 +26,12 @@ from functools import partial
 
 import numpy as np
 
+from gym import Env
+
 from gym_socks.kernel.metrics import rbf_kernel
 from gym_socks.kernel.metrics import regularized_inverse
 
+from gym_socks.sampling import sample_fn
 from gym_socks.sampling.transform import transpose_sample
 
 from gym_socks.utils.validation import check_array
@@ -37,6 +40,30 @@ import logging
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
 
 logger = logging.getLogger(__name__)
+
+
+@sample_fn
+def kernel_bayes_sampler(env: Env, state_sampler, action_sampler):
+    """Sample function for kernel Bayes' filter algorithm.
+
+    Args:
+        env: The environment to sample from.
+        state_sampler: The state sample function.
+        action_sampler: The action sample function.
+
+    Returns:
+        Tuples of state, action, next state, and the associated observation.
+
+    """
+
+    state = next(state_sampler)
+    action = next(action_sampler)
+
+    env.state = state
+    observation, *_ = env.step(action=action)
+    next_state = env.state
+
+    return state, action, next_state, observation
 
 
 def kernel_bayes_filter(
@@ -75,6 +102,7 @@ class KernelBayesFilter(object):
     """Kernel bayes filter.
 
     Args:
+        kernel_fn: Kernel function used by the estimator.
         regularization_param: Regularization parameter used in the solution to the
             regularized least-squares problem.
         verbose: Boolean flag to indicate verbose output.
@@ -112,7 +140,7 @@ class KernelBayesFilter(object):
         """The belief state data points."""
         return self._belief_data
 
-    def fit(self, S: np.ndarray, initial_condition: np.ndarray = None):
+    def fit(self, S: list, initial_condition: np.ndarray = None):
         """Run the algorithm.
 
         Args:
