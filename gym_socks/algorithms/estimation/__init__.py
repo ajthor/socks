@@ -3,3 +3,6 @@ __all__ = ["kernel_bayes_filter"]
 from gym_socks.algorithms.estimation.kernel_bayes_filter import kernel_bayes_filter
 from gym_socks.algorithms.estimation.kernel_bayes_filter import kernel_bayes_sampler
 from gym_socks.algorithms.estimation.kernel_bayes_filter import KernelBayesFilter
+
+from gym_socks.algorithms.estimation.kernel_belief_prop import KernelBeliefPropagation
+from gym_socks.algorithms.estimation.kernel_belief_prop import kernel_belief_propagation
