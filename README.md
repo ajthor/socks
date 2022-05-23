@@ -28,7 +28,7 @@ support Windows.
 SOCKS comes with several examples in the GitHub repo. In order to run the examples,
 first install the package and use `python examples/<example>` from the code directory.
 
-For example, `python python examples/control/tracking.py` will run the optimal control
+For example, `python examples/control/tracking.py` will run the optimal control
 algorithm on the tracking benchmark using nonholonomic vehicle dynamics.
 
 ## Citation
