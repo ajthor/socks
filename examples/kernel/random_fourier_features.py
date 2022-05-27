@@ -63,13 +63,15 @@ num_features = 100  # Number of Fourier features.
 
 # %%
 start = perf_counter()
-alg = ConditionalEmbedding(regularization_param=regularization_param)
 
 w = np.random.standard_normal((np.shape(X_train)[1], num_features))
 Z_train = np.exp(1j * X_train @ w)
 Z_test = np.exp(1j * X_test @ w)
 
-y_pred1 = alg.fit(Z_train.T @ Z_train).predict(Z_train.T @ y_train, Z_test.T)
+# We use `np.linalg.solve` here to avoid issues with Cholesky factorization.
+y_pred1 = np.linalg.solve(Z_train.T @ Z_train, Z_train.T @ y_train)
+y_pred1 = Z_test @ y_pred1
+
 print(perf_counter() - start)
 
 # %% [markdown]
@@ -87,7 +89,7 @@ rbf_sampler = RBFSampler(gamma=gamma, n_components=num_features, random_state=1)
 Z_train = rbf_sampler.fit_transform(X_train)
 Z_test = rbf_sampler.fit_transform(X_test)
 
-y_pred2 = alg.fit(Z_train.T @ Z_train).predict(Z_train.T @ y_train, Z_test.T)
+y_pred2 = alg.fit(Z_train.T @ Z_train, Z_train.T @ y_train).predict(Z_test.T)
 print(perf_counter() - start)
 
 # %% [markdown]

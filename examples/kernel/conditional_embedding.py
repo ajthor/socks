@@ -58,7 +58,7 @@ regularization_param = 1 / (sample_size ** 2)
 start = perf_counter()
 alg = ConditionalEmbedding(regularization_param=regularization_param)
 
-y_pred = alg.fit(kernel_fn(X_train)).predict(y_train, kernel_fn(X_train, X_test))
+y_pred = alg.fit(kernel_fn(X_train), y_train).predict(kernel_fn(X_train, X_test))
 print(perf_counter() - start)
 
 # %% [markdown]
