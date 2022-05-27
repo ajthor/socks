@@ -100,3 +100,56 @@ class ConditionalEmbedding(RegressorMixin):
 
     def score(self, y_test: np.ndarray, K: np.ndarray, y_train: np.ndarray):
         return _regression_score(y_test, self.predict(y_train, K))
+
+
+def _sample_uniform_ball(num_samples: int, dim: int = 3, radius: float = 1):
+    S = np.random.randn(dim, num_samples)
+    S /= np.linalg.norm(S, axis=0)
+
+    U = np.random.random(num_samples) ** (1 / dim)
+
+    return radius * (S * U).T
+
+
+class GenerativeModel(ConditionalEmbedding):
+    def predict(
+        self,
+        K: np.ndarray,
+        num_samples: int = 1,
+    ):
+        r"""Predict the values.
+
+        Args:
+            G: The kernel matrix. Usually computed as ``kernel_fn(X_test, X_test)``.
+            K: The kernel matrix. Usually computed as ``kernel_fn(X_train, X_test)``.
+
+        Returns:
+            An ndarray of predicted y values.
+
+        """
+
+        # X = check_array(X)
+        # G = check_matrix(G, copy=True)
+        K = check_matrix(K, copy=True)
+
+        # mean = np.einsum("ij,ik->k", self._alpha, K)
+        # cov = G
+        # # cov[np.diag_indices_from(cov)] += self.regularization_param
+
+        # y_samples = np.empty((num_samples, *shape))
+
+        # for dim in range(shape[1]):
+        #     y_samples[:, :, dim] = np.random.multivariate_normal(mean, cov, num_samples)
+
+        # return y_samples
+
+        # Generate points in a Hilbert space ball centered at the mean.
+        coeffs = _sample_uniform_ball(num_samples, len(self._alpha), radius=1)
+        coeffs += self._alpha.T
+
+        y_samples = coeffs @ K
+
+        return y_samples
+
+    def score(self, y: np.ndarray):
+        raise NotImplementedError()
