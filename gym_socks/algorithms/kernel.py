@@ -103,6 +103,18 @@ class ConditionalEmbedding(RegressorMixin):
 
 
 def _sample_uniform_ball(num_samples: int, dim: int = 3, radius: float = 1):
+    """Generate uniform random points in an ND ball.
+
+    Args:
+        num_samples: Number of points to generate.
+        dim: The dimensionality of the ball.
+        radius: The radius of the ball.
+
+    Returns:
+        A sample of points of shape `(dim, num_samples)`.
+
+    """
+
     S = np.random.randn(dim, num_samples)
     S /= np.linalg.norm(S, axis=0)
 
@@ -112,42 +124,83 @@ def _sample_uniform_ball(num_samples: int, dim: int = 3, radius: float = 1):
 
 
 class GenerativeModel(ConditionalEmbedding):
+    r"""Generative model.
+
+    The generative model is a distribution over functions, meaning given a set of
+    inputs, it outputs a random function that *could* fit the data. Unlike the
+    :py:class:`ConditionalEmbedding` class, the :py:class:`GenerativeModel` class does
+    **not** compute the *best fit* function that matches the mean of the data. Instead,
+    it computes a function that is within a Hilbert space ball of the embedding.
+
+    In other words, if :math:`m \in \mathscr{H}` is the conditional embedding, then the
+    generative model produces a random function :math:`f \in \mathscr{H}` such that
+    :math:`\lVert m - f \rVert \leq \delta`, where :math:`\delta` is the radius of the
+    ball.
+
+    This is useful in generating functions or trajectories which are superficially
+    similar to the true embedding.
+
+    Important:
+
+        It is important to note that the generated functions are close to the empirical
+        conditional embedding, not the true embedding. Therefore, it should not be
+        expected that the generated functions obey the same confidence bounds as the
+        conditional embedding.
+
+    """
+
     def predict(
         self,
         K: np.ndarray,
         num_samples: int = 1,
+        radius: float = None,
     ):
-        r"""Predict the values.
+        r"""Generate predicted functions.
+
+        Generates a function that is within ``radius`` of the conditional embedding in
+        the RKHS norm.
 
         Args:
-            G: The kernel matrix. Usually computed as ``kernel_fn(X_test, X_test)``.
             K: The kernel matrix. Usually computed as ``kernel_fn(X_train, X_test)``.
+            num_samples: Number of samples to compute.
+            radius: The radius of the Hilbert space ball.
 
         Returns:
             An ndarray of predicted y values.
 
         """
 
-        # X = check_array(X)
-        # G = check_matrix(G, copy=True)
+        radius = 1 if radius is None else radius
+
         K = check_matrix(K, copy=True)
 
-        # mean = np.einsum("ij,ik->k", self._alpha, K)
-        # cov = G
-        # # cov[np.diag_indices_from(cov)] += self.regularization_param
-
-        # y_samples = np.empty((num_samples, *shape))
-
-        # for dim in range(shape[1]):
-        #     y_samples[:, :, dim] = np.random.multivariate_normal(mean, cov, num_samples)
-
-        # return y_samples
+        # bound = self.regularization_param * len(self._alpha) ** (-1 / 2)
+        # bound += self.regularization_param ** (1 / 2)
 
         # Generate points in a Hilbert space ball centered at the mean.
-        coeffs = _sample_uniform_ball(num_samples, len(self._alpha), radius=1)
+        coeffs = _sample_uniform_ball(num_samples, len(self._alpha), radius)
         coeffs += self._alpha.T
 
         y_samples = coeffs @ K
+
+        return y_samples
+
+    def sample_y(
+        self,
+        shape: tuple,
+        G: np.ndarray,
+        K: np.ndarray,
+        num_samples: int = 1,
+    ):
+
+        mean = np.einsum("ij,ik->k", self._alpha, K)
+        cov = G
+        # cov[np.diag_indices_from(cov)] += self.regularization_param
+
+        y_samples = np.empty((num_samples, *shape))
+
+        for dim in range(shape[1]):
+            y_samples[:, :, dim] = np.random.multivariate_normal(mean, cov, num_samples)
 
         return y_samples
 

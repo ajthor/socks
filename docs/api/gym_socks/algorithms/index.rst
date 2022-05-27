@@ -22,3 +22,4 @@ Submodules
    :maxdepth: 1
 
    base/index.rst
+   kernel/index.rst
