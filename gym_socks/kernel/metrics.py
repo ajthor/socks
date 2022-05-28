@@ -215,15 +215,12 @@ def rbf_kernel_derivative(
     X: np.ndarray,
     Y: np.ndarray = None,
     sigma: float = None,
-    D: np.ndarray = None,
 ) -> np.ndarray:
 
     X, Y = check_pairwise_arrays(X, Y)
 
-    if D is None:
-        D = euclidean_distances(X, Y, squared=False)
-    else:
-        D = check_pairwise_distances(D, shape=(X.shape[0], Y.shape[0]))
+    # Compute a "difference" matrix between points.
+    D = np.squeeze(np.subtract.outer(Y, X)).T
 
     if sigma is None:
         sigma = np.median(D)

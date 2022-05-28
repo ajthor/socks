@@ -22,12 +22,15 @@ To run the example, use the following command:
 # %%
 import numpy as np
 from functools import partial
-from gym_socks.algorithms.kernel import ConditionalEmbedding
-from gym_socks.kernel.metrics import rbf_kernel_derivative
 
 from gym_socks.kernel.metrics import rbf_kernel
+from gym_socks.kernel.metrics import rbf_kernel_derivative
+from gym_socks.kernel.metrics import regularized_inverse
 
 from time import perf_counter
+
+import matplotlib
+from matplotlib import pyplot as plt
 
 # %% [markdown]
 # ## Generate the Sample
@@ -58,17 +61,18 @@ regularization_param = 1 / (sample_size ** 2)
 
 #  %%
 start = perf_counter()
-alg = ConditionalEmbedding(regularization_param=regularization_param)
+
 G = kernel_fn(X_train)
 K = kernel_fn(X_train, X_test)
-alg.fit(G)
+
+W = regularized_inverse(G, regularization_param=regularization_param)
 
 C = rbf_kernel_derivative(X_train, sigma=sigma)
 D = rbf_kernel_derivative(X_train, X_test, sigma=sigma)
 
-y_pred = alg.predict(y_train, K)
-y_pred_d1 = -alg.predict(y_train, K * D)
-y_pred_d2 = alg.predict(y_train, (G * C) @ np.linalg.solve(alg._W, K * D))
+y_pred = y_train.T @ W @ K
+y_pred_d1 = -y_train.T @ W @ (K * D)
+y_pred_d2 = (y_train.T @ W @ (G * C)) @ W @ (K * D)
 
 print(perf_counter() - start)
 
@@ -79,17 +83,14 @@ print(perf_counter() - start)
 # against the original data.
 
 # %%
-import matplotlib
-from matplotlib import pyplot as plt
-
 fig = plt.figure()
 ax = plt.axes()
 plt.grid()
 
 plt.scatter(X_train, y_train, marker=".", c="grey", label="Data")
-plt.plot(X_test, y_pred, linewidth=2, label="Function Approximation")
-plt.plot(X_test, y_pred_d1, linewidth=2, label="First Derivative")
-plt.plot(X_test, y_pred_d2, linewidth=2, label="Second Derivative")
+plt.plot(X_test, y_pred.T, linewidth=2, label="Function Approximation")
+plt.plot(X_test, y_pred_d1.T, linewidth=2, label="First Derivative")
+plt.plot(X_test, y_pred_d2.T, linewidth=2, label="Second Derivative")
 
 plt.legend()
 
