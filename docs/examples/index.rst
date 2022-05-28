@@ -196,6 +196,19 @@ Experimental
         :bdg-primary-line:`control`
         :bdg-primary-line:`experimental`
 
+    .. grid-item-card::
+        :link: experimental/generative_model
+        :link-type: doc
+
+        **Generative Model**
+        ^^^
+
+        Construct a generative model via embeddings.
+
+        +++
+        :bdg-primary-line:`kernel`
+        :bdg-primary-line:`experimental`
+
 Contributing Examples
 =====================
 

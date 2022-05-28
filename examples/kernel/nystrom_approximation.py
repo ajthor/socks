@@ -28,6 +28,8 @@ from functools import partial
 from gym_socks.algorithms.kernel import ConditionalEmbedding
 
 from gym_socks.kernel.metrics import rbf_kernel
+from gym_socks.kernel.metrics import woodbury_inverse
+
 from sklearn.kernel_approximation import Nystroem
 
 from time import perf_counter
@@ -79,7 +81,7 @@ nystroem_sampler = Nystroem(
 
 Z_train = nystroem_sampler.fit_transform(X_train)
 
-y_pred = alg.fit(Z_train @ Z_train.T).predict(y_train, kernel_fn(X_train, X_test))
+y_pred = alg.fit(Z_train @ Z_train.T, y_train).predict(kernel_fn(X_train, X_test))
 print(perf_counter() - start)
 
 # %% [markdown]
@@ -138,10 +140,12 @@ np.fill_diagonal(A, 1 / (regularization_param * sample_size))
 
 C = np.identity(num_features)
 
-D = np.linalg.inv(C + (Z_train.T @ A @ Z_train))
-W = A - (A @ Z_train @ D @ Z_train.T @ A)
+# D = np.linalg.inv(C + (Z_train.T @ A @ Z_train))
+# W = A - (A @ Z_train @ D @ Z_train.T @ A)
+W = woodbury_inverse(A, Z_train, C, Z_train.T, precomputed=True)
 
 y_pred_woodbury = (y_train.T @ W @ kernel_fn(X_train, X_test)).T
+
 print(perf_counter() - start)
 
 # %% [markdown]
