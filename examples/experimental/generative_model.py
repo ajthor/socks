@@ -23,7 +23,7 @@ the data and $r$ is the radius of the ball. The generative model we construct ca
 viewed as randomly generating functions in the RKHS that are close to the empirical
 embedding in the RKHS norm. In other words, we generate functions,
 
-$$f \sim U(\lbrace f \in \mathscr{H} \mid \lVert f - m \rVert_{\mathscr{H}} \leq r
+$$g \sim U(\lbrace f \in \mathscr{H} \mid \lVert f - m \rVert_{\mathscr{H}} \leq r
 \rbrace)$$
 
 where $U$ denotes a uniform distribution over the RKHS ball.
@@ -40,25 +40,27 @@ To run the example, use the following command:
 # Graphical Explanation
 # ---------------------
 #
+# This figure shows the norm ball in the RKHS.
+#
 # .. raw:: html
 #
 #     <svg height="300" width="500">
 #     	<circle cx="97.5" cy="97.5" r="73" stroke-width="1" stroke-dasharray="0 6" stroke="black" stroke-linecap="round" fill="transparent" />
 #       <circle cx="150" cy="150" r="148" stroke-width="3" stroke-dasharray="0 6" stroke="black" stroke-linecap="round" fill="transparent" />
-#       <line x1="95" y1="95" x2="148" y2="148" style="stroke:red;stroke-width:2" />
+#       <line x1="97.5" y1="97.5" x2="148" y2="148" style="stroke:red;stroke-width:2" />
 #       <line x1="50" y1="250" x2="250" y2="50" style="stroke:blue;stroke-width:2" />
-#       <circle cx="95" cy="95" r="5" stroke-width="2" fill="red" />
+#       <circle cx="97.5" cy="97.5" r="5" stroke-width="2" fill="red" />
 #       <circle cx="150" cy="150" r="5" stroke-width="2" fill="blue" />
 #       Sorry, your browser does not support inline SVG.
 #     </svg>
 #
-# This figure shows the norm ball in the RKHS. The red dot indicates the true embedding
-# and the maximum error (distance) in probability :math:`\epsilon` (red line) to the
-# empirical embedding (blue dot). The larger ball is the RKHS ball where the generator
-# samples from. The blue line depicts the diameter of the RKHS ball. This indicates that
-# if we seek to generate functions which are still close to the true embedding, that the
-# ball should be chosen to have radius :math:`2 \epsilon` (which would have a maximum
-# error in probability of :math:`3 \epsilon`).
+# The red dot indicates the true embedding and the maximum error (distance) in
+# probability :math:`\epsilon` (red line) to the empirical embedding (blue dot). The
+# larger ball is the RKHS ball where the generator samples from. The blue line depicts
+# the diameter of the RKHS ball. This indicates that if we seek to generate functions
+# which are still close to the true embedding, that the ball should be chosen to have
+# radius :math:`2 \epsilon` (which would have a maximum error in probability of :math:`3
+# \epsilon` from the true embedding).
 
 # %% [markdown]
 # ## Demonstration of the Idea
@@ -66,7 +68,7 @@ To run the example, use the following command:
 # %%
 import numpy as np
 from functools import partial
-from gym_socks.algorithms.kernel import ConditionalEmbedding
+
 from gym_socks.algorithms.kernel import GenerativeModel
 from gym_socks.kernel.metrics import rbf_kernel
 
@@ -109,19 +111,21 @@ regularization_param = 1 / (sample_size ** 2)
 # empirical embedding.
 
 #  %%
-# Compute the conditional distribution embedding. Used for plotting.
-alg = ConditionalEmbedding(regularization_param=regularization_param)
-y_mean = alg.fit(kernel_fn(X_train), y_train).predict(kernel_fn(X_train, X_test))
-
 start = perf_counter()
 num_samples = 10  # Number of generated functions.
 
 alg = GenerativeModel(regularization_param=regularization_param)
+G = kernel_fn(X_train)
+K = kernel_fn(X_train, X_test)
+
 # Fit the gerneative model to the data.
-alg.fit(kernel_fn(X_train), y_train)
+alg.fit(G, y_train)
+
+# Compute the conditional distribution embedding. Used for plotting.
+y_mean = alg.predict(K)
 
 # Compute the predicted y values for the generated functions.
-y_pred = alg.predict(kernel_fn(X_train, X_test), num_samples, radius=4)
+y_pred = alg.sample(K, num_samples, radius=4)
 
 print(perf_counter() - start)
 
@@ -199,7 +203,7 @@ from sklearn.gaussian_process.kernels import RBF
 x = np.linspace(-5, 5, 1000)
 X_test = x.reshape(-1, 1)
 
-gpr = GaussianProcessRegressor(kernel=RBF(sigma, length_scale_bounds="fixed"), alpha=10)
+gpr = GaussianProcessRegressor(RBF(sigma, length_scale_bounds="fixed"), alpha=1)
 gpr.fit(X_train, y_train)
 
 y_mean, y_std = gpr.predict(X_test, return_std=True)
@@ -214,11 +218,11 @@ plt.scatter(X_train, y_train, marker=".", c="grey", label="Data")
 # Plot the standard deviation.
 plt.fill_between(
     x,
-    np.squeeze(y_mean) - y_std,
-    np.squeeze(y_mean) + y_std,
+    np.squeeze(y_mean) - 2 * y_std,
+    np.squeeze(y_mean) + 2 * y_std,
     alpha=0.1,
     color="black",
-    label=r"$\pm$ 1 std. dev.",
+    label=r"$\pm$ 2 std. dev.",
 )
 
 # Plot the y values from the generated functions.
@@ -232,7 +236,7 @@ plt.legend()
 plt.show()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. note::
+# .. admonition:: Try It
 #
 #     We demonstrate here a particular case where Gaussian processes may not work well
 #     as a generative process. Try changing the parameters ``alpha``, the kernel
@@ -244,13 +248,12 @@ plt.show()
 # %%
 regularization_param = 1e-2
 
-# For plotting only.
-alg = ConditionalEmbedding(regularization_param=regularization_param)
-y_mean = alg.fit(kernel_fn(X_train), y_train).predict(kernel_fn(X_train, X_test))
-
 alg = GenerativeModel(regularization_param=regularization_param)
-alg.fit(kernel_fn(X_train), y_train)
-y_pred = alg.predict(kernel_fn(X_train, X_test), num_samples, radius=1)
+alg.fit(G, y_train)
+
+y_mean = alg.predict(K)  # For plotting.
+
+y_pred = alg.sample(K, num_samples, radius=1)
 
 fig = plt.figure()
 ax = plt.axes()

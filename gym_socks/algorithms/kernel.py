@@ -58,7 +58,6 @@ class ConditionalEmbedding(RegressorMixin):
         """
 
         G = check_matrix(G, ensure_square=True, copy=True)
-        self._G = G
 
         if self.regularization_param is None:
             self.regularization_param = 1 / (len(G) ** 2)
@@ -147,9 +146,12 @@ class GenerativeModel(ConditionalEmbedding):
         expected that the generated functions obey the same confidence bounds as the
         conditional embedding.
 
+    Args:
+        regularization_param: The regularization parameter :math:`\lambda`.
+
     """
 
-    def predict(
+    def sample(
         self,
         K: np.ndarray,
         num_samples: int = 1,
@@ -174,33 +176,11 @@ class GenerativeModel(ConditionalEmbedding):
 
         K = check_matrix(K, copy=True)
 
-        # bound = self.regularization_param * len(self._alpha) ** (-1 / 2)
-        # bound += self.regularization_param ** (1 / 2)
-
         # Generate points in a Hilbert space ball centered at the mean.
         coeffs = _sample_uniform_ball(num_samples, len(self._alpha), radius)
         coeffs += self._alpha.T
 
         y_samples = coeffs @ K
-
-        return y_samples
-
-    def sample_y(
-        self,
-        shape: tuple,
-        G: np.ndarray,
-        K: np.ndarray,
-        num_samples: int = 1,
-    ):
-
-        mean = np.einsum("ij,ik->k", self._alpha, K)
-        cov = G
-        # cov[np.diag_indices_from(cov)] += self.regularization_param
-
-        y_samples = np.empty((num_samples, *shape))
-
-        for dim in range(shape[1]):
-            y_samples[:, :, dim] = np.random.multivariate_normal(mean, cov, num_samples)
 
         return y_samples
 
