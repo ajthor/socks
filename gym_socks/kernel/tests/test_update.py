@@ -8,9 +8,8 @@ from scipy.linalg import cholesky
 
 from gym_socks.kernel.metrics import rbf_kernel
 
-from gym_socks.kernel.update import add_sample
-from gym_socks.kernel.update import remove_first_sample
-from gym_socks.kernel.update import remove_last_sample
+from gym_socks.kernel.update import rinv_add_rc
+from gym_socks.kernel.update import rinv_del_rc
 from gym_socks.kernel.update import remove_regularization
 from gym_socks.kernel.update import cho_add_rc
 from gym_socks.kernel.update import cho_del_rc
@@ -40,7 +39,7 @@ class TestMatrixInverseUpdate(unittest.TestCase):
         )
 
         # Compute the modified inverse after adding a sample.
-        W = add_sample(W_reduced, X, y, kernel_fn, regularization_param)
+        W = rinv_add_rc(W_reduced, X, y, kernel_fn, regularization_param)
 
         cls.assertTrue(np.allclose(W, groundTruth))
 
@@ -66,7 +65,7 @@ class TestMatrixInverseUpdate(unittest.TestCase):
         )
 
         # Compute the modified inverse after removing a sample.
-        W = remove_first_sample(W_full)
+        W = rinv_del_rc(W_full, last=False)
 
         cls.assertTrue(np.allclose(W, groundTruth))
 
@@ -92,7 +91,7 @@ class TestMatrixInverseUpdate(unittest.TestCase):
         )
 
         # Compute the modified inverse after removing a sample.
-        W = remove_last_sample(W_full)
+        W = rinv_del_rc(W_full, last=True)
 
         cls.assertTrue(np.allclose(W, groundTruth))
 
@@ -119,7 +118,7 @@ class TestMatrixInverseUpdate(unittest.TestCase):
 
 class TestCholeskyFactorizationUpdate(unittest.TestCase):
     def test_add_sample(cls):
-        """Matrix inverse should update correctly when a sample is added."""
+        """Cholesky factor should update correctly when a sample is added."""
 
         regularization_param = 1e-1
         kernel_fn = partial(rbf_kernel, sigma=1)
@@ -146,7 +145,7 @@ class TestCholeskyFactorizationUpdate(unittest.TestCase):
         cls.assertTrue(np.allclose(L, groundTruth))
 
     def test_remove_first_sample(cls):
-        """Matrix inverse should update correctly when the first sample is removed."""
+        """Cholesky factor should update correctly when the first sample is removed."""
 
         regularization_param = 1e-1
         kernel_fn = partial(rbf_kernel, sigma=1)
@@ -172,7 +171,7 @@ class TestCholeskyFactorizationUpdate(unittest.TestCase):
         cls.assertTrue(np.allclose(L, groundTruth))
 
     def test_remove_last_sample(cls):
-        """Matrix inverse should update correctly when the last sample is removed."""
+        """Cholesky factor should update correctly when the last sample is removed."""
 
         regularization_param = 1e-1
         kernel_fn = partial(rbf_kernel, sigma=1)
