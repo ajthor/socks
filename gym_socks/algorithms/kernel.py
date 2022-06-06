@@ -4,7 +4,6 @@ import numpy as np
 
 from scipy.linalg import cholesky
 from scipy.linalg import cho_solve
-from scipy.linalg import solve_triangular
 
 from functools import partial
 
@@ -34,6 +33,8 @@ class ConditionalEmbedding(RegressorMixin):
         regularization_param: The regularization parameter :math:`\lambda`.
 
     """
+
+    _cholesky_lower = False  # Whether to use lower triangular cholesky factorization.
 
     def __init__(
         self,
@@ -67,8 +68,9 @@ class ConditionalEmbedding(RegressorMixin):
             ), "regularization_param must be a strictly positive real value."
 
         G[np.diag_indices_from(G)] += self.regularization_param * len(G)
+
         try:
-            L = cholesky(G, lower=True)
+            self._L = cholesky(G, lower=self._cholesky_lower)
         except np.linalg.LinAlgError as e:
             e.args = (
                 "The Gram matrix is not positive definite. "
@@ -76,7 +78,7 @@ class ConditionalEmbedding(RegressorMixin):
             ) + e.args
             raise
 
-        self._alpha = cho_solve((L, True), y, check_finite=False)
+        self._alpha = cho_solve((self._L, self._cholesky_lower), y, check_finite=False)
 
         return self
 
