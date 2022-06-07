@@ -39,28 +39,43 @@ from gym_socks.utils.validation import check_array
 from gym_socks.utils.validation import check_matrix
 
 
-def remove_regularization(A, A_inv, regularization_param):
-    r"""
+def hua_identity(A, A_inv, B_inv):
+    """Hua's identity.
 
     .. math::
 
-        W = (G + \lambda M I)^{-1}
-        W^{*} = (G + \lambda M I - \lambda M I)^{-1}
         (A + B)^{-1} = A^{-1} - (A + A B^{-1} A)^{-1}
 
     """
 
     A = check_matrix(A, ensure_square=True)
     A_inv = check_matrix(A_inv, ensure_square=True)
+    B_inv = check_matrix(B_inv, ensure_square=True)
 
-    M = len(A_inv)
+    return A_inv - np.linalg.inv(A + A @ B_inv @ A)
 
-    C = np.zeros_like(A)
-    C[np.diag_indices_from(C)] += -M * regularization_param
-    D = np.zeros_like(C)
-    D[np.diag_indices_from(D)] += -1 / (M * regularization_param)
 
-    return D - np.linalg.inv(C + C @ A_inv @ C)
+def sherman_morrison_identity(A_inv, u, v):
+    r"""Sherman-Morrison identity.
+
+    This is a special case of the Woodbury matrix identity where :math:`U` and :math:`V`
+    are vectors.
+
+    .. math::
+
+        (A + uv^{\top})^{-1}
+        = A^{-1} - \frac{A^{-1} u v^{\top} A^{-1}}{1 + v^{\top} A^{-1} u}
+
+    """
+
+    A_inv = check_matrix(A_inv, ensure_square=True, copy=True)
+
+    u = check_array(u)
+    v = check_array(v)
+
+    Au = A_inv @ u
+
+    return np.subtract(A_inv, Au @ (v.T @ A_inv) / (1 + v.T @ A_inv @ u), out=A_inv)
 
 
 def _partitioned_inverse(A_inv, x, y, a):
@@ -71,7 +86,7 @@ def _partitioned_inverse(A_inv, x, y, a):
     F22 = a - y.T @ A11_inv @ x
     F22_inv = np.linalg.inv(F22)
 
-    F11_inv = A11_inv + A11_inv @ x @ F22_inv @ y.T @ A11_inv
+    F11_inv = A11_inv + (A11_inv @ x) @ F22_inv @ (y.T @ A11_inv)
 
     return np.block(
         [
