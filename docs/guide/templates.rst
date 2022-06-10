@@ -59,13 +59,13 @@ It is recommended to use the following templates when defining new systems
                     super().__init__(*args, **kwargs)
 
                     self.observation_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
                     self.state_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
                     self.action_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(1,), dtype=float
                     )
 
                     self.state = None
@@ -103,13 +103,13 @@ It is recommended to use the following templates when defining new systems
                     super().__init__(*args, **kwargs)
 
                     self.observation_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
                     self.state_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
                     self.action_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(1,), dtype=float
                     )
 
                     self.state = None
@@ -158,13 +158,13 @@ It is recommended to use the following templates when defining new systems
                     super().__init__(*args, **kwargs)
 
                     self.observation_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
                     self.state_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
                     self.action_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(1,), dtype=float
                     )
 
                     self.state = None
@@ -179,7 +179,7 @@ It is recommended to use the following templates when defining new systems
                     v = self.np_random.standard_normal(
                         size=self.observation_space.shape
                     )
-                    return np.array(state, dtype=np.float32) + np.asarray(v)
+                    return np.array(state, dtype=float) + np.asarray(v)
 
                 def dynamics(self, time, state, action, disturbance):
                     ...
@@ -320,7 +320,7 @@ It is recommended to use the following templates when defining a new sampling fu
                     v = self.np_random.standard_normal(
                         size=self.observation_space.shape
                     )
-                    return np.array(state, dtype=np.float32) + np.asarray(v)
+                    return np.array(state, dtype=float) + np.asarray(v)
 
             env = PartiallyObservableNDIntegrator(dim=2)
 

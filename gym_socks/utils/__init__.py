@@ -19,7 +19,7 @@ def normalize(v: np.ndarray) -> np.ndarray:
         Normalized matrix or vector.
 
     """
-    return v / np.sum(v, axis=0)
+    return v / np.sum(np.abs(v), axis=0)
 
 
 def indicator_fn(points: np.ndarray, space: any) -> np.ndarray:

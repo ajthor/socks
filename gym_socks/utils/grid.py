@@ -66,7 +66,7 @@ def boxgrid(space: gym.spaces.Box, resolution: tuple, out=None):
         >>> import numpy as np
         >>> from gym.spaces import Box
         >>> from gym_socks.utils.grid import boxgrid
-        >>> space = Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        >>> space = Box(low=-1, high=1, shape=(2,), dtype=float)
         >>> boxgrid(space, (3, 5))
         array([[-1. , -1. ],
                [-1. , -0.5],
