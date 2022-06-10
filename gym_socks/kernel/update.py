@@ -335,4 +335,4 @@ def cho_del_rc(
     else:
         S23 = L[0, 1:].reshape(1, -1)
         S33 = L[1:, 1:]
-        return cho_update(S33, S23)
+        return cho_update((S33, lower), S23)

@@ -10,7 +10,6 @@ from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.kernel.update import rinv_add_rc
 from gym_socks.kernel.update import rinv_del_rc
-from gym_socks.kernel.update import remove_regularization
 from gym_socks.kernel.update import cho_add_rc
 from gym_socks.kernel.update import cho_del_rc
 
@@ -92,26 +91,6 @@ class TestMatrixInverseUpdate(unittest.TestCase):
 
         # Compute the modified inverse after removing a sample.
         W = rinv_del_rc(W_full, last=True)
-
-        cls.assertTrue(np.allclose(W, groundTruth))
-
-    def test_remove_regularization(cls):
-        """Test remove regularization updates matrix inverse correctly."""
-
-        regularization_param = 1e-1
-        kernel_fn = partial(rbf_kernel, sigma=1)
-
-        Z = np.arange(8).reshape(4, 2)
-
-        # Compute the inverse without regularization.
-        G = kernel_fn(Z)
-        groundTruth = np.linalg.inv(G)
-
-        # Compute the regularized inverse.
-        W_reg = np.linalg.inv(G + regularization_param * len(G) * np.identity(len(G)))
-
-        # Compute the modified inverse after removing regularization.
-        W = remove_regularization(G, W_reg, regularization_param)
 
         cls.assertTrue(np.allclose(W, groundTruth))
 
