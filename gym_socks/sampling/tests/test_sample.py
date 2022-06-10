@@ -28,7 +28,7 @@ class TestSample(unittest.TestCase):
         cls.env = NDIntegratorEnv(2)
         cls.policy = RandomizedPolicy(action_space=cls.env.action_space)
 
-        cls.sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        cls.sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
         cls.sample_space.seed(1)
 
     def test_random_sampler(cls):

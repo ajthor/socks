@@ -25,7 +25,7 @@ class TestIntegratorSystem(unittest.TestCase):
         env.sampling_time = 0.25
 
         # env.reset([0.1, 0.1])
-        # action = np.array([0], dtype=np.float32)
+        # action = np.array([0], dtype=float)
 
         # trajectory = []
         # trajectory.append(env.state)
@@ -73,7 +73,7 @@ class TestIntegratorSystem(unittest.TestCase):
         env.sampling_time = 0.25
 
         # env.reset([0.1, 0.1])
-        # action = np.array([0], dtype=np.float32)
+        # action = np.array([0], dtype=float)
 
         # trajectory = []
         # trajectory.append(env.state)

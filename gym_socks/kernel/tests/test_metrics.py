@@ -97,7 +97,7 @@ class TestRegularizedInverse(unittest.TestCase):
 
         groundTruth = np.array(
             [[0.66676608, -0.0081415], [-0.0081415, 0.66676608]],
-            dtype=np.float32,
+            dtype=float,
         )
 
         W = regularized_inverse(G, 1 / 4)

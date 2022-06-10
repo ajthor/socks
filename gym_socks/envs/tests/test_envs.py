@@ -64,13 +64,13 @@ class TestDynamicalSystem(unittest.TestCase):
         cls.env = DynamicalSystem()
 
         cls.env.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
         cls.env.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
         cls.env.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
 
     # def test_system_num_time_steps(cls):
@@ -107,7 +107,7 @@ class TestDynamicalSystem(unittest.TestCase):
     #     cls.assertEqual(cls.env.action_dim, (1,))
 
     #     cls.env.observation_space = gym.spaces.Box(
-    #         low=-1, high=1, shape=(1,), dtype=np.float32
+    #         low=-1, high=1, shape=(1,), dtype=float
     #     )
 
     #     cls.assertEqual(cls.env.state_dim, (1,))

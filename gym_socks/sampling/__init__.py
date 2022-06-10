@@ -14,7 +14,7 @@ Example:
         >>> from gym_socks.envs.integrator import NDIntegratorEnv
         >>> from gym_socks.policies import RandomizedPolicy
         >>> env = NDIntegratorEnv(2)
-        >>> sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        >>> sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
         >>> sampler = default_sampler(
         ...     system=env, policy=RandomizedPolicy(env), sample_space=sample_space
         ... )

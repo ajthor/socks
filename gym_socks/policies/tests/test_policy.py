@@ -31,7 +31,7 @@ class TestConstantPolicy(unittest.TestCase):
     @patch("gym_socks.envs.dynamical_system.DynamicalSystem.__abstractmethods__", set())
     def setUpClass(cls):
         cls.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
 
     def test_constant_policy_returns_constants(cls):
@@ -47,7 +47,7 @@ class TestZeroPolicy(unittest.TestCase):
     @patch("gym_socks.envs.dynamical_system.DynamicalSystem.__abstractmethods__", set())
     def setUpClass(cls):
         cls.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
 
     def test_zero_policy_returns_zero(cls):

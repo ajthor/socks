@@ -35,13 +35,13 @@ class NonholonomicVehicleEnv(DynamicalSystem):
         super().__init__(*args, **kwargs)
 
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(3,), dtype=float
         )
         self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(3,), dtype=float
         )
         self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(2,), dtype=float
         )
 
         self.state = None
@@ -49,7 +49,7 @@ class NonholonomicVehicleEnv(DynamicalSystem):
         self.seed(seed=seed)
 
     def step(self, action, time=0):
-        action = np.asarray(action, dtype=np.float32)
+        action = np.asarray(action, dtype=float)
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
@@ -102,4 +102,4 @@ class NonholonomicVehicleEnv(DynamicalSystem):
         dx2 = u1 * np.cos(x3) + w2
         dx3 = u2 + w3
 
-        return np.array([dx1, dx2, dx3], dtype=np.float32)
+        return np.array([dx1, dx2, dx3], dtype=float)

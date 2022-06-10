@@ -35,13 +35,13 @@ class QuadrotorEnv(DynamicalSystem):
         super().__init__(*args, **kwargs)
 
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(12,), dtype=float
         )
         self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(12,), dtype=float
         )
         self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(3,), dtype=float
         )
 
         self.state = None
@@ -170,5 +170,5 @@ class QuadrotorEnv(DynamicalSystem):
 
         return np.array(
             [dx1, dx2, dx3, dx4, dx5, dx6, dx7, dx8, dx9, dx10, dx11, dx12],
-            dtype=np.float32,
+            dtype=float,
         )

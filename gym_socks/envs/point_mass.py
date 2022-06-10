@@ -28,13 +28,13 @@ class NDPointMassEnv(DynamicalSystem):
         super().__init__(*args, **kwargs)
 
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=float
         )
         self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=float
         )
         self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=float
         )
 
         self.state = None
@@ -54,4 +54,4 @@ class NDPointMassEnv(DynamicalSystem):
         return 1e-2 * np.array(w)
 
     def dynamics(self, time, state, action, disturbance):
-        return (1 / self.mass) * np.array([*action], dtype=np.float32) + disturbance
+        return (1 / self.mass) * np.array([*action], dtype=float) + disturbance
