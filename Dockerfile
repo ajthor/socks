@@ -12,7 +12,6 @@ RUN apt-get -y update && \
 
 RUN pip install -U \
   black \
-  gym \
   numpy \
   pyglet \
   pytest \
