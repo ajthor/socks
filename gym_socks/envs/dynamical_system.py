@@ -182,7 +182,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
     @abstractmethod
     def dynamics(self, time, state, action, disturbance):
-        """Dynamics for the system.
+        r"""Dynamics for the system.
 
         .. math::
 

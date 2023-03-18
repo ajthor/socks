@@ -40,12 +40,10 @@ class TestEnvironmentsRun(unittest.TestCase):
 
         for env in system_list:
             with cls.subTest(msg=f"Testing with {type(env)}."):
-
                 try:
                     obs = env.reset()
 
                     for t in range(5):
-
                         # get action
                         action = env.action_space.sample()
 
@@ -54,6 +52,9 @@ class TestEnvironmentsRun(unittest.TestCase):
 
                 except Exception as e:
                     cls.fail(f"Simulating system {type(env)} raised an exception.")
+
+                finally:
+                    env.close()
 
 
 class TestDynamicalSystem(unittest.TestCase):
@@ -118,7 +119,6 @@ class TestDynamicalSystem(unittest.TestCase):
         cls.assertTrue(cls.env.observation_space.contains(cls.env.state))
 
     def test_default_dynamics_not_implemented(cls):
-
         with cls.assertRaises(NotImplementedError):
             # state = cls.env.reset()
             # action = cls.env.action_space.sample()
@@ -131,6 +131,5 @@ class TestDynamicalSystem(unittest.TestCase):
     #         cls.env.close()
 
     def test_default_render_not_implemented(cls):
-
         with cls.assertRaises(NotImplementedError):
             cls.env.render()

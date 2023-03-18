@@ -47,7 +47,7 @@ def cartesian(*xi, out=None):
 
 
 def boxgrid(space: gym.spaces.Box, resolution: tuple, out=None):
-    """Returns a coarse grid from a bounded Box space.
+    r"""Returns a coarse grid from a bounded Box space.
 
     Constructs a coarse grid from a bounded box in :math:`\mathbb{R}^n`. A
     :py:class:`Box` is the Cartesian product of :math:`n` intervals, and we create a

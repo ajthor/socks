@@ -40,7 +40,7 @@ from gym_socks.utils.validation import check_matrix
 
 
 def hua_identity(A, A_inv, B_inv):
-    """Hua's identity.
+    r"""Hua's identity.
 
     .. math::
 
@@ -104,7 +104,7 @@ def rinv_add_rc(
     regularization_param: float = None,
     precomputed: bool = False,
 ):
-    """Add a sample to the regularized matrix inverse.
+    r"""Add a sample to the regularized matrix inverse.
 
     When a new sample point :math:`y` is added to the sample :math:`X`, we generally do
     not want to explicitly recompute the matrix inverse :math:`W`. Instead, we can
@@ -160,7 +160,7 @@ def rinv_add_rc(
 
 
 def rinv_del_rc(W: np.ndarray, last: bool = True):
-    """Remove a sample from the regularized matrix inverse.
+    r"""Remove a sample from the regularized matrix inverse.
 
     Given a sample :math:`X`, we generally compute the Gram (kernel) matrix :math:`G`
     and the regularized inverse :math:`W`. When a sample point is removed from
@@ -223,7 +223,7 @@ def cho_update(c_and_lower: tuple, x: np.ndarray):
 
     for j in range(m):
         Ljj = L[j, j]
-        r = np.sqrt(Ljj ** 2 + x[j] ** 2)
+        r = np.sqrt(Ljj**2 + x[j] ** 2)
         c = r / Ljj
         s = x[j] / Ljj
 
@@ -250,7 +250,7 @@ def cho_add_rc(
     regularization_param: float = None,
     precomputed: bool = False,
 ):
-    """Add a sample to the Cholesky factorization.
+    r"""Add a sample to the Cholesky factorization.
 
     Args:
         c_and_lower: A tuple containing the Cholesky factor and a boolean variable
