@@ -20,6 +20,7 @@ To run the example, use the following command:
 import numpy as np
 
 from gym_socks.envs.spaces import Box
+from gym_socks.envs.cwh import CWH4DEnv
 from gym_socks.algorithms.control.kernel_control_fwd import KernelControlFwd
 
 from gym_socks.kernel.metrics import rbf_kernel
@@ -34,8 +35,6 @@ from gym_socks.utils.grid import boxgrid
 # Configuration variables.
 
 # %%
-system_id = "CWH4DEnv-v0"
-
 regularization_param = 1e-7
 time_horizon = 5
 
@@ -49,7 +48,7 @@ seed = 123
 # random initial conditions.
 
 # %%
-env = make(system_id)
+env = CWH4DEnv()
 env.seed(seed)
 sample_size = 2500
 
