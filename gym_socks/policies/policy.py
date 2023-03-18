@@ -12,7 +12,7 @@ Note:
 
 from abc import ABC, abstractmethod
 
-from gym import Space
+from gym_socks.envs.spaces import Space
 
 import numpy as np
 
