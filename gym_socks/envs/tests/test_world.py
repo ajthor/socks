@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import Base, patch
 
-import gym
-
 from gym_socks.envs import NDIntegratorEnv
 from gym_socks.envs.core import BaseDynamicalObject
 

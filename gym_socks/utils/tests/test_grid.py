@@ -1,7 +1,6 @@
 import unittest
 
-import gym
-
+from gym_socks.envs.spaces import Box
 import gym_socks.utils
 
 import numpy as np
@@ -32,7 +31,7 @@ class TestGrid(unittest.TestCase):
     def test_boxgrid(cls):
         """Should generate proper grid from space."""
 
-        sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
+        sample_space = Box(low=-1, high=1, shape=(2,), dtype=float)
 
         groundTruth = [
             [-1.0, -1.0],

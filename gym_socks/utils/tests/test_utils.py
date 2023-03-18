@@ -1,7 +1,6 @@
 import unittest
 
-import gym
-
+from gym_socks.envs.spaces import Box
 import gym_socks.utils
 
 import numpy as np
@@ -33,7 +32,7 @@ class TestIndicatorFunction(unittest.TestCase):
     def test_indicator_function_on_box(cls):
         """Test indicator function on box."""
 
-        interval = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
+        interval = Box(low=-1, high=1, shape=(2,), dtype=float)
 
         # One point inside.
         points = [[0.1, 0.1]]

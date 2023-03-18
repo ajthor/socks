@@ -7,8 +7,7 @@ from time import perf_counter
 from functools import lru_cache
 from functools import partial
 
-from gym.spaces import Box
-
+from gym_socks.envs.spaces import Box
 from gym_socks.envs.integrator import NDIntegratorEnv
 
 from gym_socks.sampling import random_sampler

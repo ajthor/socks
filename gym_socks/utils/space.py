@@ -1,13 +1,10 @@
-import gym
-
 import numpy as np
 from numpy.core.numeric import isscalar
 
+from gym_socks.envs.spaces import Box
 
-def subspace(
-    space: gym.spaces.Box, low, high, shape: tuple = None, seed: int = None
-) -> gym.spaces.Box:
 
+def subspace(space: Box, low, high, shape: tuple = None, seed: int = None) -> Box:
     # if shape is not None:
     #     shape = tuple(shape)
 
@@ -26,7 +23,7 @@ def subspace(
     # if np.isscalar(high):
     #     high = np.full(shape, high, dtype=space.dtype)
 
-    _space = gym.spaces.Box(low=low, high=high, shape=shape, dtype=space.dtype)
+    _space = Box(low=low, high=high, shape=shape, dtype=space.dtype)
 
     if seed is not None:
         _space.seed(seed=seed)

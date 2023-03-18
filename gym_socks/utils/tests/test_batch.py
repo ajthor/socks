@@ -1,7 +1,5 @@
 import unittest
 
-import gym
-
 from gym_socks.utils.batch import batch_generator
 
 import numpy as np

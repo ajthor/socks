@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import patch
 
-import gym
-
 from gym_socks.envs.tora import TORAEnv
 
 import numpy as np

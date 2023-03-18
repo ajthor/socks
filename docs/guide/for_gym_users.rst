@@ -12,8 +12,8 @@ In this guide, we go over some of these differences and help get you started wit
 
 An environment in gym (:py:obj:`gym.Env`) is a class with a ``step()``, ``reset()``,
 ``render()``, and ``close()`` method. A
-:py:class:`~gym_socks.envs.dynamical_system.DynamicalSystem` inherits from
-:py:obj:`gym.Env`, which means it has all of the same features.
+:py:class:`~gym_socks.envs.dynamical_system.DynamicalSystem` implements the same 
+interface as :py:obj:`gym.Env`, which means it has all of the same features.
 
 However, gym environments are designed to encapsulate every part of the runtime loop,
 including computing the cost, determining simulation termination, and tracking and

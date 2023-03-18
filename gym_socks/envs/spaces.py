@@ -26,10 +26,7 @@ class Space:
         self._np_random = None
 
         if seed is not None:
-            if isinstance(seed, int):
-                self._np_random = np.random.RandomState(seed)
-            else:
-                self.seed(seed)
+            self.seed(seed)
 
     @property
     def np_random(self):
@@ -199,9 +196,9 @@ class Box(Space):
         # else, if x is not a numpy array, then try converting it to a numpy array
         elif not isinstance(x, np.ndarray):
             x = np.asarray(x, dtype=self.dtype)
-        # else, raise value error
-        else:
-            raise ValueError("x must be a scalar or a numpy array.")
+        # # else, raise value error
+        # else:
+        #     raise ValueError("x must be a scalar or a numpy array.")
 
         return bool(
             np.can_cast(x, self.dtype, casting="safe")
@@ -233,28 +230,28 @@ class Box(Space):
         # bounded above is true if high has upper bound and not bounded below
         bounded_above = has_upper_bound & ~has_lower_bound
 
-        bounded = bounded_below & bounded_above
+        bounded = has_lower_bound & has_upper_bound
         unbounded = ~bounded
 
-        sample = np.zeros(self.shape, dtype=self.dtype)
+        sample = np.empty(self.shape, dtype=self.dtype)
 
         # bounded samples are generated from a uniform distribution
-        sample[bounded] = self._np_random.uniform(
-            size=bounded[bounded].shape, low=bounded[bounded], high=self.high[bounded]
+        sample[bounded] = self.np_random.uniform(
+            size=bounded[bounded].shape, low=self.low[bounded], high=self.high[bounded]
         )
 
         # unbounded samples are generated from a normal distribution
-        sample[unbounded] = self._np_random.normal(size=unbounded[unbounded].shape)
+        sample[unbounded] = self.np_random.normal(size=unbounded[unbounded].shape)
 
         # unbounded below samples are generated from an exponential distribution
         sample[bounded_below] = (
-            self._np_random.exponential(size=bounded_below[bounded_below].shape)
+            self.np_random.exponential(size=bounded_below[bounded_below].shape)
             + self.low[bounded_below]
         )
 
         # unbounded above samples are generated from an exponential distribution
         sample[bounded_above] = (
-            self._np_random.exponential(size=bounded_above[bounded_above].shape)
+            self.np_random.exponential(size=bounded_above[bounded_above].shape)
             + self.high[bounded_above]
         )
 

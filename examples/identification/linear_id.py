@@ -21,8 +21,7 @@ import gym_socks
 
 import numpy as np
 
-from gym.envs.registration import make
-
+from gym_socks.envs.cwh import CWH4DEnv
 from gym_socks.algorithms.identification.kernel_linear_id import kernel_linear_id
 
 from gym_socks.policies import ConstantPolicy
@@ -34,7 +33,6 @@ from gym_socks.sampling import transition_sampler
 # Configuration variables.
 
 # %%
-system_id = "CWH4DEnv-v0"
 regularization_param = 1e-9
 time_horizon = 1000
 
@@ -46,7 +44,7 @@ time_horizon = 1000
 # increase the accuracy of the approximation.
 
 # %%
-env = make(system_id)
+env = CWH4DEnv()
 
 sample_size = 100
 

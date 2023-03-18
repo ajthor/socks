@@ -17,12 +17,9 @@ To run the example, use the following command:
 """
 
 # %%
-import gym
-
 import numpy as np
 
-from gym.envs.registration import make
-
+from gym_socks.envs.spaces import Box
 from gym_socks.algorithms.control.kernel_control_fwd import KernelControlFwd
 
 from gym_socks.kernel.metrics import rbf_kernel
@@ -56,19 +53,19 @@ env = make(system_id)
 env.seed(seed)
 sample_size = 2500
 
-state_sample_space = gym.spaces.Box(
-    low=np.array([-1.1, -1.1, -0.06, -0.06], dtype=np.float32),
-    high=np.array([1.1, 1.1, 0.06, 0.06], dtype=np.float32),
+state_sample_space = Box(
+    low=np.array([-1.1, -1.1, -0.06, -0.06], dtype=float),
+    high=np.array([1.1, 1.1, 0.06, 0.06], dtype=float),
     shape=(4,),
-    dtype=np.float32,
+    dtype=float,
     seed=seed,
 )
 
-action_sample_space = gym.spaces.Box(
+action_sample_space = Box(
     low=-0.05,
     high=0.05,
     shape=(2,),
-    dtype=np.float32,
+    dtype=float,
     seed=seed,
 )
 
@@ -96,7 +93,7 @@ def _cost_fn(time: int = 0, state: np.ndarray = None) -> float:
 
     """
 
-    dist = state - np.array([0, 0, 0, 0], dtype=np.float32)
+    dist = state - np.array([0, 0, 0, 0], dtype=float)
     result = np.linalg.norm(dist, ord=2, axis=1)
     result = np.power(result, 2)
     return result
@@ -128,7 +125,7 @@ def _constraint_fn(time: int = 0, state: np.ndarray = None) -> float:
                 (np.abs(state[:, 0]) < np.abs(state[:, 1]))
                 & (np.abs(state[:, 2]) <= 0.05)
                 & (np.abs(state[:, 3]) <= 0.05),
-                dtype=np.float32,
+                dtype=float,
             )
             + 1
             - delta
@@ -145,7 +142,7 @@ def _constraint_fn(time: int = 0, state: np.ndarray = None) -> float:
                 & (state[:, 1] <= 0)
                 & (np.abs(state[:, 2]) <= 0.05)
                 & (np.abs(state[:, 3]) <= 0.05),
-                dtype=np.float32,
+                dtype=float,
             )
             + 1
             - delta
@@ -212,7 +209,7 @@ plt.gca().add_patch(matplotlib.patches.PathPatch(path, fc="none", ec="blue"))
 
 plt.gca().add_patch(plt.Rectangle((-0.2, -0.2), 0.4, 0.2, fc="none", ec="green"))
 
-trajectory = np.array(trajectory, dtype=np.float32)
+trajectory = np.array(trajectory, dtype=float)
 plt.plot(
     trajectory[:, 0],
     trajectory[:, 1],

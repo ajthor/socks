@@ -47,7 +47,7 @@ It is recommended to use the following templates when defining new systems
 
         .. code-block:: python
 
-            import gym
+            from gym_socks.envs.spaces import Box
             from gym_socks.envs.dynamical_system import DynamicalSystem
 
             import numpy as np
@@ -58,13 +58,13 @@ It is recommended to use the following templates when defining new systems
                 def __init__(self, seed=0, *args, **kwargs):
                     super().__init__(*args, **kwargs)
 
-                    self.observation_space = gym.spaces.Box(
+                    self.observation_space = Box(
                         low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
-                    self.state_space = gym.spaces.Box(
+                    self.state_space = Box(
                         low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
-                    self.action_space = gym.spaces.Box(
+                    self.action_space = Box(
                         low=-np.inf, high=np.inf, shape=(1,), dtype=float
                     )
 
@@ -91,7 +91,7 @@ It is recommended to use the following templates when defining new systems
 
         .. code-block:: python
 
-            import gym
+            from gym_socks.envs.spaces import Box
             from gym_socks.envs.dynamical_system import DynamicalSystem
 
             import numpy as np
@@ -102,13 +102,13 @@ It is recommended to use the following templates when defining new systems
                 def __init__(self, seed=0, *args, **kwargs):
                     super().__init__(*args, **kwargs)
 
-                    self.observation_space = gym.spaces.Box(
+                    self.observation_space = Box(
                         low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
-                    self.state_space = gym.spaces.Box(
+                    self.state_space = Box(
                         low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
-                    self.action_space = gym.spaces.Box(
+                    self.action_space = Box(
                         low=-np.inf, high=np.inf, shape=(1,), dtype=float
                     )
 
@@ -146,7 +146,7 @@ It is recommended to use the following templates when defining new systems
 
         .. code-block:: python
 
-            import gym
+            from gym_socks.envs.spaces import Box
             from gym_socks.envs.dynamical_system import DynamicalSystem
 
             import numpy as np
@@ -157,13 +157,13 @@ It is recommended to use the following templates when defining new systems
                 def __init__(self, seed=0, *args, **kwargs):
                     super().__init__(*args, **kwargs)
 
-                    self.observation_space = gym.spaces.Box(
+                    self.observation_space = Box(
                         low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
-                    self.state_space = gym.spaces.Box(
+                    self.state_space = Box(
                         low=-np.inf, high=np.inf, shape=(2,), dtype=float
                     )
-                    self.action_space = gym.spaces.Box(
+                    self.action_space = Box(
                         low=-np.inf, high=np.inf, shape=(1,), dtype=float
                     )
 
@@ -211,7 +211,7 @@ of environments for repeatability.
 
 .. note::
 
-    The ``step``, ``reset``, ``render``, and ``close`` methods are inherited from
+    The ``step``, ``reset``, ``render``, and ``close`` methods are the same as
     ``gym.Env`` and should be overridden if custom behavior is needed, for instance if
     explicitly using linear dynamics :math:`x_{t+1} = A x_{t} + B u_{t} + w_{t}` is
     desired.

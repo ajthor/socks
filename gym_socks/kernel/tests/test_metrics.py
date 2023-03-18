@@ -4,8 +4,6 @@ from functools import partial
 
 import numpy as np
 
-import gym
-
 from gym_socks.kernel.metrics import abel_kernel
 from gym_socks.kernel.metrics import delta_kernel
 from gym_socks.kernel.metrics import rbf_kernel

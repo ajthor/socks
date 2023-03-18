@@ -1,7 +1,5 @@
 __all__ = ["logging", "normalize", "indicator_fn", "batch_generator"]
 
-import gym
-
 import numpy as np
 
 
@@ -23,15 +21,15 @@ def normalize(v: np.ndarray) -> np.ndarray:
 
 
 def indicator_fn(points: np.ndarray, space: any) -> np.ndarray:
-    """Lightweight indicator for gym.spaces.Box sets.
+    """Lightweight indicator for Box sets.
 
-    Provides a lightweight proxy for the `contains` function in `gym.spaces.Box`. The
+    Provides a lightweight proxy for the `contains` function in `Box`. The
     original function does type checking, casting, and shape checking, which is slow.
 
     Args:
         points: Points to evaluate the indicator at.
         space: Space over which the indicator function is defined. Should be either a
-            `gym.spaces.Box` or a function which returns 0 or 1 depending on whether the
+            `Box` or a function which returns 0 or 1 depending on whether the
             points are inside or outside the space.
 
     Returns:

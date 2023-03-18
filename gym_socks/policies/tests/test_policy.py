@@ -1,8 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-import gym
-
+from gym_socks.envs.spaces import Box
 import gym_socks.envs
 
 from gym_socks.policies import BasePolicy
@@ -21,7 +20,6 @@ class TestBasePolicy(unittest.TestCase):
         cls.policy = BasePolicy()
 
     def test_default_policy_not_implemented(cls):
-
         with cls.assertRaises(NotImplementedError):
             cls.policy()
 
@@ -30,9 +28,7 @@ class TestConstantPolicy(unittest.TestCase):
     @classmethod
     @patch("gym_socks.envs.dynamical_system.DynamicalSystem.__abstractmethods__", set())
     def setUpClass(cls):
-        cls.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=float
-        )
+        cls.action_space = Box(low=-np.inf, high=np.inf, shape=(1,), dtype=float)
 
     def test_constant_policy_returns_constants(cls):
         policy = ConstantPolicy(action_space=cls.action_space, constant=1)
@@ -46,9 +42,7 @@ class TestZeroPolicy(unittest.TestCase):
     @classmethod
     @patch("gym_socks.envs.dynamical_system.DynamicalSystem.__abstractmethods__", set())
     def setUpClass(cls):
-        cls.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=float
-        )
+        cls.action_space = Box(low=-np.inf, high=np.inf, shape=(1,), dtype=float)
 
     def test_zero_policy_returns_zero(cls):
         policy = ZeroPolicy(action_space=cls.action_space)

@@ -1,8 +1,5 @@
 from abc import ABC, abstractmethod
 
-import gym
-from gym.utils import seeding
-
 import numpy as np
 from scipy.integrate import solve_ivp
 
@@ -21,8 +18,8 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
     Example:
         ::
 
-            import gym
             import numpy as np
+            from gym_socks.envs.spaces import Box
             from gym_socks.envs.dynamical_system import DynamicalSystem
             class CustomDynamicalSystem(DynamicalSystem):
 
@@ -32,13 +29,13 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
                     state_dim = 2  # 2-D state and observation space.
                     action_dim = 1  # 1-D action space.
 
-                    self.observation_space = gym.spaces.Box(
+                    self.observation_space = Box(
                         low=-np.inf, high=np.inf, shape=(state_dim,), dtype=float
                     )
-                    self.state_space = gym.spaces.Box(
+                    self.state_space = Box(
                         low=-np.inf, high=np.inf, shape=(state_dim,), dtype=float
                     )
-                    self.action_space = gym.spaces.Box(
+                    self.action_space = Box(
                         low=-np.inf, high=np.inf, shape=(action_dim,), dtype=float
                     )
 
@@ -62,8 +59,8 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
         For example::
 
-            import gym
             import numpy as np
+            from gym_socks.envs.spaces import Box
             from gym_socks.envs.dynamical_system import DynamicalSystem
             class CustomDynamicalSystem(DynamicalSystem):
 
@@ -73,13 +70,13 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
                     state_dim = 2  # 2-D state and observation space.
                     action_dim = 1  # 1-D action space.
 
-                    self.observation_space = gym.spaces.Box(
+                    self.observation_space = Box(
                         low=-np.inf, high=np.inf, shape=(state_dim,), dtype=float
                     )
-                    self.state_space = gym.spaces.Box(
+                    self.state_space = Box(
                         low=-np.inf, high=np.inf, shape=(state_dim,), dtype=float
                     )
-                    self.action_space = gym.spaces.Box(
+                    self.action_space = Box(
                         low=-np.inf, high=np.inf, shape=(action_dim,), dtype=float
                     )
 
@@ -118,7 +115,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
         system at the next time step. Thus, in order to use discrete spaces, you will
         need to override the :py:meth:`step` function.
 
-        See :py:obj:`gym.spaces` for more information on the different available spaces.
+        See :py:obj:`spaces` for more information on the different available spaces.
 
     The system can then be simulated using the standard gym environment.
 
@@ -257,7 +254,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
         """
 
-        action = np.atleast_1d(np.asarray(action, dtype=float))
+        # action = np.atleast_1d(np.asarray(action, dtype=float))
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
@@ -317,7 +314,15 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
         return self._np_random
 
     def seed(self, seed=None):
-        self._np_random, seed = seeding.np_random(seed)
+        """Sets the seed of the random number generator."""
+
+        # assert seed is a non-negative integer or None
+        if seed is not None and not (isinstance(seed, int) and seed >= 0):
+            raise ValueError("seed must be a non-negative integer or None.")
+
+        # initialize the random number generator
+        self._np_random = np.random.RandomState(seed)
+
         return [seed]
 
 

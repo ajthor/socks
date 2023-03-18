@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-import gym
+from gym_socks.envs.spaces import Box
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
@@ -74,7 +74,7 @@ class BaseCWH(object):
         self.compute_angular_velocity()
 
     def compute_angular_velocity(self):
-        self.angular_velocity = np.sqrt(self.mu / (self.orbital_radius ** 3))
+        self.angular_velocity = np.sqrt(self.mu / (self.orbital_radius**3))
 
         self.state_matrix = self.compute_state_matrix(sampling_time=self.sampling_time)
         self.input_matrix = self.compute_input_matrix(sampling_time=self.sampling_time)
@@ -93,15 +93,9 @@ class CWH4DEnv(BaseCWH, DynamicalSystem):
     def __init__(self, seed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(4,), dtype=float
-        )
-        self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(4,), dtype=float
-        )
-        self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(2,), dtype=float
-        )
+        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(4,), dtype=float)
+        self.state_space = Box(low=-np.inf, high=np.inf, shape=(4,), dtype=float)
+        self.action_space = Box(low=-np.inf, high=np.inf, shape=(2,), dtype=float)
 
         self.state = None
 
@@ -146,20 +140,20 @@ class CWH4DEnv(BaseCWH, DynamicalSystem):
             [
                 4 * Ts - (3 * sin_nt) / n,
                 0,
-                (2 * (sin_nt2 ** 2)) / (n ** 2),
-                -(2 * (sin_nt - nt)) / (n ** 2),
+                (2 * (sin_nt2**2)) / (n**2),
+                -(2 * (sin_nt - nt)) / (n**2),
             ],
             [
-                (12 * (sin_nt2 ** 2)) / n - 3 * (Ts ** 2) * n,
+                (12 * (sin_nt2**2)) / n - 3 * (Ts**2) * n,
                 Ts,
-                (2 * (sin_nt - nt)) / (n ** 2),
-                (8 * (sin_nt2 ** 2)) / (n ** 2) - (3 * (Ts ** 2)) / 2,
+                (2 * (sin_nt - nt)) / (n**2),
+                (8 * (sin_nt2**2)) / (n**2) - (3 * (Ts**2)) / 2,
             ],
-            [3 - 3 * cos_nt, 0, sin_nt / n, (4 * (sin_nt2 ** 2)) / n],
+            [3 - 3 * cos_nt, 0, sin_nt / n, (4 * (sin_nt2**2)) / n],
             [
                 6 * sin_nt - 6 * nt,
                 0,
-                -(4 * (sin_nt2 ** 2)) / n,
+                -(4 * (sin_nt2**2)) / n,
                 (4 * sin_nt) / n - 3 * Ts,
             ],
         ]
@@ -241,15 +235,9 @@ class CWH6DEnv(BaseCWH, DynamicalSystem):
     def __init__(self, seed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=float
-        )
-        self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=float
-        )
-        self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(3,), dtype=float
-        )
+        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(6,), dtype=float)
+        self.state_space = Box(low=-np.inf, high=np.inf, shape=(6,), dtype=float)
+        self.action_space = Box(low=-np.inf, high=np.inf, shape=(3,), dtype=float)
 
         self.state = None
 
@@ -299,32 +287,32 @@ class CWH6DEnv(BaseCWH, DynamicalSystem):
                 4 * Ts - (3 * sin_nt) / n,
                 0,
                 0,
-                (2 * (sin_nt2 ** 2)) / (n ** 2),
-                -(2 * (sin_nt - nt)) / (n ** 2),
+                (2 * (sin_nt2**2)) / (n**2),
+                -(2 * (sin_nt - nt)) / (n**2),
                 0,
             ],
             [
-                (12 * (sin_nt2 ** 2)) / n - 3 * (Ts ** 2) * n,
+                (12 * (sin_nt2**2)) / n - 3 * (Ts**2) * n,
                 Ts,
                 0,
-                (2 * (sin_nt - nt)) / (n ** 2),
-                (8 * (sin_nt2 ** 2)) / (n ** 2) - (3 * (Ts ** 2)) / 2,
+                (2 * (sin_nt - nt)) / (n**2),
+                (8 * (sin_nt2**2)) / (n**2) - (3 * (Ts**2)) / 2,
                 0,
             ],
-            [0, 0, sin_nt / n, 0, 0, (2 * (sin_nt2 ** 2)) / (n ** 2)],
+            [0, 0, sin_nt / n, 0, 0, (2 * (sin_nt2**2)) / (n**2)],
             [
                 3 - 3 * cos_nt,
                 0,
                 0,
                 sin_nt / n,
-                (4 * (sin_nt2 ** 2)) / n,
+                (4 * (sin_nt2**2)) / n,
                 0,
             ],
             [
                 6 * sin_nt - 6 * nt,
                 0,
                 0,
-                -(4 * (sin_nt2 ** 2)) / n,
+                -(4 * (sin_nt2**2)) / n,
                 (4 * sin_nt) / n - 3 * Ts,
                 0,
             ],

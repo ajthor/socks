@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-import gym
+from gym_socks.envs.spaces import Box
 
 from gym_socks.envs import NDIntegratorEnv
 from gym_socks.policies import ConstantPolicy
@@ -28,7 +28,7 @@ class TestSample(unittest.TestCase):
         cls.env = NDIntegratorEnv(2)
         cls.policy = RandomizedPolicy(action_space=cls.env.action_space)
 
-        cls.sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
+        cls.sample_space = Box(low=-1, high=1, shape=(2,), dtype=float)
         cls.sample_space.seed(1)
 
     def test_random_sampler(cls):
@@ -54,7 +54,7 @@ class TestSample(unittest.TestCase):
 
         sample_size = 27
 
-        state_sample_space = gym.spaces.Box(
+        state_sample_space = Box(
             low=-1,
             high=1,
             shape=cls.env.state_space.shape,
@@ -193,7 +193,6 @@ class TestSample(unittest.TestCase):
         cls.assertEqual(np.array(Y).shape, (sample_size, 10))
 
     def test_custom_sampler_as_function(cls):
-
         sample_size = 10
 
         @sample_fn
@@ -217,7 +216,6 @@ class TestSample(unittest.TestCase):
         cls.assertEqual(np.array(Y).shape, (sample_size, 2))
 
     def test_custom_sampler_as_generator(cls):
-
         sample_size = 10
 
         @sample_fn
@@ -241,7 +239,6 @@ class TestSample(unittest.TestCase):
         cls.assertEqual(np.array(Y).shape, (sample_size, 2))
 
     def test_custom_policy_sampler(cls):
-
         sample_size = 10
 
         state_sampler = space_sampler(space=cls.env.state_space)

@@ -1,8 +1,5 @@
 from abc import ABC, abstractmethod
 
-import gym
-from gym.utils import seeding
-
 import numpy as np
 
 from functools import wraps
@@ -11,7 +8,7 @@ from functools import wraps
 class BaseDynamicalObject(ABC):
     """Base dynamical object class.
 
-    Bases: :py:obj:`gym.Env`, :py:obj:`abc.ABC`
+    Bases: :py:obj:`abc.ABC`
 
     This class is **abstract**, meaning it is not meant to be instantiated directly.
     Instead, define a new class that inherits from :py:class:`BaseDynamicalObject`.

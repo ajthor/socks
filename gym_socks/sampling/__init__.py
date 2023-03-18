@@ -11,10 +11,11 @@ Example:
     Sample the stochastic kernel of a dynamical system (i.e. the state transition
     probability kernel).
 
+        >>> from gym_socks.envs.spaces import Box
         >>> from gym_socks.envs.integrator import NDIntegratorEnv
         >>> from gym_socks.policies import RandomizedPolicy
         >>> env = NDIntegratorEnv(2)
-        >>> sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
+        >>> sample_space = Box(low=-1, high=1, shape=(2,), dtype=float)
         >>> sampler = default_sampler(
         ...     system=env, policy=RandomizedPolicy(env), sample_space=sample_space
         ... )

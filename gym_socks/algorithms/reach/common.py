@@ -1,7 +1,6 @@
-import gym
-
 import numpy as np
 
+from gym_socks.envs.spaces import Box
 from gym_socks.utils import indicator_fn
 
 
@@ -20,11 +19,11 @@ def _fht_step(Y, V, constraint_set, target_set):
         Y: Vector of data points in the sample.
         V: Vector of coefficients from the kernel-based approximation.
         constraint_set: A space or function which determines whether a point is in the
-            constraint set. This can be either a space from gym.spaces or a function
+            constraint set. This can be either a space from spaces or a function
             which acts as a 0/1 classifier. See the `indicator_fn` implementation for
             more information.
         target_set: A space or function which determines whether a point is in the
-            target set. This can be either a space from gym.spaces or a function which
+            target set. This can be either a space from spaces or a function which
             acts as a 0/1 classifier. See the `indicator_fn` implementation for more
             information.
 
@@ -53,7 +52,7 @@ def _tht_step(Y, V, constraint_set, target_set):
         Y: Vector of data points in the sample.
         V: Vector of coefficients from the kernel-based approximation.
         constraint_set: A space or function which determines whether a point is in the
-            constraint set. This can be either a space from gym.spaces or a function
+            constraint set. This can be either a space from spaces or a function
             which acts as a 0/1 classifier. See the `indicator_fn` implementation for
             more information.
         target_set: This argument is unused in the terminal-hitting time problem. The
@@ -88,11 +87,11 @@ def generate_tube(time_horizon: int, shape, low, high):
 
     tube = []
     for i in range(time_horizon):
-        tube_t = gym.spaces.Box(
+        tube_t = Box(
             low[i],
             high[i],
             shape=shape,
-            dtype=np.float32,
+            dtype=float,
         )
         tube.append(tube_t)
 

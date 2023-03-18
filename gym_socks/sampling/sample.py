@@ -5,8 +5,7 @@ from functools import wraps
 from itertools import islice
 from collections.abc import Generator
 
-import gym
-
+from gym_socks.envs.spaces import Space
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
@@ -128,18 +127,18 @@ def sample_fn(fn):
 
 
 @sample_fn
-def space_sampler(space: gym.spaces.Space):
+def space_sampler(space: Space):
     """Randomly sample from a space.
 
     Args:
-        space: A :py:obj:`gym.space.Space` that implements a :py:func:`sample` function.
+        space: A :py:obj:`Space` that implements a :py:func:`sample` function.
 
     Yields:
         A random sample from the space.
 
     Example:
 
-        >>> from gym.spaces import Box
+        >>> from gym_socks.envs.spaces import Box
         >>> from gym_socks.envs.sample import space_sampler
         >>> sampler = space_sampler(Box(low=-1, high=1, shape=(2,), dtype=float))
         >>> S = sampler.sample(size=100)

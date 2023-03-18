@@ -1,6 +1,6 @@
 """Planar quadrotor system."""
 
-import gym
+from gym_socks.envs.spaces import Box
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
@@ -31,15 +31,9 @@ class PlanarQuadrotorEnv(DynamicalSystem):
         """Initialize the system."""
         super().__init__(*args, **kwargs)
 
-        self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=float
-        )
-        self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=float
-        )
-        self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(2,), dtype=float
-        )
+        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(6,), dtype=float)
+        self.state_space = Box(low=-np.inf, high=np.inf, shape=(6,), dtype=float)
+        self.action_space = Box(low=-np.inf, high=np.inf, shape=(2,), dtype=float)
 
         self.state = None
 
@@ -114,7 +108,6 @@ class PlanarQuadrotorEnv(DynamicalSystem):
         return np.array(w)
 
     def dynamics(self, time, state, action, disturbance):
-
         x1, x2, x3, x4, x5, x6 = state
         u1, u2 = action
         w1, w2, w3, w4, w5, w6 = disturbance

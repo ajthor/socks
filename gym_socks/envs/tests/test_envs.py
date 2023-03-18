@@ -1,8 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-import gym
-
+from gym_socks.envs.spaces import Box
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
 from gym_socks.envs import NDIntegratorEnv
@@ -64,15 +63,11 @@ class TestDynamicalSystem(unittest.TestCase):
     def setUp(cls):
         cls.env = DynamicalSystem()
 
-        cls.env.observation_space = gym.spaces.Box(
+        cls.env.observation_space = Box(
             low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
-        cls.env.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=float
-        )
-        cls.env.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=float
-        )
+        cls.env.state_space = Box(low=-np.inf, high=np.inf, shape=(1,), dtype=float)
+        cls.env.action_space = Box(low=-np.inf, high=np.inf, shape=(1,), dtype=float)
 
     # def test_system_num_time_steps(cls):
     #     """System returns correct number of time steps."""
@@ -107,7 +102,7 @@ class TestDynamicalSystem(unittest.TestCase):
     #     cls.assertEqual(cls.env.state_dim, (1,))
     #     cls.assertEqual(cls.env.action_dim, (1,))
 
-    #     cls.env.observation_space = gym.spaces.Box(
+    #     cls.env.observation_space = Box(
     #         low=-1, high=1, shape=(1,), dtype=float
     #     )
 

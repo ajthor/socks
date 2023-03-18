@@ -2,8 +2,6 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
-import gym
-
 from gym_socks.envs.cwh import CWH4DEnv
 from gym_socks.envs.cwh import CWH6DEnv
 
@@ -18,7 +16,6 @@ class Test4DCWHSystem(unittest.TestCase):
         cls.env = CWH4DEnv()
 
     def test_set_parameters(cls):
-
         state_matrix = cls.env.state_matrix
         input_matrix = cls.env.input_matrix
 

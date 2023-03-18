@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import patch
 
-import gym
-
 from gym_socks.envs.integrator import NDIntegratorEnv
 
 from gym_socks.policies import ZeroPolicy

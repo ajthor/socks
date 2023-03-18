@@ -25,54 +25,57 @@ from gym_socks.envs.tora import TORAEnv
 
 # ---- Register gym envs ----
 
-from gym.envs.registration import register
+try:
+    from gym.envs.registration import register
+except ImportError:
+    pass
+else:
+    register(
+        id="CWH4DEnv-v0",
+        entry_point="gym_socks.envs:CWH4DEnv",
+        order_enforce=False,
+    )
 
-register(
-    id="CWH4DEnv-v0",
-    entry_point="gym_socks.envs:CWH4DEnv",
-    order_enforce=False,
-)
+    register(
+        id="CWH6DEnv-v0",
+        entry_point="gym_socks.envs:CWH6DEnv",
+        order_enforce=False,
+    )
 
-register(
-    id="CWH6DEnv-v0",
-    entry_point="gym_socks.envs:CWH6DEnv",
-    order_enforce=False,
-)
+    register(
+        id="2DIntegratorEnv-v0",
+        entry_point=NDIntegratorEnv,
+        kwargs={"dim": 2},
+        order_enforce=False,
+    )
 
-register(
-    id="2DIntegratorEnv-v0",
-    entry_point=NDIntegratorEnv,
-    kwargs={"dim": 2},
-    order_enforce=False,
-)
+    register(
+        id="NonholonomicVehicleEnv-v0",
+        entry_point="gym_socks.envs:NonholonomicVehicleEnv",
+        order_enforce=False,
+    )
 
-register(
-    id="NonholonomicVehicleEnv-v0",
-    entry_point="gym_socks.envs:NonholonomicVehicleEnv",
-    order_enforce=False,
-)
+    register(
+        id="PlanarQuadrotorEnv-v0",
+        entry_point="gym_socks.envs:PlanarQuadrotorEnv",
+        order_enforce=False,
+    )
 
-register(
-    id="PlanarQuadrotorEnv-v0",
-    entry_point="gym_socks.envs:PlanarQuadrotorEnv",
-    order_enforce=False,
-)
+    register(
+        id="2DPointMassEnv-v0",
+        entry_point=NDPointMassEnv,
+        kwargs={"dim": 2},
+        order_enforce=False,
+    )
 
-register(
-    id="2DPointMassEnv-v0",
-    entry_point=NDPointMassEnv,
-    kwargs={"dim": 2},
-    order_enforce=False,
-)
+    register(
+        id="QuadrotorEnv-v0",
+        entry_point="gym_socks.envs:QuadrotorEnv",
+        order_enforce=False,
+    )
 
-register(
-    id="QuadrotorEnv-v0",
-    entry_point="gym_socks.envs:QuadrotorEnv",
-    order_enforce=False,
-)
-
-register(
-    id="TORAEnv-v0",
-    entry_point="gym_socks.envs:TORAEnv",
-    order_enforce=False,
-)
+    register(
+        id="TORAEnv-v0",
+        entry_point="gym_socks.envs:TORAEnv",
+        order_enforce=False,
+    )

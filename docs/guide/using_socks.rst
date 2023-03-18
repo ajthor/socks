@@ -243,11 +243,11 @@ generate the tuple :math:`(x_{i}, u_{i}, y_{i})`.
 
 In order to sample from a space, we can use the
 :py:func:`~gym_socks.sampling.sample.space_sampler` function, which randomly generates
-samples from a :py:obj:`gym.Space`.
+samples from a :py:obj:`Space`.
 
 .. code-block:: python
 
-    from gym.spaces import Box
+    from gym_socks.envs.spaces import Box
     from gym_socks.sampling import space_sampler
 
     sample_space = Box(low=-1, high=1, shape(2,), dtype=float)

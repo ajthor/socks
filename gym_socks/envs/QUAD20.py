@@ -5,7 +5,7 @@ with Nonlinear Dynamics <https://easychair.org/publications/open/nrdD>`_.
 
 """
 
-import gym
+from gym_socks.envs.spaces import Box
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
@@ -34,15 +34,9 @@ class QuadrotorEnv(DynamicalSystem):
     def __init__(self, seed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(12,), dtype=float
-        )
-        self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(12,), dtype=float
-        )
-        self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(3,), dtype=float
-        )
+        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(12,), dtype=float)
+        self.state_space = Box(low=-np.inf, high=np.inf, shape=(12,), dtype=float)
+        self.action_space = Box(low=-np.inf, high=np.inf, shape=(3,), dtype=float)
 
         self.state = None
 
@@ -101,12 +95,12 @@ class QuadrotorEnv(DynamicalSystem):
         self.total_mass = self.center_mass + 4 * self.rotor_mass
 
     def _compute_inertia(self):
-        self.Jx = (2 / 5) * self.center_mass * (self.radius_center_mass ** 2) + 2 * (
-            self.rotor_distance ** 2
+        self.Jx = (2 / 5) * self.center_mass * (self.radius_center_mass**2) + 2 * (
+            self.rotor_distance**2
         ) * self.rotor_mass
         self.Jy = self.Jx
-        self.Jz = (2 / 5) * self.center_mass * (self.radius_center_mass ** 2) + 4 * (
-            self.rotor_distance ** 2
+        self.Jz = (2 / 5) * self.center_mass * (self.radius_center_mass**2) + 4 * (
+            self.rotor_distance**2
         ) * self.rotor_mass
 
     def generate_disturbance(self, time, state, action):

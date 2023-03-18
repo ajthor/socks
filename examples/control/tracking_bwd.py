@@ -19,9 +19,8 @@ from functools import partial
 
 import numpy as np
 
-from gym.spaces import Box
-from gym.envs.registration import make
-
+from gym_socks.envs.spaces import Box
+from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
 from gym_socks.algorithms.control.kernel_control_bwd import KernelControlBwd
 
 from gym_socks.kernel.metrics import rbf_kernel
@@ -49,8 +48,6 @@ from time import perf_counter
 # Configuration variables.
 
 # %%
-system_id = "NonholonomicVehicleEnv-v0"
-
 sigma = 3  # Kernel bandwidth parameter.
 regularization_param = 1e-3  # Regularization parameter.
 
@@ -66,7 +63,7 @@ seed = 12345
 # random initial conditions.
 
 # %%
-env = make(system_id)
+env = NonholonomicVehicleEnv()
 env.sampling_time = 0.1
 env.seed(seed)
 sample_size = 2000

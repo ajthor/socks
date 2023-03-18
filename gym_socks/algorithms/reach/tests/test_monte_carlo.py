@@ -2,10 +2,11 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
-import gym
 import gym_socks
 
 from scipy.constants import unit
+
+from gym_socks.envs.spaces import Box
 
 from gym_socks.envs.integrator import NDIntegratorEnv
 from gym_socks.envs.dynamical_system import DynamicalSystem
@@ -32,7 +33,7 @@ def make_tube(
 
     tube = []
     for i in range(time_horizon):
-        tube_t = gym.spaces.Box(
+        tube_t = Box(
             lower_bound,
             upper_bound,
             shape=shape,
@@ -80,7 +81,7 @@ class TestTrajectoryIndicator(unittest.TestCase):
         # The trajectory of the system with no disturbance starts at (-0.1, 0.1) and
         # ends at (0.1, 0.1) after 20 time steps.
 
-        sample_space = gym.spaces.Box(
+        sample_space = Box(
             low=np.array([-0.1, 0.1], dtype=float),
             high=np.array([-0.1, 0.1], dtype=float),
             dtype=float,
@@ -128,7 +129,7 @@ class TestTrajectoryIndicator(unittest.TestCase):
         # The trajectory of the system with no disturbance starts at (0.2, 0.1) and
         # ends at (0.4, 0.1) after 20 time steps.
 
-        sample_space = gym.spaces.Box(
+        sample_space = Box(
             low=np.array([0.2, 0.1], dtype=float),
             high=np.array([0.2, 0.1], dtype=float),
             dtype=float,

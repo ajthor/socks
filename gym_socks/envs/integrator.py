@@ -96,7 +96,7 @@ Tip:
 
 """
 
-import gym
+from gym_socks.envs.spaces import Box
 from gym_socks.envs.dynamical_system import DynamicalSystem
 
 import numpy as np
@@ -124,15 +124,11 @@ class NDIntegratorEnv(DynamicalSystem):
     def __init__(self, dim: int = 2, seed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.observation_space = gym.spaces.Box(
+        self.observation_space = Box(
             low=-np.inf, high=np.inf, shape=(dim,), dtype=float
         )
-        self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(dim,), dtype=float
-        )
-        self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=float
-        )
+        self.state_space = Box(low=-np.inf, high=np.inf, shape=(dim,), dtype=float)
+        self.action_space = Box(low=-np.inf, high=np.inf, shape=(1,), dtype=float)
 
         self.state = None
 

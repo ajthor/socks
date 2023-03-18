@@ -15,13 +15,13 @@ To run the example, use the following command:
 """
 
 # %%
-import gym
-
 import numpy as np
 
 from functools import partial
 
-from gym.envs.registration import make
+from gym_socks.envs.spaces import Box
+from gym_socks.envs.integrator import NDIntegratorEnv
+
 from gym_socks.kernel.metrics import rbf_kernel
 
 from gym_socks.algorithms.reach.kernel_sr import kernel_sr
@@ -36,7 +36,6 @@ from gym_socks.utils.grid import cartesian
 # Configuration variables.
 
 # %%
-system_id = "2DIntegratorEnv-v0"
 time_horizon = 5
 sigma = 0.1
 regularization_param = 1
@@ -50,11 +49,11 @@ regularization_param = 1
 # work.
 
 # %%
-env = make(system_id)
+env = NDIntegratorEnv(2)
 
 sample_size = 3125  # This number is chosen based on the values below.
 
-state_sample_space = gym.spaces.Box(
+state_sample_space = Box(
     low=-1.1, high=1.1, shape=env.state_space.shape, dtype=env.state_space.dtype
 )
 
@@ -69,13 +68,9 @@ S = transition_sampler(env, state_sampler, action_sampler).sample(size=sample_si
 # -0.5 and 0.5, and specify the constraint tube to be between -1 and 1.
 
 # %%
-target_tube = [
-    gym.spaces.Box(low=-0.5, high=0.5, shape=(2,), dtype=float)
-] * time_horizon
+target_tube = [Box(low=-0.5, high=0.5, shape=(2,), dtype=float)] * time_horizon
 
-constraint_tube = [
-    gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
-] * time_horizon
+constraint_tube = [Box(low=-1, high=1, shape=(2,), dtype=float)] * time_horizon
 
 # Generate test points.
 x1 = np.linspace(-1, 1, 50)

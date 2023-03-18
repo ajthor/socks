@@ -41,10 +41,9 @@ amount of sample information needed to characterize the dynamics.
 """
 
 # %%
-import gym
-
 import numpy as np
 
+from gym_socks.envs.spaces import Box
 from gym_socks.envs.nonholonomic import NonholonomicVehicleEnv
 
 from functools import partial
@@ -64,6 +63,7 @@ import matplotlib.pyplot as plt
 #
 # In order to demonstrate the idea, we can look at a deterministic system.
 
+
 # %%
 class DeterministicNonholonomicVehicleEnv(NonholonomicVehicleEnv):
     def generate_disturbance(self, time, state, action):
@@ -73,7 +73,7 @@ class DeterministicNonholonomicVehicleEnv(NonholonomicVehicleEnv):
 deterministic_env = DeterministicNonholonomicVehicleEnv()
 
 # Generate a collection of random actions.
-action_sample_space = gym.spaces.Box(
+action_sample_space = Box(
     low=np.array([0.1, -10.1], dtype=float),
     high=np.array([1.1, 10.1], dtype=float),
     shape=deterministic_env.action_space.shape,
@@ -189,7 +189,7 @@ env.seed(seed)
 
 sample_size = 100
 
-action_sample_space = gym.spaces.Box(
+action_sample_space = Box(
     low=np.array([0.1, -10.1], dtype=float),
     high=np.array([1.1, 10.1], dtype=float),
     shape=env.action_space.shape,

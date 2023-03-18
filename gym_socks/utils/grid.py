@@ -1,9 +1,9 @@
-import gym
-
 import numpy as np
 
 from functools import reduce
 from operator import mul
+
+from gym_socks.envs.spaces import Box
 
 
 def cartesian(*xi, out=None):
@@ -46,7 +46,7 @@ def cartesian(*xi, out=None):
     return out
 
 
-def boxgrid(space: gym.spaces.Box, resolution: tuple, out=None):
+def boxgrid(space: Box, resolution: tuple, out=None):
     r"""Returns a coarse grid from a bounded Box space.
 
     Constructs a coarse grid from a bounded box in :math:`\mathbb{R}^n`. A
@@ -64,7 +64,7 @@ def boxgrid(space: gym.spaces.Box, resolution: tuple, out=None):
     Example:
 
         >>> import numpy as np
-        >>> from gym.spaces import Box
+        >>> from gym_socks.envs.spaces import Box
         >>> from gym_socks.utils.grid import boxgrid
         >>> space = Box(low=-1, high=1, shape=(2,), dtype=float)
         >>> boxgrid(space, (3, 5))

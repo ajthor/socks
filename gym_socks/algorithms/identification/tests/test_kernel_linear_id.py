@@ -2,8 +2,6 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
-import gym
-
 import numpy as np
 
 from gym_socks.algorithms.identification.kernel_linear_id import KernelLinearId
