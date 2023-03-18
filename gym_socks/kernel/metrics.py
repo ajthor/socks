@@ -205,7 +205,7 @@ def rbf_kernel(
     else:
         assert sigma > 0, "sigma must be a strictly positive real value."
 
-    D /= -2 * (sigma ** 2)
+    D /= -2 * (sigma**2)
     np.exp(D, D)
 
     return D
@@ -227,7 +227,7 @@ def rbf_kernel_derivative(
     else:
         assert sigma > 0, "sigma must be a strictly positive real valued."
 
-    D *= 2 / (2 * sigma ** 2)
+    D *= 2 / (2 * sigma**2)
 
     return D
 

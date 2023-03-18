@@ -27,7 +27,7 @@ def _trajectory_indicator(
     target_tube=None,
     step_fn=None,
 ):
-    trajectories = np.asarray(trajectories, dtype=np.float32)
+    trajectories = np.asarray(trajectories, dtype=float)
     result = indicator_fn(trajectories[:, time_horizon], target_tube[time_horizon])
     result = np.array(result, dtype=int)
 
@@ -227,7 +227,7 @@ class MonteCarloSR(RegressorMixin):
 
         # Initialize the safety probability matrix.
         safety_probabilities = np.empty(
-            (self.time_horizon, num_test_points), dtype=np.float32
+            (self.time_horizon, num_test_points), dtype=float
         )
 
         for i, state in enumerate(T):

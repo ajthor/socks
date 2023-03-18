@@ -74,11 +74,11 @@ A = cartesian(np.linspace(-1, 1, 5))
 
 # %%
 target_tube = [
-    gym.spaces.Box(low=-0.5, high=0.5, shape=(2,), dtype=np.float32)
+    gym.spaces.Box(low=-0.5, high=0.5, shape=(2,), dtype=float)
 ] * time_horizon
 
 constraint_tube = [
-    gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+    gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
 ] * time_horizon
 
 # Generate test points.

@@ -8,7 +8,7 @@ import numpy as np
 from functools import wraps
 
 
-class BaseDynamicalObject(gym.Env, ABC):
+class BaseDynamicalObject(ABC):
     """Base dynamical object class.
 
     Bases: :py:obj:`gym.Env`, :py:obj:`abc.ABC`

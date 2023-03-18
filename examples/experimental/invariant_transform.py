@@ -74,8 +74,8 @@ deterministic_env = DeterministicNonholonomicVehicleEnv()
 
 # Generate a collection of random actions.
 action_sample_space = gym.spaces.Box(
-    low=np.array([0.1, -10.1], dtype=np.float32),
-    high=np.array([1.1, 10.1], dtype=np.float32),
+    low=np.array([0.1, -10.1], dtype=float),
+    high=np.array([1.1, 10.1], dtype=float),
     shape=deterministic_env.action_space.shape,
     dtype=deterministic_env.action_space.dtype,
 )
@@ -190,8 +190,8 @@ env.seed(seed)
 sample_size = 100
 
 action_sample_space = gym.spaces.Box(
-    low=np.array([0.1, -10.1], dtype=np.float32),
-    high=np.array([1.1, 10.1], dtype=np.float32),
+    low=np.array([0.1, -10.1], dtype=float),
+    high=np.array([1.1, 10.1], dtype=float),
     shape=env.action_space.shape,
     dtype=env.action_space.dtype,
     seed=seed,
@@ -283,7 +283,7 @@ def _tracking_cost(time: int = 0, state: np.ndarray = None) -> float:
             [np.sin(theta), np.cos(theta), 0],
             [0, 0, 1],
         ],
-        dtype=np.float32,
+        dtype=float,
     )
     YT = YT @ R
 
@@ -328,7 +328,7 @@ fig = plt.figure()
 ax = plt.axes()
 plt.grid()
 
-target_trajectory = np.array(target_trajectory, dtype=np.float32)
+target_trajectory = np.array(target_trajectory, dtype=float)
 plt.plot(
     target_trajectory[:, 0],
     target_trajectory[:, 1],
@@ -337,7 +337,7 @@ plt.plot(
     label="Target Trajectory",
 )
 
-trajectory = np.array(trajectory, dtype=np.float32)
+trajectory = np.array(trajectory, dtype=float)
 plt.plot(
     trajectory[:, 0],
     trajectory[:, 1],

@@ -32,13 +32,13 @@ class PlanarQuadrotorEnv(DynamicalSystem):
         super().__init__(*args, **kwargs)
 
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(6,), dtype=float
         )
         self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(6,), dtype=float
         )
         self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(2,), dtype=float
         )
 
         self.state = None
@@ -128,4 +128,4 @@ class PlanarQuadrotorEnv(DynamicalSystem):
         dx5 = x5 + w5
         dx6 = (self.rotor_distance * (u1 - u2)) / self.inertia + w6
 
-        return np.array([dx1, dx2, dx3, dx4, dx5, dx6], dtype=np.float32)
+        return np.array([dx1, dx2, dx3, dx4, dx5, dx6], dtype=float)

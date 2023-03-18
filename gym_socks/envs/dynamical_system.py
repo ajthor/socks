@@ -33,13 +33,13 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
                     action_dim = 1  # 1-D action space.
 
                     self.observation_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=float
                     )
                     self.state_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=float
                     )
                     self.action_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(action_dim,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(action_dim,), dtype=float
                     )
 
                     self.state = None
@@ -74,13 +74,13 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
                     action_dim = 1  # 1-D action space.
 
                     self.observation_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=float
                     )
                     self.state_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(state_dim,), dtype=float
                     )
                     self.action_space = gym.spaces.Box(
-                        low=-np.inf, high=np.inf, shape=(action_dim,), dtype=np.float32
+                        low=-np.inf, high=np.inf, shape=(action_dim,), dtype=float
                     )
 
                     self.state = None
@@ -182,7 +182,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
     @abstractmethod
     def dynamics(self, time, state, action, disturbance):
-        """Dynamics for the system.
+        r"""Dynamics for the system.
 
         .. math::
 
@@ -222,7 +222,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
         """
 
-        return np.asarray(state, dtype=np.float32)
+        return np.asarray(state, dtype=float)
 
     def cost(self, time, state, action):
         """Cost function for the system.
@@ -257,7 +257,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
 
         """
 
-        action = np.atleast_1d(np.asarray(action, dtype=np.float32))
+        action = np.atleast_1d(np.asarray(action, dtype=float))
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
@@ -298,7 +298,7 @@ class DynamicalSystem(BaseDynamicalObject, ABC):
         if state is None:
             self.state = self.state_space.sample()
         else:
-            self.state = np.atleast_1d(np.asarray(state, dtype=np.float32))
+            self.state = np.atleast_1d(np.asarray(state, dtype=float))
 
         return self.state
 
@@ -355,6 +355,6 @@ def simulate(env, N, x0=None, policy=None, full_sequence=False):
         state_sequence.append(env.state)
 
     return (
-        np.array(state_sequence, dtype=np.float32),
-        np.array(action_sequence, dtype=np.float32),
+        np.array(state_sequence, dtype=float),
+        np.array(action_sequence, dtype=float),
     )

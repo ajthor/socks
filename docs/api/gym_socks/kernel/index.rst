@@ -11,3 +11,4 @@ Submodules
 
     metrics/index.rst
     probability/index.rst
+    update/index.rst

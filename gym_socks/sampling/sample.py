@@ -180,14 +180,14 @@ def grid_sampler(grid_points: np.ndarray):
 
 @sample_fn
 def transition_sampler(
-    env: gym.Env,
+    env,
     state_sampler,
     action_sampler,
 ):
     """Transition sampler."""
 
     initial_condition = next(state_sampler)
-    env.reset(initial_condition)
+    env.reset(state=initial_condition)
 
     action = next(action_sampler)
     env.step(action=action)
@@ -198,14 +198,14 @@ def transition_sampler(
 
 @sample_fn
 def observation_sampler(
-    env: gym.Env,
+    env,
     state_sampler,
     action_sampler,
 ):
     """Observation sampler."""
 
     initial_condition = next(state_sampler)
-    env.reset(initial_condition)
+    env.reset(state=initial_condition)
 
     action = next(action_sampler)
     obs, *_ = env.step(action=action)
@@ -215,7 +215,7 @@ def observation_sampler(
 
 @sample_fn
 def trajectory_sampler(
-    env: gym.Env,
+    env,
     state_sampler,
     action_sampler,
     time_horizon: int = 1,
@@ -223,7 +223,7 @@ def trajectory_sampler(
     """Trajectory sampler."""
 
     initial_condition = next(state_sampler)
-    env.reset(initial_condition)
+    env.reset(state=initial_condition)
 
     state_sequence = []
     action_sequence = []

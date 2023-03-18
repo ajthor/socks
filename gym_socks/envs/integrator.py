@@ -125,13 +125,13 @@ class NDIntegratorEnv(DynamicalSystem):
         super().__init__(*args, **kwargs)
 
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=float
         )
         self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(dim,), dtype=float
         )
         self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
 
         self.state = None
@@ -144,4 +144,4 @@ class NDIntegratorEnv(DynamicalSystem):
 
     def dynamics(self, time, state, action, disturbance):
         _, *x = state
-        return np.array([*x, *action], dtype=np.float32) + disturbance
+        return np.array([*x, *action], dtype=float) + disturbance

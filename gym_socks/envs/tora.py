@@ -21,13 +21,13 @@ class TORAEnv(DynamicalSystem):
     def __init__(self, seed=None):
 
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(4,), dtype=float
         )
         self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(4,), dtype=float
         )
         self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
 
         self.state = None
@@ -55,4 +55,4 @@ class TORAEnv(DynamicalSystem):
         dx3 = x4 + w3
         dx4 = action + w4
 
-        return np.array([dx1, dx2, dx3, *dx4], dtype=np.float32)
+        return np.array([dx1, dx2, dx3, *dx4], dtype=float)

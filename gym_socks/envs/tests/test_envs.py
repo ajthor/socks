@@ -40,12 +40,10 @@ class TestEnvironmentsRun(unittest.TestCase):
 
         for env in system_list:
             with cls.subTest(msg=f"Testing with {type(env)}."):
-
                 try:
                     obs = env.reset()
 
                     for t in range(5):
-
                         # get action
                         action = env.action_space.sample()
 
@@ -54,6 +52,9 @@ class TestEnvironmentsRun(unittest.TestCase):
 
                 except Exception as e:
                     cls.fail(f"Simulating system {type(env)} raised an exception.")
+
+                finally:
+                    env.close()
 
 
 class TestDynamicalSystem(unittest.TestCase):
@@ -64,13 +65,13 @@ class TestDynamicalSystem(unittest.TestCase):
         cls.env = DynamicalSystem()
 
         cls.env.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
         cls.env.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
         cls.env.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(1,), dtype=float
         )
 
     # def test_system_num_time_steps(cls):
@@ -107,7 +108,7 @@ class TestDynamicalSystem(unittest.TestCase):
     #     cls.assertEqual(cls.env.action_dim, (1,))
 
     #     cls.env.observation_space = gym.spaces.Box(
-    #         low=-1, high=1, shape=(1,), dtype=np.float32
+    #         low=-1, high=1, shape=(1,), dtype=float
     #     )
 
     #     cls.assertEqual(cls.env.state_dim, (1,))
@@ -118,7 +119,6 @@ class TestDynamicalSystem(unittest.TestCase):
         cls.assertTrue(cls.env.observation_space.contains(cls.env.state))
 
     def test_default_dynamics_not_implemented(cls):
-
         with cls.assertRaises(NotImplementedError):
             # state = cls.env.reset()
             # action = cls.env.action_space.sample()
@@ -131,6 +131,5 @@ class TestDynamicalSystem(unittest.TestCase):
     #         cls.env.close()
 
     def test_default_render_not_implemented(cls):
-
         with cls.assertRaises(NotImplementedError):
             cls.env.render()
