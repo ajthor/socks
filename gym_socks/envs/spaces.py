@@ -50,9 +50,9 @@ class Space:
     def seed(self, seed=None):
         """Sets the seed of the random number generator."""
 
-        # assert seed is an integer or None
-        if seed is not None and not isinstance(seed, int):
-            raise ValueError("seed must be an integer or None.")
+        # assert seed is a non-negative integer or None
+        if seed is not None and not (isinstance(seed, int) and seed >= 0):
+            raise ValueError("seed must be a non-negative integer or None.")
 
         self._seed = seed
 
@@ -186,6 +186,10 @@ class Box(Space):
     def high(self):
         return self._high
 
+    @property
+    def shape(self):
+        return self._shape
+
     def contains(self, x) -> bool:
         """Check if x is in the box."""
 
@@ -195,6 +199,9 @@ class Box(Space):
         # else, if x is not a numpy array, then try converting it to a numpy array
         elif not isinstance(x, np.ndarray):
             x = np.asarray(x, dtype=self.dtype)
+        # else, raise value error
+        else:
+            raise ValueError("x must be a scalar or a numpy array.")
 
         return bool(
             np.can_cast(x, self.dtype, casting="safe")
@@ -258,7 +265,7 @@ class Box(Space):
         return sample.astype(self.dtype)
 
     def __eq__(self, other: object) -> bool:
-        """Check if two boxes are equal."""
+        """Check if two boxes are equal. Dtypes need not be the same."""
         if not isinstance(other, Box):
             return False
         return bool(
