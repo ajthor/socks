@@ -21,7 +21,7 @@ import numpy as np
 
 from gym_socks.envs.spaces import Box
 from gym_socks.envs.cwh import CWH4DEnv
-from gym_socks.algorithms.control.kernel_control_fwd import KernelControlFwd
+from gym_socks.algorithms.control.kernel_control_bwd import KernelControlBwd
 
 from gym_socks.kernel.metrics import rbf_kernel
 
@@ -158,11 +158,10 @@ def _constraint_fn(time: int = 0, state: np.ndarray = None) -> float:
 
 # %%
 # Compute policy.
-policy = KernelControlFwd(
+policy = KernelControlBwd(
     time_horizon=time_horizon,
     cost_fn=_cost_fn,
-    constraint_fn=_constraint_fn,
-    verbose=False,
+    # constraint_fn=_constraint_fn,
     kernel_fn=rbf_kernel,
     regularization_param=regularization_param,
 )
