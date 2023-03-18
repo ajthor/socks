@@ -11,9 +11,13 @@ class Space:
         # assert dtype is not None
         if self.dtype is None:
             raise ValueError("dtype must be specified.")
-        # else, dtype must be a valid dtype
-        elif not isinstance(self.dtype, np.dtype):
-            raise ValueError("dtype must be a valid numpy dtype.")
+
+        # assert dtype is valid numpy dtype
+        if not isinstance(self.dtype, np.dtype):
+            try:
+                self._dtype = np.dtype(self.dtype)
+            except TypeError:
+                raise ValueError("dtype must be a valid numpy dtype.")
 
         # assert shape is not None
         if self.shape is None:
@@ -31,7 +35,7 @@ class Space:
     def np_random(self):
         """Returns the random number generator and initializes it if None."""
         if self._np_random is None:
-            self._np_random = np.random.RandomState(self.seed)
+            self._np_random = np.random.RandomState(self._seed)
 
         return self._np_random
 
@@ -45,12 +49,17 @@ class Space:
 
     def seed(self, seed=None):
         """Sets the seed of the random number generator."""
+
+        # assert seed is an integer or None
+        if seed is not None and not isinstance(seed, int):
+            raise ValueError("seed must be an integer or None.")
+
         self._seed = seed
 
         # initialize the random number generator
-        self._np_random = np.random.RandomState(self.seed)
+        self._np_random = np.random.RandomState(self._seed)
 
-        return self.seed
+        return self._seed
 
     def contains(self, x) -> bool:
         """Check if x is in the space."""
@@ -72,20 +81,20 @@ class Box(Space):
     ) -> None:
         """Initialize the class."""
 
-        # assert dtype is not none
-        if dtype is None:
-            raise ValueError("dtype must be specified.")
-        # else, dtype must be a valid dtype
-        elif not isinstance(dtype, np.dtype):
-            raise ValueError("dtype must be a valid numpy dtype.")
-
-        # seed must be an integer or none
-        if seed is not None and not isinstance(seed, int):
-            raise ValueError("seed must be an integer or None.")
-
         self._shape = shape
         self._dtype = dtype
         self._seed = seed
+
+        # assert dtype is not none
+        if dtype is None:
+            raise ValueError("dtype must be specified.")
+
+        # assert dtype is valid numpy dtype
+        if not isinstance(self.dtype, np.dtype):
+            try:
+                self._dtype = np.dtype(self.dtype)
+            except TypeError:
+                raise ValueError("dtype must be a valid numpy dtype.")
 
         # if shape is not none, then it must be a tuple of integers
         if self.shape is not None:
@@ -138,20 +147,22 @@ class Box(Space):
         if isinstance(high, (int, float)):
             high = np.full(self.shape, high, dtype=self.dtype)
 
-        # assert low is a numpy array and it has the same shape as self._shape
+        # ensure low is a numpy array and it has the same shape as self._shape
         if not isinstance(low, np.ndarray):
-            raise ValueError("low must be a numpy array.")
-        elif low.shape != self._shape:
+            low = np.asarray(low, dtype=self.dtype)
+
+        if low.shape != self._shape:
             raise ValueError("low must have the same shape as shape.")
 
         # if low has a different dtype than self.dtype, then low is cast to self.dtype
         if low.dtype != self.dtype:
             low = low.astype(self.dtype)
 
-        # assert high is a numpy array and it has the same shape as self._shape
+        # ensure high is a numpy array and it has the same shape as self._shape
         if not isinstance(high, np.ndarray):
-            raise ValueError("high must be a numpy array.")
-        elif high.shape != self._shape:
+            high = np.asarray(high, dtype=self.dtype)
+
+        if high.shape != self._shape:
             raise ValueError("high must have the same shape as shape.")
 
         # if high has a different dtype than self.dtype, then high is cast to self.dtype
@@ -165,7 +176,7 @@ class Box(Space):
         self._low = low
         self._high = high
 
-        super().__init__(shape=self.shape, dtype=self.dtype, seed=self.seed)
+        super().__init__(shape=self.shape, dtype=self.dtype, seed=self._seed)
 
     @property
     def low(self):
@@ -178,11 +189,12 @@ class Box(Space):
     def contains(self, x) -> bool:
         """Check if x is in the box."""
 
-        # try converting x to a numpy array
-        try:
+        # if x is a scalar, then x is a numpy array of shape self.shape
+        if isinstance(x, (int, float)):
+            x = np.full(self.shape, x, dtype=self.dtype)
+        # else, if x is not a numpy array, then try converting it to a numpy array
+        elif not isinstance(x, np.ndarray):
             x = np.asarray(x, dtype=self.dtype)
-        except ValueError:
-            return False
 
         return bool(
             np.can_cast(x, self.dtype, casting="safe")
@@ -221,21 +233,21 @@ class Box(Space):
 
         # bounded samples are generated from a uniform distribution
         sample[bounded] = self._np_random.uniform(
-            low=bounded[bounded], high=self.high[bounded]
+            size=bounded[bounded].shape, low=bounded[bounded], high=self.high[bounded]
         )
 
         # unbounded samples are generated from a normal distribution
-        sample[unbounded] = self._np_random.normal(shape=unbounded[unbounded].shape)
+        sample[unbounded] = self._np_random.normal(size=unbounded[unbounded].shape)
 
         # unbounded below samples are generated from an exponential distribution
         sample[bounded_below] = (
-            self._np_random.exponential(shape=bounded_below[bounded_below].shape)
+            self._np_random.exponential(size=bounded_below[bounded_below].shape)
             + self.low[bounded_below]
         )
 
         # unbounded above samples are generated from an exponential distribution
         sample[bounded_above] = (
-            self._np_random.exponential(shape=bounded_above[bounded_above].shape)
+            self._np_random.exponential(size=bounded_above[bounded_above].shape)
             + self.high[bounded_above]
         )
 
@@ -245,14 +257,14 @@ class Box(Space):
 
         return sample.astype(self.dtype)
 
-    def __eq__(self, __o: object) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Check if two boxes are equal."""
-        if not isinstance(__o, Box):
+        if not isinstance(other, Box):
             return False
         return bool(
-            self.shape == __o.shape
-            and np.all(self.low == __o.low)
-            and np.all(self.high == __o.high)
+            self.shape == other.shape
+            and np.all(self.low == other.low)
+            and np.all(self.high == other.high)
         )
 
     def __repr__(self) -> str:

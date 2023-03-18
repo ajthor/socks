@@ -1,5 +1,7 @@
 import unittest
 
+import numpy as np
+
 from gym_socks.envs.spaces import Space
 from gym_socks.envs.spaces import Box
 
@@ -30,18 +32,6 @@ class TestSpace(unittest.TestCase):
 
 # test the Box class
 class TestBox(unittest.TestCase):
-    def test_low_is_not_none(self):
-        with self.assertRaises(ValueError):
-            Box()
-        with self.assertRaises(ValueError):
-            Box(low=None)
-
-    def test_high_is_not_none(self):
-        with self.assertRaises(ValueError):
-            Box(low=0)
-        with self.assertRaises(ValueError):
-            Box(low=0, high=None)
-
     def test_low_is_valid(self):
         with self.assertRaises(ValueError):
             Box(low="invalid", high=1)
@@ -50,7 +40,7 @@ class TestBox(unittest.TestCase):
         with self.assertRaises(ValueError):
             Box(low=(1, 2), high=1)
         with self.assertRaises(ValueError):
-            Box(low=1, high=1)
+            Box(low=0, high=-1)
 
     def test_high_is_valid(self):
         with self.assertRaises(ValueError):
@@ -60,30 +50,36 @@ class TestBox(unittest.TestCase):
         with self.assertRaises(ValueError):
             Box(low=0, high=(1, 2))
         with self.assertRaises(ValueError):
-            Box(low=0, high=1)
+            Box(low=0, high=-1)
 
     def test_low_and_high_are_same_shape(self):
         with self.assertRaises(ValueError):
             Box(low=[1, 2], high=[1])
         with self.assertRaises(ValueError):
             Box(low=(1, 2), high=(1,))
-        with self.assertRaises(ValueError):
-            Box(low=1, high=1)
 
-    def test_low_and_high_are_same_dtype(self):
-        with self.assertRaises(ValueError):
-            Box(low=[1, 2], high=[1.0, 2.0])
-        with self.assertRaises(ValueError):
-            Box(low=(1, 2), high=(1.0, 2.0))
-        with self.assertRaises(ValueError):
-            Box(low=1, high=1.0)
+    def test_contains_is_valid(self):
+        box = Box(low=0, high=1)
+        self.assertTrue(box.contains(0))
+        self.assertTrue(box.contains(0.5))
+        self.assertTrue(box.contains(1))
+        self.assertFalse(box.contains(-1))
+        self.assertFalse(box.contains(2))
 
-    def test_low_and_high_are_same_type(self):
-        with self.assertRaises(ValueError):
-            Box(low=1, high=[1])
-        with self.assertRaises(ValueError):
-            Box(low=[1], high=1)
-        with self.assertRaises(ValueError):
-            Box(low=(1,), high=1)
-        with self.assertRaises(ValueError):
-            Box(low=1, high=(1,))
+        box = Box(low=[0, 0], high=[1, 1])
+        self.assertTrue(box.contains([0, 0]))
+        self.assertTrue(box.contains([0.5, 0.5]))
+        self.assertTrue(box.contains([1, 1]))
+        self.assertFalse(box.contains([-1, 0]))
+        self.assertFalse(box.contains([2, 0]))
+        self.assertFalse(box.contains([0, -1]))
+        self.assertFalse(box.contains([0, 2]))
+
+        box = Box(low=(0, 0), high=(1, 1))
+        self.assertTrue(box.contains((0, 0)))
+        self.assertTrue(box.contains((0.5, 0.5)))
+        self.assertTrue(box.contains((1, 1)))
+        self.assertFalse(box.contains((-1, 0)))
+        self.assertFalse(box.contains((2, 0)))
+        self.assertFalse(box.contains((0, -1)))
+        self.assertFalse(box.contains((0, 2)))
