@@ -7,13 +7,7 @@ RUN apt-get -y update && \
   wget \
   ca-certificates \
   libblas-dev \
-  liblapack-dev \
-  ffmpeg \
-  dvipng \
-  cm-super \
-  texlive-xetex \
-  texlive-fonts-recommended \
-  texlive-plain-generic && \
+  liblapack-dev && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN pip install -U \
@@ -38,9 +32,9 @@ ENV USER ${NB_USER}
 ENV HOME /home
 
 RUN if [[ "$arg" != "root" ]] ; then adduser --disabled-password \
-    --gecos "Default user" \
-    --uid ${NB_UID} \
-    ${NB_USER} ; fi
+  --gecos "Default user" \
+  --uid ${NB_UID} \
+  ${NB_USER} ; fi
 
 COPY . ${HOME}
 

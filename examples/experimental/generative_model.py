@@ -86,7 +86,7 @@ from matplotlib import pyplot as plt
 # %%
 sample_size = 200
 X_train = np.random.uniform(-5.5, 5.5, sample_size).reshape(-1, 1)
-y_train = X_train ** 2
+y_train = X_train**2
 y_train += 2 * np.random.standard_normal(size=(sample_size, 1))  # Additive noise.
 
 X_test = np.linspace(-5, 5, 1000).reshape(-1, 1)
@@ -101,7 +101,7 @@ X_test = np.linspace(-5, 5, 1000).reshape(-1, 1)
 # %%
 sigma = 1
 kernel_fn = partial(rbf_kernel, sigma=sigma)
-regularization_param = 1 / (sample_size ** 2)
+regularization_param = 1 / (sample_size**2)
 
 # %% [markdown]
 # ## Compute the Appromation
@@ -222,7 +222,7 @@ plt.fill_between(
     np.squeeze(y_mean) + 2 * y_std,
     alpha=0.1,
     color="black",
-    label=r"$\pm$ 2 std. dev.",
+    label=r"+/- 2 std. dev.",
 )
 
 # Plot the y values from the generated functions.
