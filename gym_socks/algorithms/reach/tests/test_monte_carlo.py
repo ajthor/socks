@@ -36,7 +36,7 @@ def make_tube(
             lower_bound,
             upper_bound,
             shape=shape,
-            dtype=np.float32,
+            dtype=float,
         )
         tube.append(tube_t)
 
@@ -81,9 +81,9 @@ class TestTrajectoryIndicator(unittest.TestCase):
         # ends at (0.1, 0.1) after 20 time steps.
 
         sample_space = gym.spaces.Box(
-            low=np.array([-0.1, 0.1], dtype=np.float32),
-            high=np.array([-0.1, 0.1], dtype=np.float32),
-            dtype=np.float32,
+            low=np.array([-0.1, 0.1], dtype=float),
+            high=np.array([-0.1, 0.1], dtype=float),
+            dtype=float,
         )
 
         sample_size = 5
@@ -129,9 +129,9 @@ class TestTrajectoryIndicator(unittest.TestCase):
         # ends at (0.4, 0.1) after 20 time steps.
 
         sample_space = gym.spaces.Box(
-            low=np.array([0.2, 0.1], dtype=np.float32),
-            high=np.array([0.2, 0.1], dtype=np.float32),
-            dtype=np.float32,
+            low=np.array([0.2, 0.1], dtype=float),
+            high=np.array([0.2, 0.1], dtype=float),
+            dtype=float,
         )
 
         sample_size = 5

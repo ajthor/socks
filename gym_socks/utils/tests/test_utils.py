@@ -33,7 +33,7 @@ class TestIndicatorFunction(unittest.TestCase):
     def test_indicator_function_on_box(cls):
         """Test indicator function on box."""
 
-        interval = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        interval = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
 
         # One point inside.
         points = [[0.1, 0.1]]

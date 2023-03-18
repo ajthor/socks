@@ -109,10 +109,10 @@ import matplotlib.pyplot as plt
 fig = plt.figure()
 ax = plt.axes()
 
-actual_trajectory = np.array(actual_trajectory, dtype=np.float32)
+actual_trajectory = np.array(actual_trajectory, dtype=float)
 plt.plot(actual_trajectory[:, 0], actual_trajectory[:, 1], label="Actual Trajectory")
 
-estimated_trajectory = np.array(estimated_trajectory, dtype=np.float32)
+estimated_trajectory = np.array(estimated_trajectory, dtype=float)
 plt.plot(
     estimated_trajectory[:, 0], estimated_trajectory[:, 1], label="Estimated Trajectory"
 )

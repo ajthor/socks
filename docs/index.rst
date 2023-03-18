@@ -79,7 +79,7 @@ checking out several of the key examples.
     :gutter: 1 1 2 3
 
     .. grid-item-card::
-        :link: examples/control/tracking
+        :link: examples/control/tracking_fwd
         :link-type: doc
 
         **Target Tracking Problem**

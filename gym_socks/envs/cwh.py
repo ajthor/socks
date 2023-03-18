@@ -9,7 +9,7 @@ from scipy.constants import gravitational_constant
 
 
 class BaseCWH(object):
-    """CWH base class.
+    r"""CWH base class.
 
     This class holds the shared parameters for the CWH systems, which include:
 
@@ -94,13 +94,13 @@ class CWH4DEnv(BaseCWH, DynamicalSystem):
         super().__init__(*args, **kwargs)
 
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(4,), dtype=float
         )
         self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(4,), dtype=float
         )
         self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(2,), dtype=float
         )
 
         self.state = None
@@ -174,7 +174,7 @@ class CWH4DEnv(BaseCWH, DynamicalSystem):
         return np.matmul(eAt, B)
 
     def step(self, action, time=0):
-        action = np.asarray(action, dtype=np.float32)
+        action = np.asarray(action, dtype=float)
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
@@ -228,7 +228,7 @@ class CWH4DEnv(BaseCWH, DynamicalSystem):
         # )
         # dx4 = -2 * self.angular_velocity * x3 + (u2 / self.chief_mass) + w4
 
-        # return np.array([dx1, dx2, dx3, dx4], dtype=np.float32)
+        # return np.array([dx1, dx2, dx3, dx4], dtype=float)
 
 
 class CWH6DEnv(BaseCWH, DynamicalSystem):
@@ -242,13 +242,13 @@ class CWH6DEnv(BaseCWH, DynamicalSystem):
         super().__init__(*args, **kwargs)
 
         self.observation_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(6,), dtype=float
         )
         self.state_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(6,), dtype=float
         )
         self.action_space = gym.spaces.Box(
-            low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(3,), dtype=float
         )
 
         self.state = None
@@ -343,7 +343,7 @@ class CWH6DEnv(BaseCWH, DynamicalSystem):
         return np.matmul(eAt, B)
 
     def step(self, action, time=0):
-        action = np.asarray(action, dtype=np.float32)
+        action = np.asarray(action, dtype=float)
 
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
@@ -399,4 +399,4 @@ class CWH6DEnv(BaseCWH, DynamicalSystem):
         # dx5 = -2 * self.angular_velocity * x4 + (u2 / self.chief_mass) + w5
         # dx6 = -(self.angular_velocity ** 2) * x3 + (u3 / self.chief_mass) + w6
 
-        # return np.array([dx1, dx2, dx3, dx4, dx5, dx6], dtype=np.float32)
+        # return np.array([dx1, dx2, dx3, dx4, dx5, dx6], dtype=float)

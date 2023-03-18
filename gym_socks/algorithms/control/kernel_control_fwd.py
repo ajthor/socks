@@ -35,13 +35,18 @@ from functools import partial
 
 import numpy as np
 
+from scipy.linalg import cholesky
+from scipy.linalg import cho_solve
+
 from gym_socks.policies import BasePolicy
-from gym_socks.algorithms.control.common import compute_solution
+from gym_socks.algorithms.control.common import _compute_solution
 
 from gym_socks.kernel.metrics import rbf_kernel
-from gym_socks.kernel.metrics import regularized_inverse
 
 from gym_socks.sampling.transform import transpose_sample
+
+from gym_socks.utils import normalize
+from gym_socks.utils.validation import check_array
 
 import logging
 from gym_socks.utils.logging import ms_tqdm, _progress_fmt
@@ -54,10 +59,8 @@ def kernel_control_fwd(
     A: np.ndarray,
     cost_fn=None,
     constraint_fn=None,
-    heuristic: bool = False,
     regularization_param: float = None,
     kernel_fn=None,
-    verbose: bool = True,
 ):
     """Stochastic optimal control policy forward in time.
 
@@ -70,7 +73,6 @@ def kernel_control_fwd(
         A: Collection of admissible control actions.
         cost_fn: The cost function. Should return a real value.
         constraint_fn: The constraint function. Should return a real value.
-        heuristic: Whether to use the heuristic solution instead of solving the LP.
         regularization_param: Regularization prameter for the regularized least-squares
             problem used to construct the approximation.
         kernel_fn: The kernel function used by the algorithm.
@@ -84,10 +86,8 @@ def kernel_control_fwd(
     alg = KernelControlFwd(
         cost_fn=cost_fn,
         constraint_fn=constraint_fn,
-        heuristic=heuristic,
         regularization_param=regularization_param,
         kernel_fn=kernel_fn,
-        verbose=verbose,
     )
     alg.train(S, A)
 
@@ -104,63 +104,27 @@ class KernelControlFwd(BasePolicy):
     Args:
         cost_fn: The cost function. Should return a real value.
         constraint_fn: The constraint function. Should return a real value.
-        heuristic: Whether to use the heuristic solution instead of solving the LP.
         regularization_param: Regularization prameter for the regularized least-squares
             problem used to construct the approximation.
         kernel_fn: The kernel function used by the algorithm.
-        verbose: Whether the algorithm should print verbose output.
 
     """
+
+    _cholesky_lower = False  # Whether to use lower triangular cholesky factorization.
 
     def __init__(
         self,
         cost_fn=None,
         constraint_fn=None,
-        heuristic: bool = False,
         regularization_param: float = None,
         kernel_fn=None,
-        verbose: bool = True,
-        *args,
-        **kwargs,
     ):
 
         self.cost_fn = cost_fn
         self.constraint_fn = constraint_fn
 
-        self.heuristic = heuristic
-
         self.kernel_fn = kernel_fn
         self.regularization_param = regularization_param
-
-        self.verbose = verbose
-
-    def _validate_params(self, S=None, A=None):
-
-        if S is None:
-            raise ValueError("Must supply a sample.")
-
-        if A is None:
-            raise ValueError("Must supply a sample.")
-
-        if self.kernel_fn is None:
-            self.kernel_fn = partial(rbf_kernel, sigma=0.1)
-
-        if self.regularization_param is None:
-            self.regularization_param = 1
-
-        if self.cost_fn is None:
-            raise ValueError("Must supply a cost function.")
-
-        if self.constraint_fn is None:
-            # raise ValueError("Must supply a constraint function.")
-            self._constrained = False
-        else:
-            self._constrained = True
-
-    def _validate_data(self, S):
-
-        if S is None:
-            raise ValueError("Must supply a sample.")
 
     def train(self, S: np.ndarray, A: np.ndarray):
         """Train the algorithm.
@@ -174,36 +138,55 @@ class KernelControlFwd(BasePolicy):
 
         """
 
-        self._validate_data(S)
-        self._validate_data(A)
-        self._validate_params(S=S, A=A)
+        if self.kernel_fn is None:
+            self.kernel_fn = partial(rbf_kernel, sigma=0.1)
+
+        if self.regularization_param is None:
+            self.regularization_param = 1 / (len(S) ** 2)
+        else:
+            assert (
+                self.regularization_param > 0
+            ), "regularization_param must be a strictly positive real value."
+
+        if self.cost_fn is None:
+            raise ValueError("Must supply a cost function.")
 
         X, U, Y = transpose_sample(S)
-        X = np.array(X)
-        U = np.array(U)
-        Y = np.array(Y)
+        X = check_array(X)
+        U = check_array(U)
+        Y = check_array(Y)
 
         self.X = X
 
-        A = np.array(A)
+        A = check_array(A)
 
         self.A = A
 
-        logger.debug("Computing matrix inverse.")
-        self.W = regularized_inverse(
-            self.kernel_fn(X) * self.kernel_fn(U),
-            self.regularization_param,
-            copy=False,
-        )
+        logger.debug("Computing covariance matrices.")
+        CXU = self.kernel_fn(X) * self.kernel_fn(U)
+        CXU[np.diag_indices_from(CXU)] += self.regularization_param
 
-        logger.debug("Computing covariance matrix.")
         self.CUA = self.kernel_fn(U, A)
+
+        try:
+            logger.debug("Computing Cholesky factorization.")
+            self._L = cholesky(
+                CXU,
+                lower=self._cholesky_lower,
+                overwrite_a=True,
+            )
+        except np.linalg.LinAlgError as e:
+            e.args = (
+                "The Gram matrix is not positive definite. "
+                "Try increasing the regularization parameter.",
+            ) + e.args
+            raise
 
         logger.debug("Computing cost function.")
         self.cost_fn = partial(self.cost_fn, state=Y)
 
-        logger.debug("Computing constraint function.")
         if self.constraint_fn is not None:
+            logger.debug("Computing constraint function.")
             self.constraint_fn = partial(self.constraint_fn, state=Y)
 
         return self
@@ -214,27 +197,30 @@ class KernelControlFwd(BasePolicy):
             print("Must supply a state to the policy.")
             return None
 
-        state = np.atleast_2d(np.asarray(state, dtype=np.float32))
+        state = np.atleast_2d(np.asarray(state, dtype=float))
 
         T = np.array(state)
 
-        # Compute covariance matrix.
-        CXT = self.kernel_fn(self.X, T)
-        # Compute beta.
-        betaXT = self.W @ (CXT * self.CUA)
-
         # Compute cost vector.
-        C = np.matmul(np.array(self.cost_fn(time=time), dtype=np.float32), betaXT)
+        CXT = self.kernel_fn(self.X, T) * self.CUA
+        beta = cho_solve(
+            (self._L, self._cholesky_lower),
+            self.cost_fn(time=time),
+        )
+        C = beta @ CXT
 
         # Compute constraint vector.
         D = None
         if self.constraint_fn is not None:
-            D = np.matmul(
-                np.array(self.constraint_fn(time=time), dtype=np.float32), betaXT
+            beta = cho_solve(
+                (self._L, self._cholesky_lower),
+                self.constraint_fn(time=time),
             )
+            D = beta @ CXT
 
         # Compute the solution to the LP.
         logger.debug("Computing solution to the LP.")
-        sol = compute_solution(C, D, heuristic=self.heuristic)
-        idx = np.argmax(sol)
-        return np.array(self.A[idx], dtype=np.float32)
+        sol = _compute_solution(C, D)
+        sol = normalize(sol)  # Normalize the vector.
+        idx = np.random.choice(len(self.A), p=sol)
+        return np.array(self.A[idx], dtype=float)

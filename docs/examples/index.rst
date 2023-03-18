@@ -21,13 +21,25 @@ Control
         :bdg-primary-line:`control`
 
     .. grid-item-card::
-        :link: control/tracking
+        :link: control/tracking_fwd
         :link-type: doc
 
         **Target Tracking Problem**
         ^^^
 
         Unconstrained stochastic optimal control.
+
+        +++
+        :bdg-primary-line:`control`
+
+    .. grid-item-card::
+        :link: control/tracking_bwd
+        :link-type: doc
+
+        **Target Tracking Problem (DP)**
+        ^^^
+
+        Unconstrained stochastic optimal control using dynamic programming.
 
         +++
         :bdg-primary-line:`control`

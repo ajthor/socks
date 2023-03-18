@@ -32,7 +32,7 @@ class TestGrid(unittest.TestCase):
     def test_boxgrid(cls):
         """Should generate proper grid from space."""
 
-        sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        sample_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=float)
 
         groundTruth = [
             [-1.0, -1.0],
