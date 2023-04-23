@@ -216,7 +216,6 @@ def rbf_kernel_derivative(
     Y: np.ndarray = None,
     sigma: float = None,
 ) -> np.ndarray:
-
     X, Y = check_pairwise_arrays(X, Y)
 
     # Compute a "difference" matrix between points.
@@ -395,8 +394,10 @@ def regularized_inverse(
 
     G = check_matrix(G, ensure_square=True, copy=copy)
 
+    # If the regularization parameter is not specified, use the default value.
     if regularization_param is None:
         regularization_param = 1 / (len(G) ** 2)
+    # Otherwise, check that it is a strictly positive real value.
     else:
         assert (
             regularization_param > 0
