@@ -6,22 +6,30 @@ typically modeled as a rigid body, and the dynamics are governed by Newton's sec
 
 Based on the book "Aircraft Control and Simulation" by Stevens and Lewis.
 
-Stevens, Brian L., Frank L. Lewis, and Eric N. Johnson. Aircraft control and simulation:
-dynamics, controls design, and autonomous systems. John Wiley & Sons, 2015.
+Converted from available fortran code. 
+
+.. [1] Stevens, Brian L., Frank L. Lewis, and Eric N. Johnson. Aircraft control and
+    simulation: dynamics, controls design, and autonomous systems. John Wiley & Sons,
+    2015.
 
 The Morelli model is based on:
 
-    E. A. Morelli, "Global nonlinear parametric modelling with application to F-16
-          aerodynamics,"
-    Proceedings of the 1998 American Control Conference. ACC (IEEE Cat. No.98CH36207),
-    Philadelphia, PA, USA, 1998, pp. 997-1001 vol.2, doi: 10.1109/ACC.1998.703559.
+.. [2] E. A. Morelli, "Global nonlinear parametric modelling with application to F-16
+    aerodynamics," Proceedings of the 1998 American Control Conference. ACC (IEEE
+    Cat. No.98CH36207), Philadelphia, PA, USA, 1998, pp. 997-1001 vol.2, doi:
+    10.1109/ACC.1998.703559.
 
 """
 
 import numpy as np
 
+from scipy.integrate import solve_ivp
+
 from gym_socks.envs.spaces import Box
+from gym_socks.envs.spaces import Space
 from gym_socks.envs.dynamical_system import DynamicalSystem
+
+from gym_socks.policies.policy import BasePolicy
 
 
 class _BaseF16Env(DynamicalSystem):
@@ -55,6 +63,10 @@ class _BaseF16Env(DynamicalSystem):
         u4: [deg] rudder deflection, rdr (rdr >= 0.0)
 
     """
+
+    _euler = True
+
+    _sampling_time = 0.01
 
     # Turn off black formatting for this section.
     # fmt: off
@@ -119,8 +131,8 @@ class _BaseF16Env(DynamicalSystem):
         self._zpq = (self._axx - self._ayy) * self._axx + self._axzs
         self._ypr = self._azz - self._axx
         self._weight = 20500.0
-        self._gd = 32.17
-        self._mass = self._weight / self._gd
+        self._g = 32.17
+        self._mass = self._weight / self._g
         self._s = 300
         self._b = 30
         self._cbar = 11.32
@@ -137,6 +149,49 @@ class _BaseF16Env(DynamicalSystem):
 
         self.seed(seed=seed)
 
+    def step(self, action, time=0):
+        action = np.asarray(action, dtype=float)
+
+        err_msg = "%r (%s) invalid" % (action, type(action))
+        assert self.action_space.contains(action), err_msg
+
+        # Clip the control inputs.
+        action = self._clip_control(action)
+
+        disturbance = self.generate_disturbance(time, self.state, action)
+
+        # solve the initial value problem
+        if self._euler is True:
+            next_state = self.state + self.sampling_time * self.dynamics(
+                time, self.state, action, disturbance
+            )
+            self.state = next_state
+        else:
+            # solve the initial value problem
+            sol = solve_ivp(
+                self.dynamics,
+                [time, time + self.sampling_time],
+                self.state,
+                args=(
+                    action,
+                    disturbance,
+                ),
+            )
+            *_, self.state = sol.y.T
+
+        # Correct altitude if it goes below zero.
+        if self.state[11] < 0:
+            self.state[11] = 0.0
+
+        observation = self.generate_observation(time, self.state, action)
+
+        cost = self.cost(time, self.state, action)
+
+        done = False
+        info = self._info
+
+        return observation, cost, done, info
+
     def _damp(self, alpha):
         """Compute the damping coefficients.
 
@@ -150,17 +205,22 @@ class _BaseF16Env(DynamicalSystem):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
+
+        K += 2
+        L += 2
+
         # Return damping coefficients.
         D = np.zeros((9,))
         for i in range(9):
-            V = self._damp_a[K][i] + abs(DA) * (self._damp_a[L][i] - self._damp_a[K][i])
+            # V = self._damp_a[K][i] + abs(DA) * (self._damp_a[L][i] - self._damp_a[K][i])
+            V = self._damp_a[i][K] + abs(DA) * (self._damp_a[i][L] - self._damp_a[i][K])
             D[i] = V
         return D
 
@@ -177,14 +237,14 @@ class _BaseF16Env(DynamicalSystem):
 
         """
 
-        R0 = 2.377e-3  # [slug/ft^3] sea level density
-        TFAC = 1.0 + 0.703e-5 * alt  # [1] temperature factor
-        T = 519.0 * TFAC  # [R] temperature
+        R0 = 2.377e-3
+        TFAC = 1.0 - 0.703e-5 * alt
+        T = 519.0 * TFAC
         if alt >= 35000.0:
             T = 390.0
-        RHO = R0 * TFAC**4.14  # [slug/ft^3] density
-        AMACH = VT / np.sqrt(1.4 * 1716.3 * T)  # [-] mach number
-        QBAR = 0.5 * RHO * VT**2  # [psf] dynamic pressure
+        RHO = R0 * TFAC**4.14
+        AMACH = VT / np.sqrt(1.4 * 1716.3 * T)
+        QBAR = 0.5 * RHO * VT**2
 
         return AMACH, QBAR
 
@@ -251,37 +311,45 @@ class _BaseF16Env(DynamicalSystem):
 
         # Row index for altitude.
         H = 0.0001 * alt
-        I = int(H)
+        I = int(np.fix(H))
         if I >= 5:
             I = 4
-        DH = H - float(I)
+        DH = H - I
 
         # Column index for mach number.
-        RM = 0.5 * rmach
-        M = int(RM)
+        RM = 5.0 * rmach
+        M = int(np.fix(RM))
         if M >= 5:
             M = 4
-        DM = RM - float(M)
+        if M <= 0:
+            M = 0
+        DM = RM - M
         CDH = 1.0 - DH
 
         # Compute mil thrust.
-        S = self._thrust_b[I][M] * CDH + self._thrust_b[I + 1][M] * DH
-        T = self._thrust_b[I][M + 1] * CDH + self._thrust_b[I + 1][M + 1] * DH
+        # S = self._thrust_b[I][M] * CDH + self._thrust_b[I + 1][M] * DH
+        # T = self._thrust_b[I][M + 1] * CDH + self._thrust_b[I + 1][M + 1] * DH
+        S = self._thrust_b[M][I] * CDH + self._thrust_b[M][I + 1] * DH
+        T = self._thrust_b[M + 1][I] * CDH + self._thrust_b[M + 1][I + 1] * DH
         # Mach number interpolation.
         TMIL = S + (T - S) * DM
 
         # Interpolate with idle or max thrust, depending on power.
         if power <= 50.0:
             # Compute idle thrust.
-            S = self._thrust_a[I][M] * CDH + self._thrust_a[I + 1][M] * DH
-            T = self._thrust_a[I][M + 1] * CDH + self._thrust_a[I + 1][M + 1] * DH
+            # S = self._thrust_a[I][M] * CDH + self._thrust_a[I + 1][M] * DH
+            # T = self._thrust_a[I][M + 1] * CDH + self._thrust_a[I + 1][M + 1] * DH
+            S = self._thrust_a[M][I] * CDH + self._thrust_a[M][I + 1] * DH
+            T = self._thrust_a[M + 1][I] * CDH + self._thrust_a[M + 1][I + 1] * DH
             # Mach number interpolation.
             TIDL = S + (T - S) * DM
             THRUST = TIDL + (TMIL - TIDL) * power / 50.0
         else:
             # Compute max thrust.
-            S = self._thrust_c[I][M] * CDH + self._thrust_c[I + 1][M] * DH
-            T = self._thrust_c[I][M + 1] * CDH + self._thrust_c[I + 1][M + 1] * DH
+            # S = self._thrust_c[I][M] * CDH + self._thrust_c[I + 1][M] * DH
+            # T = self._thrust_c[I][M + 1] * CDH + self._thrust_c[I + 1][M + 1] * DH
+            S = self._thrust_c[M][I] * CDH + self._thrust_c[M][I + 1] * DH
+            T = self._thrust_c[M + 1][I] * CDH + self._thrust_c[M + 1][I + 1] * DH
             # Mach number interpolation.
             TMAX = S + (T - S) * DM
             THRUST = TMIL + (TMAX - TMIL) * (power - 50.0) / 50.0
@@ -323,7 +391,11 @@ class _BaseF16Env(DynamicalSystem):
 
         """
 
-        w = self._np_random.standard_normal(size=self.state_space.shape)
+        # w = self._np_random.standard_normal(size=self.state_space.shape)
+        w = self._np_random.normal(
+            scale=[1, 0.01, 0.01, 0.1, 0.1, 0.1, 0, 0, 0, 1, 1, 1, 0],
+            size=self.state_space.shape,
+        )
         return 1e-9 * w
 
     def _clip_control(self, action):
@@ -343,6 +415,8 @@ class _BaseF16Env(DynamicalSystem):
     def dynamics(self, time, state, action, disturbance):
         """Dynamics of the F-16 aircraft.
 
+        dx/dt = f(x, u, w)
+
         Args:
             time: Current time.
             state: Current state of the system.
@@ -355,9 +429,6 @@ class _BaseF16Env(DynamicalSystem):
         """
 
         VT, alpha, beta, phi, theta, psi, p, q, r, pn, pe, alt, power = state
-
-        # Clip the control inputs.
-        action = self._clip_control(action)
         thtl, el, ail, rdr = action
 
         alpha *= self._rtod
@@ -371,13 +442,15 @@ class _BaseF16Env(DynamicalSystem):
         T = self._thrust(power, alt, amach)
 
         # Lookup tables and component buildup.
-        CXT, CYT, CZT, CLT, CMT, CNT = self._components(state, action)
+        CXT, CYT, CZT, CLT, CMT, CNT = self._components(
+            [VT, alpha, beta, phi, theta, psi, p, q, r, pn, pe, alt, power], action
+        )
 
         # Add damping derivatives.
-        CBTA = np.cos(beta)
-        U = VT * np.cos(alpha) * CBTA
-        V = VT * np.sin(beta)
-        W = VT * np.sin(alpha) * CBTA
+        CBTA = np.cos(state[2])
+        U = VT * np.cos(state[1]) * CBTA
+        V = VT * np.sin(state[2])
+        W = VT * np.sin(state[1]) * CBTA
         TVT = 0.5 / VT
         B2V = self._b * TVT
         CQ = self._cbar * q * TVT
@@ -404,13 +477,13 @@ class _BaseF16Env(DynamicalSystem):
         QS = qbar * self._s
         QSB = QS * self._b
         RMQS = QS / self._mass
-        GCTH = self._gd * CTH
+        GCTH = self._g * CTH
         QSPH = q * SPH
         AY = RMQS * CYT
         AZ = RMQS * CZT
 
         # Force equations.
-        u_dot = r * V - q * W - self._gd * STH + (QS * CXT + T) / self._mass
+        u_dot = r * V - q * W - self._g * STH + (QS * CXT + T) / self._mass
         v_dot = p * W - r * U + GCTH * SPH + AY
         w_dot = q * U - p * V + GCTH * CPH + AZ
         dum = U**2 + W**2
@@ -457,7 +530,7 @@ class _BaseF16Env(DynamicalSystem):
 
         dx10 = U * S1 + V * S3 + W * S6
         dx11 = U * S2 + V * S4 + W * S7
-        dx12 = U * STH - V * S5 + W * S8
+        dx12 = U * STH - V * S5 - W * S8
 
         output = np.array(
             [dx1, dx2, dx3, dx4, dx5, dx6, dx7, dx8, dx9, dx10, dx11, dx12, dx13],
@@ -468,9 +541,9 @@ class _BaseF16Env(DynamicalSystem):
         output += disturbance
 
         # Outputs.
-        AN = -AZ / self._gd
-        ALAT = AY / self._gd
-        AX = (QS * CXT + T) / self._gd
+        AN = -AZ / self._g
+        ALAT = AY / self._g
+        AX = (QS * CXT + T) / self._g
 
         self._info = {
             "AN": AN,
@@ -588,11 +661,11 @@ class MorelliF16Env(_BaseF16Env):
         # ]
 
         return (
-            -1.378278e-1 * alpha
-            - 4.211369 * alpha**2
-            + 4.775187 * alpha**3
-            - 1.026225e1 * alpha**4
-            + 8.399763 * alpha**5
+            -1.378278e-1
+            - 4.211369 * alpha
+            + 4.775187 * alpha**2
+            - 1.026225e1 * alpha**3
+            + 8.399763 * alpha**4
         ) * (1 - beta**2) - 4.354000e-1 * de
 
     def _czq(self, alpha):
@@ -637,17 +710,17 @@ class MorelliF16Env(_BaseF16Env):
 
     def _clp(self, alpha):
         # i = [
-        #     -1.004094e-1,
-        #     6.964699e-1,
-        #     4.267246,
-        #     -6.965065,
+        #    -4.126806e-1,
+        #    -1.189974e-1,
+        #    1.247721,
+        #    -7.391132e-1,
         # ]
 
         return (
-            -1.004094e-1
-            + 6.964699e-1 * alpha
-            + 4.267246 * alpha**2
-            - 6.965065 * alpha**3
+            -4.126806e-1
+            - 1.189974e-1 * alpha
+            + 1.247721 * alpha**2
+            - 7.391132e-1 * alpha**3
         )
 
     def _clr(self, alpha):
@@ -947,7 +1020,7 @@ class StevensF16Env(_BaseF16Env):
     ]
 
     _cz_a = [
-        [ -2.229, -2.248, -2.120, -1.917, -1.646, -1.366, -1.053, -0.731, -0.416, -0.100,  0.241,  0.770],
+        [ 0.770,  0.241, -0.100, -0.416, -0.731, -1.053, -1.366, -1.646, -1.917, -2.120, -2.248, -2.229],
     ]
 
     _dlda_a = [
@@ -1004,23 +1077,29 @@ class StevensF16Env(_BaseF16Env):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
         S = 0.2 * np.abs(beta)
-        M = int(S)
+        M = int(np.fix(S))
         if M == 0:
             M = 1
         if M >= 6:
             M = 5
-        DB = S - float(M)
-        N = M + int(np.copysign(1.1, DB))
-        V = self._cl_a[K][M] + abs(DA) * (self._cl_a[L][M] - self._cl_a[K][M])
-        W = self._cl_a[K][N] + abs(DA) * (self._cl_a[L][N] - self._cl_a[K][N])
+        DB = S - M
+        N = M + int(np.fix(np.copysign(1.1, DB)))
+
+        K += 2
+        L += 2
+
+        # V = self._cl_a[K][M] + abs(DA) * (self._cl_a[L][M] - self._cl_a[K][M])
+        # W = self._cl_a[K][N] + abs(DA) * (self._cl_a[L][N] - self._cl_a[K][N])
+        V = self._cl_a[M][K] + abs(DA) * (self._cl_a[M][L] - self._cl_a[M][K])
+        W = self._cl_a[N][K] + abs(DA) * (self._cl_a[N][L] - self._cl_a[N][K])
         return (V + abs(DB) * (W - V)) * np.sign(beta)
 
     def _cm(self, alpha, el):
@@ -1036,23 +1115,31 @@ class StevensF16Env(_BaseF16Env):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
         S = el / 12.0
-        M = int(S)
+        M = int(np.fix(S))
         if M <= -2:
             M = -1
         if M >= 2:
             M = 1
-        DE = S - float(M)
-        N = M + int(np.copysign(1.1, DE))
-        V = self._cm_a[K][M] + abs(DA) * (self._cm_a[L][M] - self._cm_a[K][M])
-        W = self._cm_a[K][N] + abs(DA) * (self._cm_a[L][N] - self._cm_a[K][N])
+        DE = S - M
+        N = M + int(np.fix(np.copysign(1.1, DE)))
+
+        K += 2
+        L += 2
+        M += 2
+        N += 2
+
+        # V = self._cm_a[K][M] + abs(DA) * (self._cm_a[L][M] - self._cm_a[K][M])
+        # W = self._cm_a[K][N] + abs(DA) * (self._cm_a[L][N] - self._cm_a[K][N])
+        V = self._cm_a[M][K] + abs(DA) * (self._cm_a[M][L] - self._cm_a[M][K])
+        W = self._cm_a[N][K] + abs(DA) * (self._cm_a[N][L] - self._cm_a[N][K])
         return V + abs(DE) * (W - V)
 
     def _cn(self, alpha, beta):
@@ -1068,23 +1155,29 @@ class StevensF16Env(_BaseF16Env):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
         S = 0.2 * np.abs(beta)
-        M = int(S)
+        M = int(np.fix(S))
         if M == 0:
             M = 1
         if M >= 6:
             M = 5
-        DB = S - float(M)
-        N = M + int(np.copysign(1.1, DB))
-        V = self._cn_a[K][M] + abs(DA) * (self._cn_a[L][M] - self._cn_a[K][M])
-        W = self._cn_a[K][N] + abs(DA) * (self._cn_a[L][N] - self._cn_a[K][N])
+        DB = S - M
+        N = M + int(np.fix(np.copysign(1.1, DB)))
+
+        K += 2
+        L += 2
+
+        # V = self._cn_a[K][M] + abs(DA) * (self._cn_a[L][M] - self._cn_a[K][M])
+        # W = self._cn_a[K][N] + abs(DA) * (self._cn_a[L][N] - self._cn_a[K][N])
+        V = self._cn_a[M][K] + abs(DA) * (self._cn_a[M][L] - self._cn_a[M][K])
+        W = self._cn_a[N][K] + abs(DA) * (self._cn_a[N][L] - self._cn_a[N][K])
         return (V + abs(DB) * (W - V)) * np.sign(beta)
 
     def _cx(self, alpha, el):
@@ -1100,23 +1193,31 @@ class StevensF16Env(_BaseF16Env):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
         S = el / 12.0
-        M = int(S)
+        M = int(np.fix(S))
         if M <= -2:
             M = -1
         if M >= 2:
             M = 1
-        DE = S - float(M)
-        N = M + int(np.copysign(1.1, DE))
-        V = self._cx_a[K][M] + abs(DA) * (self._cx_a[L][M] - self._cx_a[K][M])
-        W = self._cx_a[K][N] + abs(DA) * (self._cx_a[L][N] - self._cx_a[K][N])
+        DE = S - M
+        N = M + int(np.fix(np.copysign(1.1, DE)))
+
+        K += 2
+        L += 2
+        M += 2
+        N += 2
+
+        # V = self._cx_a[K][M] + abs(DA) * (self._cx_a[L][M] - self._cx_a[K][M])
+        # W = self._cx_a[K][N] + abs(DA) * (self._cx_a[L][N] - self._cx_a[K][N])
+        V = self._cx_a[M][K] + abs(DA) * (self._cx_a[M][L] - self._cx_a[M][K])
+        W = self._cx_a[N][K] + abs(DA) * (self._cx_a[N][L] - self._cx_a[N][K])
         CX = V + (W - V) * abs(DE)
         return CX
 
@@ -1149,14 +1250,18 @@ class StevensF16Env(_BaseF16Env):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
-        S = self._cz_a[K] + abs(DA) * (self._cz_a[L] - self._cz_a[K])
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
+
+        K += 2
+        L += 2
+
+        S = self._cz_a[0][K] + abs(DA) * (self._cz_a[0][L] - self._cz_a[0][K])
         CZ = S * (1 - (beta / 57.3) ** 2) - 0.19 * (el / 25.0)
 
         return CZ
@@ -1174,23 +1279,31 @@ class StevensF16Env(_BaseF16Env):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
         S = 0.1 * beta
-        M = int(S)
-        if M == -3:
+        M = int(np.fix(S))
+        if M <= -3:
             M = -2
         if M >= 3:
             M = 2
-        DB = S - float(M)
-        N = M + int(np.copysign(1.1, DB))
-        V = self._dalda_a[K][M] + abs(DA) * (self._dalda_a[L][M] - self._dalda_a[K][M])
-        W = self._dalda_a[K][N] + abs(DA) * (self._dalda_a[L][N] - self._dalda_a[K][N])
+        DB = S - M
+        N = M + int(np.fix(np.copysign(1.1, DB)))
+
+        K += 2
+        L += 2
+        M += 3
+        N += 3
+
+        # V = self._dlda_a[K][M] + abs(DA) * (self._dlda_a[L][M] - self._dlda_a[K][M])
+        # W = self._dlda_a[K][N] + abs(DA) * (self._dlda_a[L][N] - self._dlda_a[K][N])
+        V = self._dlda_a[M][K] + abs(DA) * (self._dlda_a[M][L] - self._dlda_a[M][K])
+        W = self._dlda_a[N][K] + abs(DA) * (self._dlda_a[N][L] - self._dlda_a[N][K])
         return V + abs(DB) * (W - V)
 
     def _dldr(self, alpha, beta):
@@ -1206,23 +1319,31 @@ class StevensF16Env(_BaseF16Env):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
         S = 0.1 * beta
-        M = int(S)
-        if M == -3:
+        M = int(np.fix(S))
+        if M <= -3:
             M = -2
         if M >= 3:
             M = 2
-        DB = S - float(M)
-        N = M + int(np.copysign(1.1, DB))
-        V = self._daldr_a[K][M] + abs(DA) * (self._daldr_a[L][M] - self._daldr_a[K][M])
-        W = self._daldr_a[K][N] + abs(DA) * (self._daldr_a[L][N] - self._daldr_a[K][N])
+        DB = S - M
+        N = M + int(np.fix(np.copysign(1.1, DB)))
+
+        K += 2
+        L += 2
+        M += 3
+        N += 3
+
+        # V = self._dldr_a[K][M] + abs(DA) * (self._dldr_a[L][M] - self._dldr_a[K][M])
+        # W = self._dldr_a[K][N] + abs(DA) * (self._dldr_a[L][N] - self._dldr_a[K][N])
+        V = self._dldr_a[M][K] + abs(DA) * (self._dldr_a[M][L] - self._dldr_a[M][K])
+        W = self._dldr_a[N][K] + abs(DA) * (self._dldr_a[N][L] - self._dldr_a[N][K])
         return V + abs(DB) * (W - V)
 
     def _dnda(self, alpha, beta):
@@ -1238,23 +1359,31 @@ class StevensF16Env(_BaseF16Env):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
         S = 0.1 * beta
-        M = int(S)
-        if M == -3:
+        M = int(np.fix(S))
+        if M <= -3:
             M = -2
         if M >= 3:
             M = 2
-        DB = S - float(M)
-        N = M + int(np.copysign(1.1, DB))
-        V = self._dnda_a[K][M] + abs(DA) * (self._dnda_a[L][M] - self._dnda_a[K][M])
-        W = self._dnda_a[K][N] + abs(DA) * (self._dnda_a[L][N] - self._dnda_a[K][N])
+        DB = S - M
+        N = M + int(np.fix(np.copysign(1.1, DB)))
+
+        K += 2
+        L += 2
+        M += 3
+        N += 3
+
+        # V = self._dnda_a[K][M] + abs(DA) * (self._dnda_a[L][M] - self._dnda_a[K][M])
+        # W = self._dnda_a[K][N] + abs(DA) * (self._dnda_a[L][N] - self._dnda_a[K][N])
+        V = self._dnda_a[M][K] + abs(DA) * (self._dnda_a[M][L] - self._dnda_a[M][K])
+        W = self._dnda_a[N][K] + abs(DA) * (self._dnda_a[N][L] - self._dnda_a[N][K])
         return V + abs(DB) * (W - V)
 
     def _dndr(self, alpha, beta):
@@ -1270,23 +1399,31 @@ class StevensF16Env(_BaseF16Env):
         """
 
         S = 0.2 * alpha
-        K = int(S)
+        K = int(np.fix(S))
         if K <= -2:
             K = -1
         if K >= 9:
             K = 8
-        DA = S - float(K)
-        L = K + int(np.copysign(1.1, DA))
+        DA = S - K
+        L = K + int(np.fix(np.copysign(1.1, DA)))
         S = 0.1 * beta
-        M = int(S)
-        if M == -3:
+        M = int(np.fix(S))
+        if M <= -3:
             M = -2
         if M >= 3:
             M = 2
-        DB = S - float(M)
-        N = M + int(np.copysign(1.1, DB))
-        V = self._dndr_a[K][M] + abs(DA) * (self._dndr_a[L][M] - self._dndr_a[K][M])
-        W = self._dndr_a[K][N] + abs(DA) * (self._dndr_a[L][N] - self._dndr_a[K][N])
+        DB = S - M
+        N = M + int(np.fix(np.copysign(1.1, DB)))
+
+        K += 2
+        L += 2
+        M += 3
+        N += 3
+
+        # V = self._dndr_a[K][M] + abs(DA) * (self._dndr_a[L][M] - self._dndr_a[K][M])
+        # W = self._dndr_a[K][N] + abs(DA) * (self._dndr_a[L][N] - self._dndr_a[K][N])
+        V = self._dndr_a[M][K] + abs(DA) * (self._dndr_a[M][L] - self._dndr_a[M][K])
+        W = self._dndr_a[N][K] + abs(DA) * (self._dndr_a[N][L] - self._dndr_a[N][K])
         return V + abs(DB) * (W - V)
 
     def _components(self, state, action):
@@ -1307,7 +1444,7 @@ class StevensF16Env(_BaseF16Env):
             + self._dlda(alpha, beta) * DAIL
             + self._dldr(alpha, beta) * DRDR
         )
-        CMT = self._cm(alpha, beta)
+        CMT = self._cm(alpha, el)
         CNT = (
             self._cn(alpha, beta)
             + self._dnda(alpha, beta) * DAIL
@@ -1315,3 +1452,18 @@ class StevensF16Env(_BaseF16Env):
         )
 
         return CXT, CYT, CZT, CLT, CMT, CNT
+
+
+class F16LQRController(BasePolicy):
+    """F16 LQR policy."""
+
+    _K = np.zeros((4, 13))
+
+    def __init__(self, action_space: Space = None):
+        if action_space is not None:
+            self.action_space = action_space
+        else:
+            raise ValueError("action space must be provided")
+
+    def __call__(self, state: np.ndarray):
+        return -self._K @ state
